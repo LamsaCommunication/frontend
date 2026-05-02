@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { MotionProvider } from "@/components/providers/motion-config";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -167,7 +168,7 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
-        {children}
+        <MotionProvider>{children}</MotionProvider>
       </body>
     </html>
   );

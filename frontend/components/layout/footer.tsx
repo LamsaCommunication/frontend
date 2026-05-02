@@ -1,18 +1,10 @@
-"use client";
-
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { motion } from "framer-motion";
 import { Mail, Phone, MapPin } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { site } from "@/lib/site";
-import {
-  FacebookIcon,
-  InstagramIcon,
-  TikTokIcon,
-  WhatsAppIcon,
-} from "@/components/icons/social-icons";
+import { WhatsAppIcon } from "@/components/icons/social-icons";
 
 export function Footer() {
   const year = new Date().getFullYear();
@@ -44,18 +36,15 @@ export function Footer() {
               visuelle, impression et solutions de communication.
             </p>
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 1.1 }}
-              className="mt-4 md:mt-6"
-            >
+            <div className="mt-4 md:mt-6">
               <img
                 src="/logoFOOTER.avif"
                 alt="C'est aussi simple que ça"
+                loading="lazy"
+                decoding="async"
                 className="h-auto w-[200px] md:w-[260px] object-contain"
               />
-            </motion.div>
+            </div>
           </div>
 
           <div className="md:col-span-3">

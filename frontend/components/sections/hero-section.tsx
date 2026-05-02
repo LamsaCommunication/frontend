@@ -161,60 +161,80 @@ export function HeroSection() {
             <img
               alt="Lamsa Communication"
               src="/lamsa2.png"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="l1"
             />,
             <img
               alt="C'est aussi simple que ça"
               src="/logoFOOTER.avif"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="f1"
             />,
             <img
               alt="Lamsa Communication"
               src="/lamsa2.png"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="l2"
             />,
             <img
               alt="C'est aussi simple que ça"
               src="/logoFOOTER.avif"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="f2"
             />,
             <img
               alt="Lamsa Communication"
               src="/lamsa2.png"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="l3"
             />,
             <img
               alt="C'est aussi simple que ça"
               src="/logoFOOTER.avif"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="f3"
             />,
             <img
               alt="Lamsa Communication"
               src="/lamsa2.png"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="l4"
             />,
             <img
               alt="C'est aussi simple que ça"
               src="/logoFOOTER.avif"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="f4"
             />,
             <img
               alt="Lamsa Communication"
               src="/lamsa2.png"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="l5"
             />,
             <img
               alt="C'est aussi simple que ça"
               src="/logoFOOTER.avif"
+              loading="lazy"
+              decoding="async"
               className="h-6 w-auto object-contain opacity-80 md:h-8"
               key="f5"
             />,
