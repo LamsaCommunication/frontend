@@ -131,8 +131,9 @@ export const metadata: Metadata = {
     images: ["/lamsa2.png"],
   },
   icons: {
-    icon: "/lamsa1.png",
-    apple: "/lamsa2.png",
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
   },
   robots: {
     index: true,
