@@ -14,7 +14,9 @@
       "Bash(npx next *)",
       "Bash(Get-ChildItem \"C:\\\\PROJECT\\\\LamsaCommunication\\\\frontend\\\\public\")",
       "Bash(Select-Object Name)",
-      "Bash(node *)"
+      "Bash(node *)",
+      "Bash(git mv *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
