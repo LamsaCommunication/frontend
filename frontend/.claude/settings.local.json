@@ -8,7 +8,10 @@
       "Bash(Select-Object FullName)",
       "Bash(python skills/ui-ux-pro-max/scripts/search.py \"premium creative studio print branding design agency\" --design-system -p \"Lamsa Communication\" -f markdown)",
       "Bash(python3 skills/ui-ux-pro-max/scripts/search.py \"premium creative studio print branding design agency\" --design-system -p \"Lamsa Communication\" -f markdown)",
-      "PowerShell(Get-ChildItem -Path \"C:\\\\PROJECT\\\\LamsaCommunication\\\\frontend\" -Recurse -Depth 4 | Where-Object { -not $_.FullName.Contains\\(\"node_modules\"\\) -and -not $_.FullName.Contains\\(\".git\"\\) -and -not $_.FullName.Contains\\(\".next\"\\) } | Select-Object FullName)"
+      "PowerShell(Get-ChildItem -Path \"C:\\\\PROJECT\\\\LamsaCommunication\\\\frontend\" -Recurse -Depth 4 | Where-Object { -not $_.FullName.Contains\\(\"node_modules\"\\) -and -not $_.FullName.Contains\\(\".git\"\\) -and -not $_.FullName.Contains\\(\".next\"\\) } | Select-Object FullName)",
+      "PowerShell(head *)",
+      "Bash(npx tsc *)",
+      "Bash(npx next *)"
     ]
   }
 }

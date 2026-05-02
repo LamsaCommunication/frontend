@@ -23,7 +23,7 @@ function BentoCard({
       whileHover={{ y: -5, transition: { duration: 0.2, ease: "easeOut" } }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.55, ease: "easeOut", delay }}
-      className={`group flex flex-col rounded-3xl border border-[#ebebeb] bg-white p-6 shadow-[0_1px_12px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:shadow-[0_12px_40px_-12px_rgba(0,0,0,0.12)] md:p-8 ${className}`}
+      className={`group flex flex-col rounded-3xl border border-[#ebebeb] bg-white p-6 shadow-[0_1px_12px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:border-brand-red/20 hover:shadow-[0_16px_48px_-12px_rgba(227,6,19,0.10)] md:p-8 ${className}`}
     >
       {children}
     </motion.div>
@@ -47,7 +47,7 @@ function DesignVisual() {
               <div className="h-7 w-7 rounded-lg bg-brand-red/15" />
             </div>
           </div>
-          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-white shadow-md">
+          <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center rounded-2xl bg-white shadow-md transition-transform duration-300 group-hover:scale-110">
             <Pencil className="h-7 w-7 text-brand-red" strokeWidth={1.5} />
           </div>
         </div>
@@ -65,7 +65,7 @@ function PrintVisual() {
         <div className="relative w-full">
           <div className="absolute top-4 left-3 right-0 h-12 rounded-xl bg-brand-charcoal/[0.08]" />
           <div className="absolute top-2 left-1.5 right-0 h-12 rounded-xl bg-brand-charcoal/[0.12]" />
-          <div className="relative flex h-12 items-center justify-between rounded-xl bg-white px-4 shadow-md">
+          <div className="relative flex h-12 items-center justify-between rounded-xl bg-white px-4 shadow-md transition-transform duration-300 group-hover:scale-[1.04]">
             <div className="flex items-center gap-3">
               <Printer className="h-5 w-5 text-brand-charcoal/50" strokeWidth={1.5} />
               <div className="flex gap-1.5">
@@ -96,7 +96,7 @@ function NeonVisual() {
       />
       <div className="absolute inset-0 flex items-center justify-center">
         <Zap
-          className="h-10 w-10 text-brand-red"
+          className="h-10 w-10 text-brand-red transition-transform duration-300 group-hover:scale-110"
           strokeWidth={1.5}
           style={{ filter: "drop-shadow(0 0 14px rgba(227,6,19,0.85))" }}
         />
@@ -128,7 +128,7 @@ function IconVisual({
         style={{ background: blobColor }}
       />
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm transition-transform duration-300 group-hover:scale-110">
           <Icon className={`h-7 w-7 ${iconColor}`} strokeWidth={1.5} />
         </div>
       </div>
@@ -140,7 +140,7 @@ export function OfferingsSection() {
   return (
     <section
       id="offres"
-      className="w-full bg-white py-20 md:py-28 lg:py-32"
+      className="w-full scroll-mt-16 bg-white py-20 md:py-28 lg:py-32 lg:scroll-mt-20"
     >
       <Container as="div">
         <motion.div
@@ -151,9 +151,7 @@ export function OfferingsSection() {
           className="mx-auto max-w-xl text-center"
         >
           <span className="label-eyebrow text-brand-red">
-            <span className="block h-px w-8 bg-brand-red" aria-hidden />
             Notre offre
-            <span className="block h-px w-8 bg-brand-red" aria-hidden />
           </span>
           <h2 className="heading-section mt-5 text-3xl text-brand-charcoal sm:text-4xl md:text-5xl">
             Ce que nous{" "}

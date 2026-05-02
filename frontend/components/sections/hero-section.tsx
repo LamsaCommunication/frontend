@@ -7,135 +7,152 @@ import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { Marquee } from "@/components/ui/marquee";
-import { site, services } from "@/lib/site";
+import { site } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
+
+/*
+ * CTA buttons — rendered twice (desktop inline / mobile standalone)
+ * to achieve: title → logo → buttons order on mobile.
+ */
+function CTAButtons() {
+  return (
+    <>
+      <a
+        href={site.whatsapp.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="group inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_28px_-8px_rgba(227,6,19,0.4)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_14px_42px_-10px_rgba(227,6,19,0.55)] active:scale-[0.98] cursor-pointer lg:px-7 lg:py-3.5"
+      >
+        <WhatsAppIcon className="h-4 w-4 flex-shrink-0" title="WhatsApp" />
+        Demander un devis
+        <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+      </a>
+      <Link
+        href="#etapes"
+        className="group inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/20 bg-transparent px-6 py-3 text-sm font-semibold text-brand-charcoal transition-all duration-200 hover:border-brand-charcoal/45 hover:bg-brand-charcoal/[0.04] cursor-pointer lg:px-7 lg:py-3.5"
+      >
+        Découvrir nos services
+        <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
+      </Link>
+    </>
+  );
+}
 
 export function HeroSection() {
   return (
     <section
       id="accueil"
-      className="relative isolate w-full overflow-hidden bg-white text-brand-charcoal"
+      className="relative isolate w-full scroll-mt-16 overflow-hidden bg-white text-brand-charcoal lg:scroll-mt-20"
     >
       <Container
         as="div"
-        className="relative z-10 pb-12 pt-14 md:pb-20 md:pt-24"
+        className="relative z-10 pb-8 pt-12 md:pb-16 md:pt-22"
       >
-        <div className="grid grid-cols-1 items-center gap-12 lg:grid-cols-12 lg:gap-10">
-          <div className="lg:col-span-7">
-            <motion.span
+        {/*
+         * Three-child grid: order-1 (text) → order-2 (logo) → order-3 (mobile buttons).
+         * Desktop collapses order-3 (lg:hidden) and shows buttons inside order-1.
+         */}
+        <div className="grid grid-cols-1 items-center gap-y-5 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-0">
+
+          {/* ── 1. Heading column ───────────────────────────────────── */}
+          <div className="order-1 lg:col-span-7">
+
+            <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="label-eyebrow text-brand-red"
+              transition={{ duration: 0.5, ease: EASE }}
+              className="mb-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-red"
             >
-              <span className="block h-px w-10 bg-brand-red" aria-hidden />
               Studio communication
-            </motion.span>
+            </motion.p>
 
             <motion.h1
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 28 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.9,
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              className="heading-display mt-6 text-center text-balance text-[clamp(2.2rem,6vw,4.8rem)] font-semibold text-brand-charcoal md:mt-8"
+              transition={{ duration: 0.9, ease: EASE }}
+              className="text-[clamp(2.4rem,5.5vw,4.6rem)] font-bold leading-[1.1] tracking-[-0.025em] text-brand-charcoal"
             >
-              DÉMARQUEZ-VOUS DE VOS{" "}
-              <span className="relative inline-block">
-                CONCURRENTS !
-                <motion.span
-                  aria-hidden
-                  initial={{ scaleX: 0 }}
-                  animate={{ scaleX: 1 }}
-                  transition={{
-                    duration: 0.8,
-                    delay: 0.6,
-                    ease: [0.22, 1, 0.36, 1],
-                  }}
-                />
-              </span>
+              Démarquez-vous
+              <br className="hidden lg:block" />
+              {" "}de vos{" "}
+              <span className="text-brand-red">concurrents.</span>
             </motion.h1>
 
+            {/* Desktop-only buttons */}
             <motion.div
-              initial={{ opacity: 0, y: 12 }}
+              initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.7, delay: 0.55 }}
-              className="mt-8 flex flex-col items-stretch gap-3 sm:flex-row sm:items-center md:mt-10"
+              transition={{ duration: 0.65, delay: 0.4, ease: EASE }}
+              className="mt-9 hidden items-center gap-3 lg:flex"
             >
-              <a
-                href={site.whatsapp.link}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-7 py-4 text-base font-semibold text-white transition-all duration-200 hover:bg-brand-red-hover hover:shadow-[0_18px_40px_-18px_rgba(227,6,19,0.55)] cursor-pointer"
-              >
-                <WhatsAppIcon className="h-5 w-5" title="WhatsApp" />
-                Demander un devis
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </a>
-              <Link
-                href="#services"
-                className="group inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/15 bg-white px-7 py-4 text-base font-semibold text-brand-charcoal transition-all duration-200 hover:border-brand-charcoal hover:shadow-[0_10px_30px_-15px_rgba(0,0,0,0.18)] cursor-pointer"
-              >
-                Découvrir nos services
-                <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
-              </Link>
+              <CTAButtons />
             </motion.div>
           </div>
 
+          {/* ── 2. Logo ─────────────────────────────────────────────── */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.96 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{
-              duration: 0.9,
-              delay: 0.3,
-              ease: [0.22, 1, 0.36, 1],
-            }}
-            className="relative mx-auto w-full max-w-[440px] lg:col-span-5 lg:max-w-none"
+            initial={{ opacity: 0, scale: 0.93, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.28, ease: EASE }}
+            className="order-2 mx-auto w-full max-w-[280px] sm:max-w-[340px] lg:col-span-5 lg:mx-0 lg:max-w-none"
           >
-            <div className="relative aspect-square w-full">
-              <div className="relative h-full w-full overflow-hidden">
-                <div className="absolute inset-0 flex items-center justify-center p-12">
-                  <Image
-                    src="/lamsa2.PNG"
-                    alt="Lamsa Communication — logo"
-                    width={400}
-                    height={400}
-                    priority
-                    sizes="(max-width: 1024px) 320px, 380px"
-                    className="h-auto w-full max-w-[260px] object-contain md:max-w-[300px]"
-                  />
-                </div>
-              </div>
+            <div className="relative flex items-center justify-center py-2 lg:py-0">
+              <div
+                aria-hidden
+                className="absolute h-3/4 w-3/4 rounded-full bg-brand-red/[0.07] blur-3xl"
+              />
+              <Image
+                src="/lamsa2.PNG"
+                alt="Lamsa Communication"
+                width={480}
+                height={480}
+                priority
+                sizes="(max-width: 640px) 280px, (max-width: 1024px) 340px, 430px"
+                className="relative h-auto w-full max-w-[280px] object-contain sm:max-w-[340px] lg:max-w-[430px]"
+              />
             </div>
           </motion.div>
+
+          {/* ── 3. Mobile-only buttons (below logo) ─────────────────── */}
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.65, delay: 0.46, ease: EASE }}
+            className="order-3 flex flex-col gap-2.5 sm:flex-row sm:items-center lg:hidden"
+          >
+            <CTAButtons />
+          </motion.div>
+
         </div>
       </Container>
 
+      {/* ── Marquee ticker ─────────────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ duration: 0.7, delay: 1.3 }}
-        className="relative z-10 w-[900px] overflow-hidden bg-white mx-auto mt-10
-    [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]
-    [-webkit-mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+        transition={{ duration: 0.7, delay: 1.0 }}
+        className="relative z-10 mx-auto mt-4 w-full max-w-[900px] overflow-hidden md:mt-6
+          [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]
+          [-webkit-mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
       >
         <Marquee
           speed="fast"
           separator={null}
           className="flex items-center"
-          itemClassName="w-[200px] justify-center opacity-40"
+          itemClassName="w-[180px] justify-center opacity-80 md:w-[200px]"
           items={[
-            <span className="text-sm font-semibold tracking-wide">
-              LOGO1
-            </span>,
-            <span className="text-sm font-medium tracking-[0.2em]">
-              LOGO2
-            </span>,
-            <span className="text-sm font-semibold">LOGO3</span>,
-            <span className="text-sm font-medium tracking-wide">LOGO4</span>,
-            <span className="text-sm font-semibold">LOGO5</span>,
-            <span className="text-sm font-medium tracking-wide">LOGO6</span>,
+            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l1" />,
+            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f1" />,
+            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l2" />,
+            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f2" />,
+            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l3" />,
+            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f3" />,
+            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l4" />,
+            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f4" />,
+            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l5" />,
+            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f5" />,
           ]}
         />
       </motion.div>

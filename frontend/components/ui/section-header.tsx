@@ -38,7 +38,6 @@ export function SectionHeader({
           transition={{ duration: 0.5, ease: "easeOut" }}
           className="label-eyebrow text-brand-red"
         >
-          <span className="block h-px w-8 bg-brand-red" aria-hidden />
           {eyebrow}
         </motion.span>
       )}

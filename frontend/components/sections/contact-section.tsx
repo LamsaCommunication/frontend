@@ -10,6 +10,7 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
+  ChevronDown,
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
@@ -108,7 +109,8 @@ export function ContactSection() {
   return (
     <section
       id="contact"
-      className="relative w-full overflow-hidden py-20 md:py-28 lg:py-36"
+      className="relative w-full scroll-mt-16 overflow-hidden py-20 md:py-28 lg:py-36 lg:scroll-mt-20"
+      style={{ background: "linear-gradient(180deg, #fdf8f8 0%, #fdf8f8 65%, #ffffff 100%)" }}
     >
       <Container as="div">
         <SectionHeader
@@ -134,7 +136,6 @@ export function ContactSection() {
             <div className="flex h-full flex-col justify-between gap-8 rounded-3xl bg-brand-charcoal p-7 text-white sm:p-8 md:gap-10 md:p-10">
               <div>
                 <p className="label-eyebrow text-brand-red">
-                  <span className="block h-px w-8 bg-brand-red" aria-hidden />
                   Coordonnées
                 </p>
                 <h3 className="mt-4 text-2xl font-bold md:text-3xl">
@@ -183,10 +184,10 @@ export function ContactSection() {
                     <MapPin className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-white/50">
+                    <p className="text-xs uppercase tracking-wider text-white/50 ">
                       Localisation
                     </p>
-                    <a href="https://maps.app.goo.gl/AThK17GjJpkBr8mr7"><p className="text-base font-medium text-white">Rue Cherif Chalabi, Passage N°E, Blida 09000</p></a>
+                    <a href="https://maps.app.goo.gl/AThK17GjJpkBr8mr7"><p className="text-base font-medium text-white transition-colors hover:text-brand-red">Rue Cherif Chalabi, Passage N°E, Blida 09000</p></a>
                   </div>
                 </li>
               </ul>
@@ -196,7 +197,7 @@ export function ContactSection() {
                   href={site.whatsapp.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-brand-red px-6 py-4 text-base font-semibold text-white transition-colors hover:bg-brand-red-hover cursor-pointer"
+                  className="group inline-flex w-full items-center justify-center gap-2 rounded-full bg-brand-red px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_28px_-8px_rgba(227,6,19,0.4)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_14px_42px_-10px_rgba(227,6,19,0.55)] active:scale-[0.98] cursor-pointer"
                 >
                   <WhatsAppIcon className="h-5 w-5" title="WhatsApp" />
                   Discutons sur WhatsApp
@@ -283,6 +284,19 @@ export function ContactSection() {
                   autoComplete="tel"
                   placeholder="+213 ..."
                 />
+                <SelectField
+                  label="Service souhaité"
+                  name="service"
+                  value={form.service}
+                  onChange={handleChange}
+                >
+                  <option value="">Choisissez un service</option>
+                  {services.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </SelectField>
               </div>
 
               <TextareaField
@@ -341,7 +355,7 @@ export function ContactSection() {
                 <button
                   type="submit"
                   disabled={status === "loading"}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-brand-red px-6 py-4 text-base font-semibold text-white transition-colors hover:bg-brand-red-hover disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
+                  className="group inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-brand-red px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_28px_-8px_rgba(227,6,19,0.4)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_14px_42px_-10px_rgba(227,6,19,0.55)] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 cursor-pointer"
                 >
                   {status === "loading" ? (
                     <>
@@ -359,7 +373,7 @@ export function ContactSection() {
                   href={whatsappPrefilled}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-brand-charcoal/15 bg-white px-6 py-4 text-base font-semibold text-brand-charcoal transition-all hover:border-brand-red hover:text-brand-red cursor-pointer"
+                  className="group inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/20 bg-transparent px-6 py-3 text-sm font-semibold text-brand-charcoal transition-all duration-200 hover:border-brand-charcoal/45 hover:bg-brand-charcoal/[0.04] cursor-pointer"
                 >
                   <WhatsAppIcon className="h-5 w-5" title="WhatsApp" />
                   Envoyer via WhatsApp
@@ -418,13 +432,7 @@ type SelectProps = {
   className?: string;
 } & React.SelectHTMLAttributes<HTMLSelectElement>;
 
-function SelectField({
-  label,
-  name,
-  className,
-  children,
-  ...props
-}: SelectProps) {
+function SelectField({ label, name, className, children, ...props }: SelectProps) {
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <label
@@ -433,14 +441,17 @@ function SelectField({
       >
         {label}
       </label>
-      <select
-        id={name}
-        name={name}
-        className="h-12 w-full appearance-none rounded-xl border border-brand-light-gray bg-brand-soft-white/40 px-4 text-sm text-brand-charcoal transition-all focus:border-brand-red focus:bg-white focus:outline-none focus:ring-3 focus:ring-brand-red/15"
-        {...props}
-      >
-        {children}
-      </select>
+      <div className="relative">
+        <select
+          id={name}
+          name={name}
+          className="h-12 w-full appearance-none rounded-xl border border-brand-light-gray bg-brand-soft-white/40 px-4 pr-10 text-sm text-brand-charcoal transition-all focus:border-brand-red focus:bg-white focus:outline-none focus:ring-3 focus:ring-brand-red/15"
+          {...props}
+        >
+          {children}
+        </select>
+        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-dark/40" />
+      </div>
     </div>
   );
 }

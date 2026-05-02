@@ -14,9 +14,9 @@ export const site = {
     tiktok: "https://www.tiktok.com/@lamsa_com",
   },
   nav: [
-    { label: "Process", href: "#services" },
+    { label: "Process", href: "/#etapes" },
     { label: "FAQ", href: "/faq" },
-    { label: "Contact", href: "#contact" },
+    { label: "Contact", href: "/#contact" },
   ],
 } as const;
 

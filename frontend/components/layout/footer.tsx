@@ -4,7 +4,7 @@ import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import { Mail, Phone } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { site } from "@/lib/site";
 import {
@@ -24,7 +24,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-12 md:gap-12">
           <div className="sm:col-span-2 md:col-span-5">
             <Link
-              href="#accueil"
+              href="/#accueil"
               className="inline-flex items-center gap-3"
               aria-label="Lamsa Communication — Accueil"
             >
@@ -104,6 +104,17 @@ export function Footer() {
               ))}
               <li>
                 <a
+                  href="https://maps.app.goo.gl/FAUuAFQjfdoYzQv89"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-start gap-3 text-sm text-brand-charcoal/85 transition-colors hover:text-brand-red"
+                >
+                  <MapPin className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                  <span>Rue Cherif Chalabi, Passage N°E<br />Blida 09000</span>
+                </a>
+              </li>
+              <li>
+                <a
                   href={site.whatsapp.link}
                   target="_blank"
                   rel="noopener noreferrer"
@@ -117,38 +128,38 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-12 flex flex-col items-start justify-between gap-6 border-t border-brand-light-gray pt-8 md:flex-row md:items-center">
-          <p className="text-sm text-brand-dark/60">
+        <div className="mt-10 flex flex-col items-start justify-between gap-4 border-t border-brand-light-gray pt-5 md:flex-row md:items-center">
+          <p className="text-xs text-brand-dark/50">
             © {year} Lamsa Communication. Tous droits réservés.
           </p>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <a
               href={site.socials.instagram}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Instagram"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-charcoal/15 bg-white text-brand-charcoal transition-all hover:border-brand-red hover:bg-brand-red hover:text-white cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-charcoal/15 bg-white text-brand-charcoal transition-all hover:border-brand-red hover:bg-brand-red hover:text-white cursor-pointer"
             >
-              <InstagramIcon className="h-4 w-4" title="Instagram" />
+              <InstagramIcon className="h-3.5 w-3.5" title="Instagram" />
             </a>
             <a
               href={site.socials.facebook}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="Facebook"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-charcoal/15 bg-white text-brand-charcoal transition-all hover:border-brand-red hover:bg-brand-red hover:text-white cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-charcoal/15 bg-white text-brand-charcoal transition-all hover:border-brand-red hover:bg-brand-red hover:text-white cursor-pointer"
             >
-              <FacebookIcon className="h-4 w-4" title="Facebook" />
+              <FacebookIcon className="h-3.5 w-3.5" title="Facebook" />
             </a>
             <a
               href={site.socials.tiktok}
               target="_blank"
               rel="noopener noreferrer"
               aria-label="TikTok"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-brand-charcoal/15 bg-white text-brand-charcoal transition-all hover:border-brand-red hover:bg-brand-red hover:text-white cursor-pointer"
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-brand-charcoal/15 bg-white text-brand-charcoal transition-all hover:border-brand-red hover:bg-brand-red hover:text-white cursor-pointer"
             >
-              <TikTokIcon className="h-4 w-4" title="TikTok" />
+              <TikTokIcon className="h-3.5 w-3.5" title="TikTok" />
             </a>
           </div>
         </div>

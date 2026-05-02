@@ -146,7 +146,7 @@
     line-height: 1;
   }
   .label-eyebrow {
-    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em];
+    @apply text-[11px] font-semibold uppercase tracking-[0.22em];
   }
   .no-scrollbar::-webkit-scrollbar {
     display: none;
