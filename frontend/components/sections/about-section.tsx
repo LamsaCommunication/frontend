@@ -99,7 +99,7 @@ export function AboutSection() {
                 className="scroll-logo-static relative flex h-full w-full items-center justify-center p-10 md:p-12"
               >
                 <Image
-                  src="/lamsa2.PNG"
+                  src="/lamsa2.png"
                   alt="Lamsa Communication — logo"
                   width={400}
                   height={400}

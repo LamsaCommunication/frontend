@@ -72,6 +72,7 @@ export const services = [
   },
 ] as const;
 
+//not used yet.
 export const stats = [
   { value: "+800", label: "Projets réalisés" },
   { value: "+500", label: "Clients satisfaits" },

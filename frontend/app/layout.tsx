@@ -31,8 +31,8 @@ const localBusinessSchema = {
     postalCode: "09000",
     addressCountry: "DZ",
   },
-  image: "https://lamsadz.com/lamsa2.PNG",
-  logo: "https://lamsadz.com/lamsa1.PNG",
+  image: "https://lamsadz.com/lamsa2.png",
+  logo: "https://lamsadz.com/lamsa2.png",
   sameAs: [
     "https://www.facebook.com/lamsa.communication",
     "https://www.instagram.com/lamsa_communication/",
@@ -115,7 +115,7 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "/lamsa2.PNG",
+        url: "/lamsa2.png",
         width: 1200,
         height: 630,
         alt: "Lamsa Communication — Studio créatif à Blida, Algérie",
@@ -127,11 +127,11 @@ export const metadata: Metadata = {
     title: "Lamsa Communication — Design Graphique & Impression en Algérie",
     description:
       "Studio créatif premium à Blida, Algérie. Design, branding, impression, neon LED. Devis gratuit sous 24h.",
-    images: ["/lamsa2.PNG"],
+    images: ["/lamsa2.png"],
   },
   icons: {
-    icon: "/lamsa1.PNG",
-    apple: "/lamsa1.PNG",
+    icon: "/lamsa1.png",
+    apple: "/lamsa2.png",
   },
   robots: {
     index: true,

@@ -30,7 +30,7 @@ function CTAButtons() {
         <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
       </a>
       <Link
-        href="#etapes"
+        href="#offres"
         className="group inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/20 bg-transparent px-6 py-3 text-sm font-semibold text-brand-charcoal transition-all duration-200 hover:border-brand-charcoal/45 hover:bg-brand-charcoal/[0.04] cursor-pointer lg:px-7 lg:py-3.5"
       >
         Découvrir nos services
@@ -55,10 +55,8 @@ export function HeroSection() {
          * Desktop collapses order-3 (lg:hidden) and shows buttons inside order-1.
          */}
         <div className="grid grid-cols-1 items-center gap-y-5 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-0">
-
           {/* ── 1. Heading column ───────────────────────────────────── */}
           <div className="order-1 lg:col-span-7">
-
             <motion.p
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -77,6 +75,24 @@ export function HeroSection() {
               Démarquez-vous
               <br className="hidden lg:block" />
               {" "}de vos{" "}
+              <motion.span
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.55, delay: 0.6, ease: EASE }}
+                className="inline-flex items-center gap-2.5 align-middle lg:ml-4 lg:-translate-y-[0.1em] lg:gap-3"
+              >
+                <span className="inline-flex items-baseline gap-1 lg:gap-1.5">
+                  <span className="text-sm font-semibold leading-none text-brand-red lg:text-base lg:font-bold">+800</span>
+                  <span className="text-[11px] font-medium leading-none text-brand-charcoal/45 lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-wide lg:opacity-60">projets</span>
+                </span>
+                <span aria-hidden className="inline-block h-3 w-px self-center bg-brand-charcoal/15 lg:h-4" />
+                <span className="inline-flex items-baseline gap-1 lg:gap-1.5">
+                  <span className="text-sm font-semibold leading-none text-brand-red lg:text-base lg:font-bold">+500</span>
+                  <span className="text-[11px] font-medium leading-none text-brand-charcoal/45 lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-wide lg:opacity-60">clients</span>
+                </span>
+              </motion.span>
+              <br className="hidden lg:block" />
+              {" "}
               <span className="text-brand-red">concurrents.</span>
             </motion.h1>
 
@@ -104,7 +120,7 @@ export function HeroSection() {
                 className="absolute h-3/4 w-3/4 rounded-full bg-brand-red/[0.07] blur-3xl"
               />
               <Image
-                src="/lamsa2.PNG"
+                src="/lamsa2.png"
                 alt="Lamsa Communication"
                 width={480}
                 height={480}
@@ -124,7 +140,6 @@ export function HeroSection() {
           >
             <CTAButtons />
           </motion.div>
-
         </div>
       </Container>
 
@@ -143,16 +158,66 @@ export function HeroSection() {
           className="flex items-center"
           itemClassName="w-[180px] justify-center opacity-80 md:w-[200px]"
           items={[
-            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l1" />,
-            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f1" />,
-            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l2" />,
-            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f2" />,
-            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l3" />,
-            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f3" />,
-            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l4" />,
-            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f4" />,
-            <img alt="Lamsa Communication" src="/lamsa2.png" className="h-6 w-auto object-contain opacity-80 md:h-8" key="l5" />,
-            <img alt="C'est aussi simple que ça" src="/logoFOOTER.avif" className="h-6 w-auto object-contain opacity-80 md:h-8" key="f5" />,
+            <img
+              alt="Lamsa Communication"
+              src="/lamsa2.png"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="l1"
+            />,
+            <img
+              alt="C'est aussi simple que ça"
+              src="/logoFOOTER.avif"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="f1"
+            />,
+            <img
+              alt="Lamsa Communication"
+              src="/lamsa2.png"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="l2"
+            />,
+            <img
+              alt="C'est aussi simple que ça"
+              src="/logoFOOTER.avif"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="f2"
+            />,
+            <img
+              alt="Lamsa Communication"
+              src="/lamsa2.png"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="l3"
+            />,
+            <img
+              alt="C'est aussi simple que ça"
+              src="/logoFOOTER.avif"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="f3"
+            />,
+            <img
+              alt="Lamsa Communication"
+              src="/lamsa2.png"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="l4"
+            />,
+            <img
+              alt="C'est aussi simple que ça"
+              src="/logoFOOTER.avif"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="f4"
+            />,
+            <img
+              alt="Lamsa Communication"
+              src="/lamsa2.png"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="l5"
+            />,
+            <img
+              alt="C'est aussi simple que ça"
+              src="/logoFOOTER.avif"
+              className="h-6 w-auto object-contain opacity-80 md:h-8"
+              key="f5"
+            />,
           ]}
         />
       </motion.div>

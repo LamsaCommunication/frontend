@@ -42,7 +42,7 @@ export function Navbar() {
         >
           <div className="relative h-11 w-11 sm:h-12 sm:w-12 lg:h-[58px] lg:w-[58px]">
             <Image
-              src="/lamsa2.PNG"
+              src="/lamsa2.png"
               alt="Lamsa Communication"
               fill
               priority
