@@ -13,7 +13,8 @@
       "Bash(npx tsc *)",
       "Bash(npx next *)",
       "Bash(Get-ChildItem \"C:\\\\PROJECT\\\\LamsaCommunication\\\\frontend\\\\public\")",
-      "Bash(Select-Object Name)"
+      "Bash(Select-Object Name)",
+      "Bash(node *)"
     ]
   }
 }
