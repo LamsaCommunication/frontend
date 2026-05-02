@@ -19,7 +19,10 @@
       "Bash(git commit -m ' *)",
       "Bash(npm run *)",
       "Bash(Test-Path *)",
-      "Bash(echo \"exit: $?\")"
+      "Bash(echo \"exit: $?\")",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git push *)"
     ]
   }
 }
