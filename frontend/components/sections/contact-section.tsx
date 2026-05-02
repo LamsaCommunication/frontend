@@ -10,24 +10,17 @@ import {
   Loader2,
   CheckCircle2,
   AlertCircle,
-  ChevronDown,
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
-import { site, services } from "@/lib/site";
-import {
-  WhatsAppIcon,
-  FacebookIcon,
-  InstagramIcon,
-  TikTokIcon,
-} from "@/components/icons/social-icons";
+import { site } from "@/lib/site";
+import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { cn } from "@/lib/utils";
 
 type FormState = {
   fullName: string;
   email: string;
   phone: string;
-  service: string;
   message: string;
   website: string;
 };
@@ -36,40 +29,68 @@ const initialState: FormState = {
   fullName: "",
   email: "",
   phone: "",
-  service: "",
   message: "",
   website: "",
 };
 
 type Status = "idle" | "loading" | "success" | "error";
 
+type FormErrors = Partial<Record<keyof Omit<FormState, "website">, string>>;
+
+function validate(form: FormState, submitType: "email" | "whatsapp"): FormErrors {
+  const errors: FormErrors = {};
+
+  if (!form.fullName.trim()) {
+    errors.fullName = "Merci de remplir ce champ.";
+  } else if (!/^[A-Za-zÀ-ÿ\s]+$/.test(form.fullName.trim())) {
+    errors.fullName = "Nom invalide (lettres uniquement)";
+  }
+
+  if (!form.email.trim()) {
+    errors.email = "Merci de remplir ce champ.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    errors.email = "Veuillez entrer un email valide";
+  }
+
+  if (!form.phone.trim()) {
+    if (submitType === "whatsapp") errors.phone = "Numéro requis pour WhatsApp";
+  } else if (!/^[0-9]+$/.test(form.phone.trim())) {
+    errors.phone = "Numéro invalide (chiffres uniquement)";
+  }
+
+  if (!form.message.trim()) {
+    errors.message = "Merci de remplir ce champ.";
+  }
+
+  return errors;
+}
+
 export function ContactSection() {
   const [form, setForm] = React.useState<FormState>(initialState);
+  const [fieldErrors, setFieldErrors] = React.useState<FormErrors>({});
   const [status, setStatus] = React.useState<Status>("idle");
   const [errorMsg, setErrorMsg] = React.useState<string>("");
 
   const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
-    >,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    const { name, value } = e.target;
+    let sanitized = value;
+    if (name === "fullName") sanitized = value.replace(/[^A-Za-zÀ-ÿ\s]/g, "");
+    if (name === "phone") sanitized = value.replace(/[^0-9]/g, "");
+    setForm((f) => ({ ...f, [name]: sanitized }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (
-      !form.fullName.trim() ||
-      !form.email.trim() ||
-      !form.phone.trim() ||
-      !form.message.trim()
-    ) {
-      setStatus("error");
-      setErrorMsg("Merci de remplir tous les champs obligatoires.");
+    const errors = validate(form, "email");
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
       return;
     }
 
+    setFieldErrors({});
     setStatus("loading");
     setErrorMsg("");
 
@@ -100,11 +121,20 @@ export function ContactSection() {
   const whatsappPrefilled = React.useMemo(() => {
     const parts: string[] = [];
     if (form.fullName) parts.push(`Bonjour, je suis ${form.fullName}.`);
-    if (form.service) parts.push(`Service souhaité : ${form.service}.`);
     if (form.message) parts.push(form.message);
     const text = parts.join("\n") || "Bonjour, je souhaite un devis.";
     return `${site.whatsapp.link}?text=${encodeURIComponent(text)}`;
   }, [form]);
+
+  const handleWhatsApp = () => {
+    const errors = validate(form, "whatsapp");
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return;
+    }
+    setFieldErrors({});
+    window.open(whatsappPrefilled, "_blank", "noopener,noreferrer");
+  };
 
   return (
     <section
@@ -186,7 +216,7 @@ export function ContactSection() {
                     <MapPin className="h-5 w-5" />
                   </span>
                   <div>
-                    <p className="text-xs uppercase tracking-wider text-white/50 ">
+                    <p className="text-xs uppercase tracking-wider text-white/50">
                       Localisation
                     </p>
                     <a
@@ -259,7 +289,7 @@ export function ContactSection() {
                       href={site.socials.tiktok}
                       target="_blank"
                       rel="noopener"
-                      aria-label="Linkedin"
+                      aria-label="TikTok"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -299,6 +329,7 @@ export function ContactSection() {
                   onChange={handleChange}
                   autoComplete="name"
                   placeholder="Votre nom et prénom"
+                  error={fieldErrors.fullName}
                 />
                 <Field
                   label="Email"
@@ -309,6 +340,7 @@ export function ContactSection() {
                   onChange={handleChange}
                   autoComplete="email"
                   placeholder="vous@exemple.com"
+                  error={fieldErrors.email}
                 />
                 <Field
                   label="Téléphone"
@@ -319,20 +351,9 @@ export function ContactSection() {
                   onChange={handleChange}
                   autoComplete="tel"
                   placeholder="+213 ..."
+                  className="md:col-span-2"
+                  error={fieldErrors.phone}
                 />
-                <SelectField
-                  label="Service souhaité"
-                  name="service"
-                  value={form.service}
-                  onChange={handleChange}
-                >
-                  <option value="">Choisissez un service</option>
-                  {services.map((s) => (
-                    <option key={s.id} value={s.name}>
-                      {s.name}
-                    </option>
-                  ))}
-                </SelectField>
               </div>
 
               <TextareaField
@@ -344,6 +365,7 @@ export function ContactSection() {
                 onChange={handleChange}
                 rows={5}
                 placeholder="Décrivez brièvement votre besoin (formats, quantités, délais…)"
+                error={fieldErrors.message}
               />
 
               {/* Honeypot — invisible to humans, bots fill it */}
@@ -405,15 +427,14 @@ export function ContactSection() {
                     </>
                   )}
                 </button>
-                <a
-                  href={whatsappPrefilled}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={handleWhatsApp}
                   className="group inline-flex items-center justify-center gap-2 rounded-full border border-brand-charcoal/20 bg-transparent px-6 py-3 text-sm font-semibold text-brand-charcoal transition-all duration-200 hover:border-brand-charcoal/45 hover:bg-brand-charcoal/[0.04] cursor-pointer"
                 >
                   <WhatsAppIcon className="h-5 w-5" title="WhatsApp" />
                   Envoyer via WhatsApp
-                </a>
+                </button>
               </div>
 
               <p className="mt-4 text-xs text-brand-dark/50">
@@ -433,9 +454,11 @@ type FieldProps = {
   name: string;
   required?: boolean;
   className?: string;
+  error?: string;
 } & React.InputHTMLAttributes<HTMLInputElement>;
 
-function Field({ label, name, required, className, ...props }: FieldProps) {
+function Field({ label, name, required, className, error, ...props }: FieldProps) {
+  const errorId = `${name}-error`;
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <label
@@ -449,45 +472,21 @@ function Field({ label, name, required, className, ...props }: FieldProps) {
         id={name}
         name={name}
         required={required}
-        className="h-12 w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/40 px-4 text-sm text-brand-charcoal placeholder:text-brand-dark/40 transition-all focus:border-brand-red focus:bg-white focus:outline-none focus:ring-3 focus:ring-brand-red/15"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={cn(
+          "h-12 w-full rounded-xl border bg-brand-soft-white/40 px-4 text-sm text-brand-charcoal placeholder:text-brand-dark/40 transition-all focus:bg-white focus:outline-none focus:ring-3",
+          error
+            ? "border-red-400 focus:border-red-400 focus:ring-red-400/15"
+            : "border-brand-light-gray focus:border-brand-red focus:ring-brand-red/15",
+        )}
         {...props}
       />
-    </div>
-  );
-}
-
-type SelectProps = {
-  label: string;
-  name: string;
-  className?: string;
-} & React.SelectHTMLAttributes<HTMLSelectElement>;
-
-function SelectField({
-  label,
-  name,
-  className,
-  children,
-  ...props
-}: SelectProps) {
-  return (
-    <div className={cn("flex flex-col gap-2", className)}>
-      <label
-        htmlFor={name}
-        className="text-xs font-semibold uppercase tracking-wider text-brand-dark/70"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <select
-          id={name}
-          name={name}
-          className="h-12 w-full appearance-none rounded-xl border border-brand-light-gray bg-brand-soft-white/40 px-4 pr-10 text-sm text-brand-charcoal transition-all focus:border-brand-red focus:bg-white focus:outline-none focus:ring-3 focus:ring-brand-red/15"
-          {...props}
-        >
-          {children}
-        </select>
-        <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-dark/40" />
-      </div>
+      {error && (
+        <p id={errorId} className="text-xs text-red-500">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
@@ -497,6 +496,7 @@ type TextareaProps = {
   name: string;
   required?: boolean;
   className?: string;
+  error?: string;
 } & React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
 function TextareaField({
@@ -504,8 +504,10 @@ function TextareaField({
   name,
   required,
   className,
+  error,
   ...props
 }: TextareaProps) {
+  const errorId = `${name}-error`;
   return (
     <div className={cn("flex flex-col gap-2", className)}>
       <label
@@ -519,9 +521,21 @@ function TextareaField({
         id={name}
         name={name}
         required={required}
-        className="w-full resize-none rounded-xl border border-brand-light-gray bg-brand-soft-white/40 px-4 py-3 text-sm text-brand-charcoal placeholder:text-brand-dark/40 transition-all focus:border-brand-red focus:bg-white focus:outline-none focus:ring-3 focus:ring-brand-red/15"
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className={cn(
+          "w-full resize-none rounded-xl border bg-brand-soft-white/40 px-4 py-3 text-sm text-brand-charcoal placeholder:text-brand-dark/40 transition-all focus:bg-white focus:outline-none focus:ring-3",
+          error
+            ? "border-red-400 focus:border-red-400 focus:ring-red-400/15"
+            : "border-brand-light-gray focus:border-brand-red focus:ring-brand-red/15",
+        )}
         {...props}
       />
+      {error && (
+        <p id={errorId} className="text-xs text-red-500">
+          {error}
+        </p>
+      )}
     </div>
   );
 }
