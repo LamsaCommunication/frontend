@@ -10,38 +10,15 @@ import { AgenceCategoriesSection } from "@/components/sections/agence-categories
 import { Container } from "@/components/ui/container";
 import { site } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
-import { useEffect } from "react";
-import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
+import { AgenceScrollHandler } from "@/components/ui/agence-scroll-handler";
 
 export default function AgencePage() {
-
-    const searchParams = useSearchParams();
-    const category = searchParams.get("category");
-
-    useEffect(() => {
-      if (!category) return;
-
-      const timer = setTimeout(() => {
-        const section = document.getElementById("categories");
-
-        if (section) {
-          section.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-
-          window.scrollBy({
-            top: -90,
-            behavior: "smooth",
-          });
-        }
-      }, 150);
-
-      return () => clearTimeout(timer);
-    }, [category]);
-
   return (
     <>
+      <Suspense fallback={null}>
+        <AgenceScrollHandler />
+      </Suspense>
       <Navbar />
       <main className="flex-1">
         <AboutSection />
