@@ -15,70 +15,17 @@ export const site = {
   },
   nav: [
     { label: "Accueil", href: "/#accueil" },
+    { label: "Agence", href: "/agence" },
     { label: "Réalisation", href: "/#etapes" },
     { label: "Contact", href: "/#contact" },
-    { label: "Agence", href: "/agence" },
     { label: "FAQ", href: "/faq" },
   ],
 } as const;
 
-export const services = [
-  {
-    id: "graphic-design",
-    name: "Design Graphique",
-    description:
-      "Affiches, flyers, brochures, cartes de visite et supports visuels conçus avec précision.",
-    icon: "Pencil",
-  },
-  {
-    id: "thank-you-cards",
-    name: "Cartes de Remerciement",
-    description:
-      "Cartes sur mesure pour vos événements, mariages et campagnes de fidélisation.",
-    icon: "Heart",
-  },
-  {
-    id: "stickers-labels",
-    name: "Stickers & Étiquettes",
-    description:
-      "Stickers et étiquettes personnalisés, finitions premium et formes sur mesure.",
-    icon: "Tag",
-  },
-  {
-    id: "neon-led",
-    name: "Enseignes Neon LED",
-    description:
-      "Enseignes lumineuses Neon LED uniques pour donner vie à votre espace.",
-    icon: "Zap",
-  },
-  {
-    id: "branding",
-    name: "Branding & Identité Visuelle",
-    description:
-      "Création complète de l'identité de marque : logo, charte graphique, univers.",
-    icon: "Palette",
-  },
-  {
-    id: "print",
-    name: "Impression & Sur Mesure",
-    description:
-      "Impression de qualité et commandes 100% personnalisées selon votre besoin.",
-    icon: "Printer",
-  },
-  {
-    id: "packaging",
-    name: "Emballages & Communication",
-    description:
-      "Packaging créatif et produits de communication qui valorisent votre marque.",
-    icon: "Package",
-  },
-] as const;
-
-//not used yet.
 export const stats = [
   { value: "+800", label: "Projets réalisés" },
   { value: "+500", label: "Clients satisfaits" },
-  { value: "10+", label: "Années d'expérience" },
+  { value: "+11", label: "Années d'expérience" },
 ] as const;
 
 export const agenceCategories = [
@@ -264,51 +211,22 @@ export const agenceCategories = [
   },
 ] as const;
 
-export const workBenefits = [
-  {
-    id: "visibilite",
-    label: "Visibilité",
-    description:
-      "Des supports visuels percutants qui attirent l'attention et renforcent votre présence là où elle compte.",
-    icon: "Eye",
-  },
-  {
-    id: "conversion",
-    label: "Conversion",
-    description:
-      "Des designs stratégiques qui transforment les regards en clients et les impressions en actes d'achat.",
-    icon: "TrendingUp",
-  },
-  {
-    id: "image-de-marque",
-    label: "Image de marque",
-    description:
-      "Une identité forte, cohérente et mémorable qui inspire confiance à chaque point de contact.",
-    icon: "Award",
-  },
-  {
-    id: "croissance",
-    label: "Croissance",
-    description:
-      "Une communication bien pensée est le moteur silencieux de votre développement commercial.",
-    icon: "LineChart",
-  },
-] as const;
-
 export type AgenceProject = {
   id: string;
   title: string;
   description: string;
   image: string;
+  images?: string[];
 };
 
 export const agenceProjects: Record<string, AgenceProject[]> = {
   "communication-visuelle": [
     {
-      id: "projet-1",
+      id: "projet-2",
       title: "Campagne de lancement pour une marque de cosmétiques",
       description: "Création d'affiches, flyers et supports événementiels pour le lancement d'une nouvelle gamme de produits de beauté.",
       image: "/lamsa2.png",
+      images: ["/lamsa2.png", "/lamsa2.png", "/lamsa2.png"],
     },
   ],
   "identite-visuelle": [],

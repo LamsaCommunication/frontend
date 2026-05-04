@@ -114,21 +114,6 @@ export function HeroSection() {
             >
               <CTAButtons />
             </motion.div>
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.55, delay: 0.72, ease: EASE }}
-              className="mt-7 flex items-center gap-2.5"
-            >
-              <span
-                aria-hidden
-                className="block h-px w-5 shrink-0 bg-brand-charcoal/25"
-              />
-              <p className="text-[11px] font-medium text-brand-charcoal/40">
-                Ils font confiance à notre agence de communication, pourquoi
-                pas vous ?
-              </p>
-            </motion.div>
           </div>
 
           {/* ── 2. Logo ─────────────────────────────────────────────── */}
@@ -165,6 +150,21 @@ export function HeroSection() {
             <CTAButtons />
           </motion.div>
         </div>
+
+        {/* Social proof — full-width, centered */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.55, delay: 0.8, ease: EASE }}
+          className="mt-7 flex justify-center text-center"
+        >
+          <p className="text-sm font-medium text-brand-charcoal/60">
+            Ils font confiance à notre agence —{" "}
+            <span className="font-semibold text-brand-red">
+              pourquoi pas vous ?
+            </span>
+          </p>
+        </motion.div>
       </Container>
 
       {/* ── Marquee ticker ─────────────────────────────────────────── */}
