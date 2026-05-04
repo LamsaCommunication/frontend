@@ -176,7 +176,7 @@ export default function FaqPage() {
 
           <div className="mt-12 text-center">
             <Link
-              href="/"
+              href="/#accueil"
               className="inline-flex items-center gap-2 text-sm font-medium text-brand-dark/50 transition-colors hover:text-brand-charcoal"
             >
               <ArrowLeft className="h-4 w-4" />

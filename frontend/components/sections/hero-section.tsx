@@ -26,7 +26,7 @@ function CTAButtons() {
         className="group inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-6 py-3 text-sm font-semibold text-white shadow-[0_8px_28px_-8px_rgba(227,6,19,0.4)] transition-all duration-200 hover:scale-[1.02] hover:shadow-[0_14px_42px_-10px_rgba(227,6,19,0.55)] active:scale-[0.98] cursor-pointer lg:px-7 lg:py-3.5"
       >
         <WhatsAppIcon className="h-4 w-4 flex-shrink-0" title="WhatsApp" />
-        Demander un devis
+        Contactez nous
         <ArrowRight className="h-3.5 w-3.5 flex-shrink-0 transition-transform duration-200 group-hover:translate-x-0.5" />
       </a>
       <Link
@@ -63,7 +63,7 @@ export function HeroSection() {
               transition={{ duration: 0.5, ease: EASE }}
               className="mb-5 text-[11px] font-semibold uppercase tracking-[0.22em] text-brand-red"
             >
-              Studio communication
+              Agence de communication · depuis 2015
             </motion.p>
 
             <motion.h1
@@ -73,8 +73,7 @@ export function HeroSection() {
               className="text-[clamp(2.4rem,5.5vw,4.6rem)] font-bold leading-[1.1] tracking-[-0.025em] text-brand-charcoal"
             >
               Démarquez-vous
-              <br className="hidden lg:block" />
-              {" "}de vos{" "}
+              <br className="hidden lg:block" /> de vos{" "}
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -82,17 +81,27 @@ export function HeroSection() {
                 className="inline-flex items-center gap-2.5 align-middle lg:ml-4 lg:-translate-y-[0.1em] lg:gap-3"
               >
                 <span className="inline-flex items-baseline gap-1 lg:gap-1.5">
-                  <span className="text-sm font-semibold leading-none text-brand-red lg:text-base lg:font-bold">+800</span>
-                  <span className="text-[11px] font-medium leading-none text-brand-charcoal/45 lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-wide lg:opacity-60">projets</span>
+                  <span className="text-sm font-semibold leading-none text-brand-red lg:text-base lg:font-bold">
+                    +800
+                  </span>
+                  <span className="text-[11px] font-medium leading-none text-brand-charcoal/45 lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-wide lg:opacity-200">
+                    projets
+                  </span>
                 </span>
-                <span aria-hidden className="inline-block h-3 w-px self-center bg-brand-charcoal/15 lg:h-4" />
+                <span
+                  aria-hidden
+                  className="inline-block h-3 w-px self-center bg-brand-charcoal/15 lg:h-4"
+                />
                 <span className="inline-flex items-baseline gap-1 lg:gap-1.5">
-                  <span className="text-sm font-semibold leading-none text-brand-red lg:text-base lg:font-bold">+500</span>
-                  <span className="text-[11px] font-medium leading-none text-brand-charcoal/45 lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-wide lg:opacity-60">clients</span>
+                  <span className="text-sm font-semibold leading-none text-brand-red lg:text-base lg:font-bold">
+                    +500
+                  </span>
+                  <span className="text-[11px] font-medium leading-none text-brand-charcoal/45 lg:text-[10px] lg:font-medium lg:uppercase lg:tracking-wide lg:opacity-200">
+                    clients
+                  </span>
                 </span>
               </motion.span>
-              <br className="hidden lg:block" />
-              {" "}
+              <br className="hidden lg:block" />{" "}
               <span className="text-brand-red">concurrents.</span>
             </motion.h1>
 
@@ -104,6 +113,21 @@ export function HeroSection() {
               className="mt-9 hidden items-center gap-3 lg:flex"
             >
               <CTAButtons />
+            </motion.div>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.55, delay: 0.72, ease: EASE }}
+              className="mt-7 flex items-center gap-2.5"
+            >
+              <span
+                aria-hidden
+                className="block h-px w-5 shrink-0 bg-brand-charcoal/25"
+              />
+              <p className="text-[11px] font-medium text-brand-charcoal/40">
+                Ils font confiance à notre agence de communication, pourquoi
+                pas vous ?
+              </p>
             </motion.div>
           </div>
 

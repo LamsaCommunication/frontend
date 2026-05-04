@@ -77,10 +77,10 @@ export function Navbar() {
           >
             <span className="flex items-center gap-1.5 transition-all duration-300 group-hover:-translate-x-full group-hover:opacity-0">
               <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
-              Appeler nous
+              Contactez nous
             </span>
             <span className="absolute flex items-center gap-1.5 translate-x-full opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
-              Appeler nous
+              Contactez nous
               <ArrowRight className="h-3.5 w-3.5" strokeWidth={2.5} />
             </span>
           </a>
@@ -154,10 +154,10 @@ export function Navbar() {
               >
                 <span className="flex items-center gap-2 transition-all duration-300 group-hover:-translate-x-full group-hover:opacity-0">
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
-                  Appeler maintenant
+                  Contactez nous
                 </span>
                 <span className="absolute flex items-center gap-2 translate-x-full opacity-0 transition-all duration-300 group-hover:translate-x-0 group-hover:opacity-100">
-                  Appeler maintenant
+                  Contactez nous
                   <ArrowRight className="h-4 w-4" strokeWidth={2.5} />
                 </span>
               </a>

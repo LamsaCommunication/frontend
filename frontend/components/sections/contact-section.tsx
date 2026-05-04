@@ -183,13 +183,15 @@ export function ContactSection() {
                     <p className="text-xs uppercase tracking-wider text-white/50">
                       Email
                     </p>
-                    <a
-                      href={`mailto:${site.email}`}
-                      target="_blank"
-                      className="text-base font-medium text-white transition-colors hover:text-brand-red"
-                    >
-                      {site.email}
-                    </a>
+                    {site.email.map((p) => (
+                      <a
+                        key={p}
+                        href={`tel:${p.replace(/\s/g, "")}`}
+                        className="block text-base font-medium text-white transition-colors hover:text-brand-red"
+                      >
+                        {p}
+                      </a>
+                    ))}
                   </div>
                 </li>
                 <li className="flex items-start gap-4">

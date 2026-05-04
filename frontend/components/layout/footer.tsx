@@ -70,15 +70,17 @@ export function Footer() {
               Contact
             </h4>
             <ul className="mt-5 space-y-4">
-              <li>
-                <a
-                  href={`mailto:${site.email}`}
-                  className="flex items-center gap-3 text-sm text-brand-charcoal/85 transition-colors hover:text-brand-red"
-                >
-                  <Mail className="h-4 w-4" />
-                  {site.email}
-                </a>
-              </li>
+              {site.email.map((email) => (
+                <li key={email}>
+                  <a
+                    href={`mailto:${email}`}
+                    className="flex items-center gap-3 text-sm text-brand-charcoal/85 transition-colors hover:text-brand-red"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {email}
+                  </a>
+                </li>
+              ))}
               {site.phones.map((p) => (
                 <li key={p}>
                   <a
