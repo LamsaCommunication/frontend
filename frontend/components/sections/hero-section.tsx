@@ -156,7 +156,7 @@ export function HeroSection() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.55, delay: 0.8, ease: EASE }}
-          className="mt-7 flex justify-center text-center"
+          className="mt-14 flex justify-center text-center"
         >
           <p className="text-sm font-medium text-brand-charcoal/60">
             Ils font confiance à notre agence —{" "}

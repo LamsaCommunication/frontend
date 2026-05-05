@@ -32,8 +32,8 @@ export function Footer() {
             </Link>
 
             <p className="mt-6 max-w-md text-base text-brand-dark/70">
-              Studio créatif premium spécialisé en design graphique, identité
-              visuelle, impression et solutions de communication.
+              Agence créative experte en design graphique, identité visuelle,
+              impression et solutions de communication.
             </p>
 
             <div className="mt-4 md:mt-6">
