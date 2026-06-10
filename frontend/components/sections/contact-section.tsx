@@ -11,10 +11,14 @@ import { cn } from "@/lib/utils";
 
 /* ── Service chip labels ─────────────────────────────────────────────────── */
 
+
+// need to be a const for all section of web site and do it maping...  return later !!!
+
+
 const SERVICES = [
   "Communication Visuelle",
   "Identité Visuelle",
-  "Impression & Production",
+  "Impression & Packging",
   "Signalétique & LED",
   "Textile Personnalisé",
   "Sur Mesure",

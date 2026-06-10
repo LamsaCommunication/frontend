@@ -2,8 +2,8 @@ export const site = {
   name: "Lamsa Communication",
   tagline: "C'est aussi simple que ça",
   url: "https://lamsadz.com",
-  email: ["contact@lamsadz.com", "lamsa.communication@gmail.com"],
-  phones: ["+213 554 776 283", "+213 540 819 434", "020 514 776"],
+  email: ["lamsa.communication@gmail.com", "contact@lamsadz.com"],
+  phones: ["+213 (0) 554 776 283", "+213 (0) 540 819 434", "+213 (0) 20 514 776"],
   whatsapp: {
     number: "213554776283",
     link: "https://wa.me/213554776283",
@@ -91,7 +91,7 @@ export const agenceCategories = [
   },
   {
     id: "impression-production",
-    name: "Impression & Production",
+    name: "Impression & Packging",
     description:
       "Stickers, étiquettes, packaging premium — qualité supérieure garantie à chaque commande.",
     icon: "Printer",
@@ -117,6 +117,16 @@ export const agenceCategories = [
         name: "Cartes de Remerciement",
         description: "Cartes sur mesure pour fidéliser vos clients.",
       },
+      {
+        id: "cartes-de-visite",
+        name: "Carte de Visite",
+        description: "Valorisez votre image de marque et marquez les esprits dès la première rencontre.",
+      },
+      {
+        id: "cartes-tags",
+        name: "Cartes de tags",
+        description: "Facilitez le partage de vos données et connectez vos clients à votre univers en un seul geste.",
+      },
     ],
   },
   {
@@ -129,7 +139,7 @@ export const agenceCategories = [
     services: [
       {
         id: "neon-led",
-        name: "Enseignes Neon LED",
+        name: "Neon LED",
         description: "Néons lumineux sur mesure pour intérieur et extérieur.",
       },
       {
@@ -160,7 +170,7 @@ export const agenceCategories = [
       {
         id: "tshirts-polos",
         name: "T-shirts & Polos",
-        description: "Vêtements personnalisés par impression ou broderie.",
+        description: "Sérigraphie | DTF | Broderie | Flex découpe",
       },
       {
         id: "uniformes",

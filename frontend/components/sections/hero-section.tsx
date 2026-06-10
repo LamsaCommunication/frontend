@@ -12,6 +12,19 @@ import { WhatsAppIcon } from "@/components/icons/social-icons";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
+const CLIENT_LOGOS = [
+  { src: "/adhesive.svg",    alt: "Adhesive" },
+  { src: "/cosidar.svg",     alt: "Cosidar" },
+  { src: "/digue.svg",       alt: "Digue" },
+  { src: "/hydagri.svg",     alt: "HydAgri" },
+  { src: "/piove.svg",       alt: "Piove" },
+  { src: "/prodimag.svg",    alt: "Prodimag" },
+  { src: "/savannah.svg",    alt: "Savannah" },
+  { src: "/syngenta.svg",    alt: "Syngenta" },
+  { src: "/vitro.svg",       alt: "Vitro" },
+  { src: "/vlux.svg",        alt: "Vlux" },
+] as const;
+
 /*
  * CTA buttons — rendered twice (desktop inline / mobile standalone)
  * to achieve: title → logo → buttons order on mobile.
@@ -167,102 +180,37 @@ export function HeroSection() {
         </motion.div>
       </Container>
 
-      {/* ── Marquee ticker ─────────────────────────────────────────── */}
+      {/* ── Client logos marquee ─────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.7, delay: 1.0 }}
-        className="relative z-10 mx-auto mt-4 w-full max-w-[900px] overflow-hidden md:mt-6
-          [mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]
-          [-webkit-mask-image:linear-gradient(to_right,transparent,black_12%,black_88%,transparent)]"
+        className="relative z-10 mx-auto mt-4 w-[88%] max-w-5xl overflow-hidden md:mt-8
+          [mask-image:linear-gradient(to_right,transparent,black_14%,black_86%,transparent)]
+          [-webkit-mask-image:linear-gradient(to_right,transparent,black_14%,black_86%,transparent)]"
       >
         <Marquee
           speed="fast"
           separator={null}
-          className="flex items-center"
-          itemClassName="w-[180px] justify-center opacity-80 md:w-[200px]"
-          items={[
-            <img
-              alt="Lamsa Communication"
-              src="/lamsa2.png"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="l1"
-            />,
-            <img
-              alt="C'est aussi simple que ça"
-              src="/logoFOOTER.avif"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="f1"
-            />,
-            <img
-              alt="Lamsa Communication"
-              src="/lamsa2.png"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="l2"
-            />,
-            <img
-              alt="C'est aussi simple que ça"
-              src="/logoFOOTER.avif"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="f2"
-            />,
-            <img
-              alt="Lamsa Communication"
-              src="/lamsa2.png"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="l3"
-            />,
-            <img
-              alt="C'est aussi simple que ça"
-              src="/logoFOOTER.avif"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="f3"
-            />,
-            <img
-              alt="Lamsa Communication"
-              src="/lamsa2.png"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="l4"
-            />,
-            <img
-              alt="C'est aussi simple que ça"
-              src="/logoFOOTER.avif"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="f4"
-            />,
-            <img
-              alt="Lamsa Communication"
-              src="/lamsa2.png"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="l5"
-            />,
-            <img
-              alt="C'est aussi simple que ça"
-              src="/logoFOOTER.avif"
-              loading="lazy"
-              decoding="async"
-              className="h-6 w-auto object-contain opacity-80 md:h-8"
-              key="f5"
-            />,
-          ]}
+          className="items-center py-5 md:py-6"
+          itemClassName="px-6 md:px-10"
+          items={CLIENT_LOGOS.map(({ src, alt }) => (
+            <div
+              key={src}
+              className="relative h-14 w-14 shrink-0 md:h-20 md:w-20"
+            >
+              <Image
+                src={src}
+                alt={alt}
+                width={80}
+                height={80}
+                loading="lazy"
+                unoptimized={src.endsWith(".svg")}
+                sizes="(max-width: 768px) 56px, 80px"
+                className="h-full w-full object-contain"
+              />
+            </div>
+          ))}
         />
       </motion.div>
     </section>
