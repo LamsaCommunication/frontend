@@ -5,24 +5,9 @@ import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, Loader2, AlertCircle } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
-import { site } from "@/lib/site";
+import { site, agenceCategories } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { cn } from "@/lib/utils";
-
-/* ── Service chip labels ─────────────────────────────────────────────────── */
-
-
-// need to be a const for all section of web site and do it maping...  return later !!!
-
-
-const SERVICES = [
-  "Communication Visuelle",
-  "Identité Visuelle",
-  "Impression & Packging",
-  "Signalétique & LED",
-  "Textile Personnalisé",
-  "Sur Mesure",
-] as const;
 
 /* ── Types ───────────────────────────────────────────────────────────────── */
 
@@ -94,11 +79,6 @@ function buildWhatsAppText(form: FormState): string {
   return parts.join("\n");
 }
 
-function buildEmailBody(form: FormState): string {
-  const parts: string[] = [buildContactBlock(form)];
-  if (form.message.trim()) parts.push("", form.message.trim());
-  return parts.join("\n");
-}
 
 /* ── Section ─────────────────────────────────────────────────────────────── */
 
@@ -139,15 +119,26 @@ export function ContactSection() {
     setErrorMsg("");
 
     try {
-      const res = await fetch("/api/contact", {
+      const res = await fetch("https://api.web3forms.com/submit", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...form, message: buildEmailBody(form) }),
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: "c3f9d5bc-db41-450a-b8c4-5179d087eb07",
+          subject: `${form.fullName.trim()}${form.service ? ` · ${form.service}` : ""}`,
+          name: form.fullName.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim() || "Non renseigné",
+          service: form.service || "Non précisé",
+          message: form.message.trim(),
+          replyto: form.email.trim(),
+          from_name: "Lamsa Communication",
+        }),
       });
 
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data?.error ?? "Une erreur est survenue.");
+      const data = (await res.json()) as { success: boolean; message?: string };
+
+      if (!data.success) {
+        throw new Error(data.message ?? "Une erreur est survenue.");
       }
 
       setStatus("success");
@@ -613,19 +604,19 @@ function ServiceChips({
         Type de projet
       </label>
       <div className="flex flex-wrap gap-2">
-        {SERVICES.map((s) => (
+        {agenceCategories.map((cat) => (
           <button
-            key={s}
+            key={cat.id}
             type="button"
-            onClick={() => onSelect(selected === s ? "" : s)}
+            onClick={() => onSelect(selected === cat.name ? "" : cat.name)}
             className={cn(
               "inline-flex cursor-pointer items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150",
-              selected === s
+              selected === cat.name
                 ? "border-brand-red bg-brand-red text-white"
                 : "border-brand-light-gray bg-transparent text-brand-charcoal/50 hover:border-brand-red hover:text-brand-red",
             )}
           >
-            {s}
+            {cat.name}
           </button>
         ))}
       </div>
