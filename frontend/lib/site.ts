@@ -221,27 +221,33 @@ export const agenceCategories = [
   },
 ] as const;
 
-export type AgenceProject = {
-  id: string;
-  title: string;
-  description: string;
-  image: string;
-  images?: string[];
-};
-
-export const agenceProjects: Record<string, AgenceProject[]> = {
+export const categoryImages: Record<string, string[]> = {
   "communication-visuelle": [
-    {
-      id: "projet-2",
-      title: "Campagne de lancement pour une marque de cosmétiques",
-      description: "Création d'affiches, flyers et supports événementiels pour le lancement d'une nouvelle gamme de produits de beauté.",
-      image: "/lamsa2.png",
-      images: ["/lamsa2.png", "/lamsa2.png", "/lamsa2.png"],
-    },
+    "/lamsa2.png",
+    "/lamsa2.png",
+    "/lamsa2.png",
+    "/lamsa2.png",
   ],
-  "identite-visuelle": [],
-  "impression-production": [],
-  "signaletique-led": [],
-  "textile-personnalise": [],
+  "identite-visuelle": [
+    "/lamsa2.png",
+    "/lamsa2.png",
+    "/lamsa2.png",
+  ],
+  "impression-production": [
+    "/lamsa2.png",
+    "/lamsa2.png",
+    "/lamsa2.png",
+    "/lamsa2.png",
+  ],
+  "signaletique-led": [
+    "/lamsa2.png",
+    "/lamsa2.png",
+    "/lamsa2.png",
+  ],
+  "textile-personnalise": [
+    "/lamsa2.png",
+    "/lamsa2.png",
+    "/lamsa2.png",
+  ],
   "commandes-sur-mesure": [],
 };
