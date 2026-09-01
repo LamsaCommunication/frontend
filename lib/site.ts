@@ -16,7 +16,7 @@ export const site = {
   nav: [
     { label: "Accueil", href: "/#accueil" },
     { label: "Agence", href: "/agence" },
-    { label: "Réalisation", href: "/#etapes" },
+    { label: "Boutique", href: "/shop" },
     { label: "Contact", href: "/#contact" },
     { label: "FAQ", href: "/faq" },
   ],
@@ -223,31 +223,33 @@ export const agenceCategories = [
 
 export const categoryImages: Record<string, string[]> = {
   "communication-visuelle": [
+    "/donner_vie_vos_idees_hero.svg",
     "/lamsa2.png",
-    "/lamsa2.png",
-    "/lamsa2.png",
-    "/lamsa2.png",
+    "/logoFOOTER.avif",
   ],
   "identite-visuelle": [
+    "/comprendre_votre_vision_hero.svg",
     "/lamsa2.png",
-    "/lamsa2.png",
-    "/lamsa2.png",
+    "/logoFOOTER.avif",
   ],
   "impression-production": [
-    "/lamsa2.png",
-    "/lamsa2.png",
-    "/lamsa2.png",
-    "/lamsa2.png",
+    "/adhesive.svg",
+    "/livrer_excellence_hero.svg",
+    "/prodimag.svg",
   ],
   "signaletique-led": [
+    "/realiser_avec_precision_hero.svg",
     "/lamsa2.png",
-    "/lamsa2.png",
-    "/lamsa2.png",
+    "/vlux.svg",
   ],
   "textile-personnalise": [
+    "/comprendre_votre_vision_hero.svg",
     "/lamsa2.png",
-    "/lamsa2.png",
-    "/lamsa2.png",
+    "/livrer_excellence_hero.svg",
   ],
-  "commandes-sur-mesure": [],
+  "commandes-sur-mesure": [
+    "/donner_vie_vos_idees_hero.svg",
+    "/realiser_avec_precision_hero.svg",
+    "/livrer_excellence_hero.svg",
+  ],
 };

@@ -24,7 +24,6 @@ const localBusinessSchema = {
   url: "https://lamsadz.com",
   telephone: "+213554776283",
   email: "contact@lamsadz.com",
-  priceRange: "$$",
   address: {
     "@type": "PostalAddress",
     streetAddress: "Rue Cherif Chalabi, Passage N°E",
@@ -154,6 +153,8 @@ export const viewport: Viewport = {
   themeColor: "#ffffff",
 };
 
+import { CartDrawer } from "@/components/cart/cart-drawer";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -169,7 +170,10 @@ export default function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
-        <MotionProvider>{children}</MotionProvider>
+        <MotionProvider>
+          {children}
+          <CartDrawer />
+        </MotionProvider>
       </body>
     </html>
   );

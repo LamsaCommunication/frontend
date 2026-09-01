@@ -108,3 +108,6 @@ __pycache__/
 # Local Agent / Claude Settings
 # ==========================================
 .claude/settings.local.json
+public/MUGS.obj
+public/obj+BASE+BALL+CAP.obj
+public/Low_T-shirt.obj

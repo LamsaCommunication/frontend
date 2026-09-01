@@ -101,7 +101,7 @@ function IconVisual({
   iconColor,
   blobColor,
 }: {
-  icon: React.ElementType;
+  icon: React.ComponentType<{ className?: string; strokeWidth?: number }>;
   from: string;
   to: string;
   iconColor: string;
