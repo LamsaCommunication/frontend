@@ -183,7 +183,12 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    const sanitizedServices = catServices.filter((s) => s.name.trim().length > 0);
+    const sanitizedServices = catServices
+      .filter((s) => s.name.trim().length > 0)
+      .map((s) => ({
+        name: s.name.trim(),
+        description: s.description?.trim() || "",
+      }));
     const finalImage = catImage.trim() || undefined;
     const finalImages = finalImage ? [finalImage] : [];
 
@@ -192,7 +197,7 @@ export default function AdminCategoriesPage() {
         await categoriesApi.update(editingCategory.id, {
           name: catName.trim(),
           slug: catSlug.trim(),
-          description: catDescription.trim(),
+          description: catDescription.trim() || undefined,
           icon: catIcon,
           image: finalImage,
           images: finalImages,
@@ -209,7 +214,6 @@ export default function AdminCategoriesPage() {
           image: finalImage,
           images: finalImages,
           services: sanitizedServices,
-          subCategories: []
         });
         showNotification(`Nouvelle catégorie "${catName}" créée avec succès !`);
       }
@@ -263,7 +267,8 @@ export default function AdminCategoriesPage() {
     e.preventDefault();
     setSubError(null);
 
-    if (!parentCategoryIdForSub) {
+    const cleanParentId = parentCategoryIdForSub.trim();
+    if (!cleanParentId) {
       setSubError("Veuillez sélectionner la catégorie parente.");
       return;
     }
@@ -276,14 +281,13 @@ export default function AdminCategoriesPage() {
       return;
     }
 
-    if (editingSubCategory) {
     try {
       if (editingSubCategory) {
         await categoriesApi.update(editingSubCategory.id, {
           name: subName.trim(),
           slug: subSlug.trim(),
           description: subDescription.trim() || undefined,
-          parentId: parentCategoryIdForSub,
+          parentId: cleanParentId,
         });
         showNotification("Sous-catégorie modifiée avec succès.");
       } else {
@@ -291,18 +295,17 @@ export default function AdminCategoriesPage() {
           name: subName.trim(),
           slug: subSlug.trim(),
           description: subDescription.trim() || undefined,
-          parentId: parentCategoryIdForSub,
+          parentId: cleanParentId,
         });
         showNotification("Sous-catégorie ajoutée avec succès.");
       }
-      
+
       await fetchCatalog();
       setIsSubCategoryModalOpen(false);
     } catch (err: any) {
       console.error("Save sub-category error:", err);
       setSubError(err.response?.data?.message || "Erreur lors de la sauvegarde.");
     }
-  };
   };
 
   // Handle Category Delete with Safeguards
