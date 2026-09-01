@@ -8,7 +8,7 @@ import { Container } from "@/components/ui/container";
 import { useCatalogStore, Product } from "@/lib/store/useCatalogStore";
 import { ProductCustomizerClient } from "./client-view";
 
-export const dynamicParams = false;
+export const dynamicParams = true;
 
 const STATIC_SLUGS = [
   "cartes-de-visite-premium-soft-touch",

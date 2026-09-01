@@ -38,13 +38,21 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
     setIsMounted(true);
   }, []);
 
-  // 0. Active 3D Product Mesh Type
-  const [selectedProductType, setSelectedProductType] = React.useState<Product3DType>(() => {
-    const m = (product.modelType || "").toUpperCase();
-    if (m.includes("TSHIRT") || m.includes("SHIRT") || m.includes("TEXTILE")) return "TSHIRT";
-    if (m.includes("CASQUET") || m.includes("CAP")) return "CASQUET";
+  // 0. Active 3D Product Mesh Type — strictly synced to product.modelType from DB
+  const getProductModelType = React.useCallback((mType?: string): Product3DType => {
+    const m = (mType || "").toLowerCase().trim();
+    if (m === "tshirt" || m.includes("shirt") || m.includes("textile")) return "TSHIRT";
+    if (m === "cap" || m.includes("casquet")) return "CASQUET";
     return "CUP";
-  });
+  }, []);
+
+  const [selectedProductType, setSelectedProductType] = React.useState<Product3DType>(() =>
+    getProductModelType(product.modelType)
+  );
+
+  React.useEffect(() => {
+    setSelectedProductType(getProductModelType(product.modelType));
+  }, [product.modelType, getProductModelType]);
 
   // 1. Customization State
   const [baseColor, setBaseColor] = React.useState("#ffffff");

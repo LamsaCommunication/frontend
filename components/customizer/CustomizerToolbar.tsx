@@ -19,7 +19,7 @@ import { Product3DType, TextureTransform } from "./ProductModel";
 
 interface CustomizerToolbarProps {
   productType: Product3DType | string;
-  onProductTypeChange: (type: Product3DType) => void;
+  onProductTypeChange?: (type: Product3DType) => void;
   baseColor: string;
   onBaseColorChange: (color: string) => void;
   logoUrl: string | null;
@@ -75,53 +75,43 @@ export function CustomizerToolbar({
 
   return (
     <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 p-4 max-h-[50vh] overflow-y-auto space-y-6 lg:relative lg:block lg:bg-transparent lg:shadow-none lg:p-0 lg:max-h-none lg:overflow-visible lg:z-auto">
-      {/* ── 0. 3D Product Selector (Pills) ─────────────────────────── */}
+      {/* ── 0. Active 3D Product Mesh (Synced to DB configuration) ── */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
-            Modèle 3D Actif
+            Support 3D configuré
+          </span>
+          <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+            <CheckCircle2 className="h-3 w-3" /> Modèle 3D synchronisé
           </span>
         </div>
 
-        <div className="grid grid-cols-3 gap-1.5 rounded-2xl bg-brand-soft-white p-1.5 border border-brand-light-gray/60">
-          <button
-            type="button"
-            onClick={() => onProductTypeChange("CUP")}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-1 text-xs font-bold transition-all cursor-pointer ${
-              normalizedType === "CUP" || normalizedType === "MUG"
-                ? "bg-white text-brand-charcoal shadow-sm border border-black/5"
-                : "text-brand-warm-gray hover:text-brand-charcoal"
-            }`}
-          >
-            <Coffee className="h-3.5 w-3.5 text-brand-red shrink-0" />
-            <span className="truncate">Mug</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onProductTypeChange("TSHIRT")}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-1 text-xs font-bold transition-all cursor-pointer ${
-              normalizedType.includes("TSHIRT")
-                ? "bg-white text-brand-charcoal shadow-sm border border-black/5"
-                : "text-brand-warm-gray hover:text-brand-charcoal"
-            }`}
-          >
-            <Shirt className="h-3.5 w-3.5 text-brand-red shrink-0" />
-            <span className="truncate">T-Shirt</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onProductTypeChange("CASQUET")}
-            className={`flex items-center justify-center gap-1.5 rounded-xl py-2 px-1 text-xs font-bold transition-all cursor-pointer ${
-              normalizedType.includes("CASQUET")
-                ? "bg-white text-brand-charcoal shadow-sm border border-black/5"
-                : "text-brand-warm-gray hover:text-brand-charcoal"
-            }`}
-          >
-            <Sparkles className="h-3.5 w-3.5 text-brand-red shrink-0" />
-            <span className="truncate">Casquette</span>
-          </button>
+        <div className="flex items-center gap-3 rounded-2xl bg-brand-soft-white p-3 border border-brand-light-gray/60">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white shadow-xs border border-brand-light-gray/50 text-brand-red">
+            {normalizedType.includes("TSHIRT") ? (
+              <Shirt className="h-5 w-5" />
+            ) : normalizedType.includes("CASQUET") ? (
+              <Sparkles className="h-5 w-5" />
+            ) : (
+              <Coffee className="h-5 w-5" />
+            )}
+          </div>
+          <div className="flex flex-col">
+            <span className="text-xs font-black text-brand-charcoal">
+              {normalizedType.includes("TSHIRT")
+                ? "T-Shirt Coton 3D"
+                : normalizedType.includes("CASQUET")
+                ? "Casquette Baseball 3D"
+                : "Mug Céramique HD 3D"}
+            </span>
+            <span className="text-[10px] text-brand-warm-gray">
+              {normalizedType.includes("TSHIRT")
+                ? "Personnalisation textile DTF / Sérigraphie"
+                : normalizedType.includes("CASQUET")
+                ? "Personnalisation broderie & marquage relief"
+                : "Impression sublimation panoramique 360°"}
+            </span>
+          </div>
         </div>
       </div>
 

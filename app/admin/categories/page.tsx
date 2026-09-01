@@ -277,7 +277,11 @@ export default function AdminCategoriesPage() {
       setIsCategoryModalOpen(false);
     } catch (err: any) {
       console.error("Erreur save category:", err);
-      setCatError(err.response?.data?.message || "Erreur serveur.");
+      const apiMsg = err.response?.data?.message;
+      const formattedErr = Array.isArray(apiMsg)
+        ? apiMsg.join(" • ")
+        : (apiMsg || err.message || "Erreur serveur lors de l'enregistrement de la catégorie.");
+      setCatError(formattedErr);
     }
   };
 
