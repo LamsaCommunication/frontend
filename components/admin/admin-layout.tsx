@@ -31,6 +31,11 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  // Prevent rendering admin content if not authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="flex min-h-screen bg-[#faf9f6]">
       {/* Sidebar */}

@@ -129,6 +129,8 @@ apiClient.interceptors.response.use(
         if (typeof window !== "undefined") {
           localStorage.removeItem("lamsa_admin_access_token");
           localStorage.removeItem("lamsa_admin_refresh_token");
+          localStorage.removeItem("lamsa_admin_store");
+          
           // Redirect gracefully to login if on an admin page
           if (window.location.pathname.startsWith("/admin") && !window.location.pathname.includes("/admin/login")) {
             window.location.href = "/admin/login?sessionExpired=true";

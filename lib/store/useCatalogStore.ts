@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { catalogApi } from "../api/lamsa-api";
 
 export interface SubCategory {
   id: string;
@@ -52,10 +53,14 @@ export interface Product {
 interface CatalogState {
   categories: Category[];
   products: Product[];
+  isLoading: boolean;
   activeCategoryId: string | null;
   activeSubCategoryId: string | null;
   searchQuery: string;
   sortBy: "popular" | "price_asc" | "price_desc" | "newest";
+  
+  // Hydration from backend
+  fetchCatalog: () => Promise<void>;
   
   // Actions
   setActiveCategory: (categoryId: string | null) => void;
@@ -88,12 +93,28 @@ const INITIAL_PRODUCTS: Product[] = [];
 export const useCatalogStore = create<CatalogState>()(
   persist(
     (set, get) => ({
-      categories: INITIAL_CATEGORIES,
-      products: INITIAL_PRODUCTS,
+      categories: [],
+      products: [],
+      isLoading: false,
       activeCategoryId: null,
       activeSubCategoryId: null,
       searchQuery: "",
       sortBy: "popular",
+
+      fetchCatalog: async () => {
+        if (get().isLoading) return;
+        set({ isLoading: true });
+        try {
+          const [categories, catalogResult] = await Promise.all([
+            catalogApi.getCategories(),
+            catalogApi.getProducts({ limit: 200 })
+          ]);
+          set({ categories, products: catalogResult.products, isLoading: false });
+        } catch {
+          // Silently fail — components will show empty states
+          set({ isLoading: false });
+        }
+      },
 
       setActiveCategory: (categoryId) => set({ activeCategoryId: categoryId, activeSubCategoryId: null }),
       setActiveSubCategory: (subCategoryId) => set({ activeSubCategoryId: subCategoryId }),

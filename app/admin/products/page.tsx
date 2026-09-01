@@ -20,30 +20,51 @@ import {
   Coffee,
   Shirt,
   Disc,
-  Sparkles
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
+import { PaginationBar } from "@/components/ui/pagination-bar";
+import { usePaginatedApi } from "@/lib/hooks/usePaginatedApi";
+import { productsApi } from "@/lib/api/lamsa-api";
 import { useCatalogStore, Product, Product3DModelType } from "@/lib/store/useCatalogStore";
 
 function AdminProductsContent() {
   const searchParams = useSearchParams();
   const initialAction = searchParams.get("action");
 
-  const {
-    products,
-    categories,
-    addProduct,
-    updateProduct,
-    deleteProduct,
-    toggleProductStatus
-  } = useCatalogStore();
+  const { categories } = useCatalogStore();
 
   const [search, setSearch] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [selectedCatId, setSelectedCatId] = React.useState<string>("ALL");
-  const [currentPage, setCurrentPage] = React.useState(1);
-  const itemsPerPage = 15;
+
+  // Debounce search
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // ── Server-side paginated products fetch ─────────────────────────────────
+  const {
+    data: products,
+    pagination,
+    isLoading,
+    error,
+    page,
+    setPage,
+    refetch
+  } = usePaginatedApi<Product>({
+    url: "/api/v1/products/admin/all",
+    limit: 15,
+    params: {
+      categoryId: selectedCatId !== "ALL" ? selectedCatId : undefined,
+      search: debouncedSearch || undefined
+    },
+    deps: [selectedCatId, debouncedSearch]
+  });
 
   // Drawer / Modal state for Add & Edit
   const [isDrawerOpen, setIsDrawerOpen] = React.useState(false);
@@ -72,14 +93,7 @@ function AdminProductsContent() {
   const [formError, setFormError] = React.useState<string | null>(null);
   const [formSuccess, setFormSuccess] = React.useState<string | null>(null);
 
-  // Delete Confirmation Modal State
-  const [deleteModalState, setDeleteModalState] = React.useState<{
-    isOpen: boolean;
-    product: Product | null;
-  }>({
-    isOpen: false,
-    product: null,
-  });
+  const [addedProductId, setAddedProductId] = React.useState<string | null>(null);
 
   // Open drawer if redirected with ?action=add or ?action=new
   React.useEffect(() => {
@@ -199,7 +213,7 @@ function AdminProductsContent() {
     });
   };
 
-  const handleSaveProduct = (e: React.FormEvent) => {
+  const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -222,70 +236,54 @@ function AdminProductsContent() {
       ? [formImages[0] || "/lamsa2.png"]
       : (formImages.length > 0 ? formImages : ["/lamsa2.png"]);
 
-    if (editingProductId) {
-      updateProduct(editingProductId, {
-        name: formName.trim(),
-        slug: formSlug.trim(),
-        description: formDescription.trim() || "Produit personnalisé de haute qualité.",
-        categoryId: formCategoryId,
-        subCategoryId: formSubCategoryId || undefined,
-        price: Number(formPrice),
-        stock: Number(formStock),
-        minQuantity: Number(formMinQuantity),
-        dimensions: formDimensions.trim() || undefined,
-        modelType: finalModelType,
-        availableColors: finalAvailableColors,
-        images: finalImages,
-        featured: formFeatured,
-      });
-      setFormSuccess("Produit mis à jour avec succès !");
-    } else {
-      addProduct({
-        name: formName.trim(),
-        slug: formSlug.trim(),
-        description: formDescription.trim() || "Produit personnalisé de haute qualité.",
-        categoryId: formCategoryId,
-        subCategoryId: formSubCategoryId || undefined,
-        price: Number(formPrice),
-        stock: Number(formStock),
-        minQuantity: Number(formMinQuantity),
-        dimensions: formDimensions.trim() || undefined,
-        modelType: finalModelType,
-        availableColors: finalAvailableColors,
-        images: finalImages,
-        isActive: true,
-        featured: formFeatured,
-      });
-      setFormSuccess("Produit ajouté avec succès au catalogue !");
-    }
-
-    setTimeout(() => {
-      setIsDrawerOpen(false);
-      setFormSuccess(null);
-    }, 800);
-  };
-
-  // Filtered products list
-  const filteredProducts = React.useMemo(() => {
-    return products.filter((prod) => {
-      if (selectedCatId !== "ALL" && prod.categoryId !== selectedCatId) return false;
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        return (
-          prod.name.toLowerCase().includes(q) ||
-          prod.slug.toLowerCase().includes(q) ||
-          (prod.dimensions && prod.dimensions.toLowerCase().includes(q))
-        );
+    try {
+      if (editingProductId) {
+        await productsApi.update(editingProductId, {
+          name: formName.trim(),
+          slug: formSlug.trim(),
+          description: formDescription.trim() || "Produit personnalisé de haute qualité.",
+          categoryId: formCategoryId,
+          subCategoryId: formSubCategoryId || undefined,
+          price: Number(formPrice),
+          stock: Number(formStock),
+          minQuantity: Number(formMinQuantity),
+          dimensions: formDimensions.trim() || undefined,
+          modelType: finalModelType,
+          availableColors: finalAvailableColors,
+          images: finalImages,
+          featured: formFeatured,
+        });
+        setFormSuccess("Produit mis à jour avec succès !");
+      } else {
+        await productsApi.create({
+          name: formName.trim(),
+          slug: formSlug.trim(),
+          description: formDescription.trim() || "Produit personnalisé de haute qualité.",
+          categoryId: formCategoryId,
+          subCategoryId: formSubCategoryId || undefined,
+          price: Number(formPrice),
+          stock: Number(formStock),
+          minQuantity: Number(formMinQuantity),
+          dimensions: formDimensions.trim() || undefined,
+          modelType: finalModelType,
+          availableColors: finalAvailableColors,
+          images: finalImages,
+          isActive: true,
+          featured: formFeatured,
+        });
+        setFormSuccess("Produit ajouté avec succès au catalogue !");
       }
-      return true;
-    });
-  }, [products, selectedCatId, search]);
 
-  const totalPages = Math.ceil(filteredProducts.length / itemsPerPage) || 1;
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
-  );
+      setTimeout(() => {
+        setIsDrawerOpen(false);
+        setFormSuccess(null);
+        refetch(); // Refresh list from DB after save
+      }, 800);
+    } catch (err: any) {
+      console.error("Save product error:", err);
+      setFormError(err.response?.data?.message || "Erreur lors de la sauvegarde.");
+    }
+  };
 
   return (
     <AdminLayout>
@@ -320,7 +318,7 @@ function AdminProductsContent() {
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value);
-                setCurrentPage(1);
+                setPage(1);
               }}
               placeholder="Rechercher par nom, format..."
               className="w-full rounded-full border border-brand-light-gray bg-brand-soft-white/60 py-2 pl-9 pr-4 text-xs font-medium text-brand-charcoal placeholder-brand-warm-gray focus:border-brand-red focus:bg-white focus:outline-none"
@@ -332,7 +330,7 @@ function AdminProductsContent() {
               value={selectedCatId}
               onChange={(e) => {
                 setSelectedCatId(e.target.value);
-                setCurrentPage(1);
+                setPage(1);
               }}
               aria-label="Filtrer par catégorie"
               className="py-2 text-xs"
@@ -363,14 +361,26 @@ function AdminProductsContent() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light-gray/60">
-                {paginatedProducts.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-red" />
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-xs text-brand-red font-bold">
+                      {error}
+                    </td>
+                  </tr>
+                ) : products.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-brand-warm-gray">
                       Aucun produit ne correspond à votre recherche.
                     </td>
                   </tr>
                 ) : (
-                  paginatedProducts.map((prod) => {
+                  products.map((prod) => {
                     const cat = categories.find((c) => c.id === prod.categoryId);
                     const sub = cat?.subCategories.find((s) => s.id === prod.subCategoryId);
                     const has3DModel = prod.modelType && prod.modelType !== "none";
@@ -456,7 +466,10 @@ function AdminProductsContent() {
                         <td className="py-3.5 px-4">
                           <button
                             type="button"
-                            onClick={() => toggleProductStatus(prod.id)}
+                            onClick={async () => {
+                              await productsApi.toggleStatus(prod.id, !prod.isActive);
+                              refetch();
+                            }}
                             className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${prod.isActive ? "bg-emerald-500" : "bg-gray-300"
                               }`}
                           >
@@ -490,12 +503,15 @@ function AdminProductsContent() {
                               <Eye className="h-3.5 w-3.5" />
                             </Link>
 
-                            {/* Delete Button */}
+                            {/* Delete Button — Hard Delete from DB */}
                             <button
                               type="button"
-                              onClick={() =>
-                                setDeleteModalState({ isOpen: true, product: prod })
-                              }
+                              onClick={async () => {
+                                if (confirm(`Supprimer "${prod.name}" définitivement ?`)) {
+                                  await productsApi.delete(prod.id);
+                                  refetch();
+                                }
+                              }}
                               title="Supprimer le produit"
                               className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand-light-gray bg-white text-brand-warm-gray hover:border-brand-red hover:text-brand-red transition-colors cursor-pointer"
                             >
@@ -511,35 +527,13 @@ function AdminProductsContent() {
             </table>
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex items-center justify-between border-t border-brand-light-gray px-6 py-4">
-              <span className="text-xs text-brand-warm-gray">
-                Affichage de {paginatedProducts.length} sur {filteredProducts.length} articles
-              </span>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  disabled={currentPage === 1}
-                  onClick={() => setCurrentPage((p) => p - 1)}
-                  className="rounded-lg border border-brand-light-gray px-3 py-1 text-xs font-bold text-brand-charcoal disabled:opacity-40"
-                >
-                  Précédent
-                </button>
-                <span className="text-xs font-bold text-brand-charcoal">
-                  Page {currentPage} / {totalPages}
-                </span>
-                <button
-                  type="button"
-                  disabled={currentPage === totalPages}
-                  onClick={() => setCurrentPage((p) => p + 1)}
-                  className="rounded-lg border border-brand-light-gray px-3 py-1 text-xs font-bold text-brand-charcoal disabled:opacity-40"
-                >
-                  Suivant
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Server-side Pagination */}
+          <PaginationBar
+            pagination={pagination}
+            page={page}
+            setPage={setPage}
+            label="produits"
+          />
         </div>
 
         {/* ── Slide-Over Modal for Add & Edit Product ── */}
@@ -1090,20 +1084,6 @@ function AdminProductsContent() {
           )}
         </AnimatePresence>
 
-        {/* ── Premium Product Delete Confirmation Modal ──────────────── */}
-        <DeleteConfirmModal
-          isOpen={deleteModalState.isOpen}
-          onClose={() => setDeleteModalState({ isOpen: false, product: null })}
-          onConfirm={() => {
-            if (deleteModalState.product) {
-              deleteProduct(deleteModalState.product.id);
-              setDeleteModalState({ isOpen: false, product: null });
-            }
-          }}
-          title="Supprimer ce produit ?"
-          itemName={deleteModalState.product?.name}
-          description="Êtes-vous sûr de vouloir supprimer définitivement cet article du catalogue ? Les données, déclinaisons et configurations associées seront effacées."
-        />
       </div>
     </AdminLayout>
   );

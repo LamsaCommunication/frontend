@@ -17,15 +17,47 @@ import {
   Package,
   Layers
 } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { CustomSelect } from "@/components/ui/custom-select";
-import { useAdminStore, OrderStatus } from "@/lib/store/useAdminStore";
+import { OrderRecord, OrderStatus } from "@/lib/store/useAdminStore";
+import { ordersApi } from "@/lib/api/lamsa-api";
 
-export default function AdminSingleInvoicePage() {
-  const { orders, updateOrderStatus, generateYalidineWaybill } = useAdminStore();
-  const [selectedOrderId, setSelectedOrderId] = React.useState<string>(orders[0]?.id || "");
+function AdminSingleInvoiceContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
 
-  const order = orders.find((o) => o.id === selectedOrderId) || orders[0];
+  const [order, setOrder] = React.useState<OrderRecord | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  const loadOrder = React.useCallback(async () => {
+    if (!id) {
+      setIsLoading(false);
+      return;
+    }
+    try {
+      const data = await ordersApi.getOrder(id);
+      setOrder(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
+
+  React.useEffect(() => {
+    loadOrder();
+  }, [loadOrder]);
+
+  if (isLoading) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-64">
+          <p className="text-sm font-bold text-brand-warm-gray">Chargement...</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   if (!order) {
     return (
@@ -37,13 +69,25 @@ export default function AdminSingleInvoicePage() {
     );
   }
 
-  const handleStatusChange = (status: OrderStatus) => {
-    updateOrderStatus(order.id, status);
+  const handleStatusChange = async (status: OrderStatus) => {
+    try {
+      await ordersApi.updateStatus(order.id, status);
+      await loadOrder();
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la mise à jour du statut.");
+    }
   };
 
-  const handleYalidineDispatch = () => {
-    const { tracking } = generateYalidineWaybill(order.id);
-    alert(`Bordereau Yalidine généré avec succès !\nNuméro de suivi : ${tracking}`);
+  const handleYalidineDispatch = async () => {
+    try {
+      await ordersApi.dispatchYalidine(order.id);
+      await loadOrder();
+      alert(`Bordereau Yalidine généré avec succès !`);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la génération du bordereau.");
+    }
   };
 
   return (
@@ -74,22 +118,6 @@ export default function AdminSingleInvoicePage() {
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Quick order selector switch */}
-            <div className="w-64">
-              <CustomSelect
-                value={order.id}
-                onChange={(e) => setSelectedOrderId(e.target.value)}
-                aria-label="Sélectionner une facture"
-                className="py-1.5 text-xs font-bold"
-              >
-                {orders.map((ord) => (
-                  <option key={ord.id} value={ord.id}>
-                    {ord.orderNumber} — {ord.firstName} ({ord.totalAmount.toLocaleString()} DZD)
-                  </option>
-                ))}
-              </CustomSelect>
-            </div>
-
             <button
               type="button"
               onClick={() => window.print()}
@@ -319,5 +347,13 @@ export default function AdminSingleInvoicePage() {
         </div>
       </div>
     </AdminLayout>
+  );
+}
+
+export default function AdminSingleInvoicePage() {
+  return (
+    <React.Suspense fallback={null}>
+      <AdminSingleInvoiceContent />
+    </React.Suspense>
   );
 }

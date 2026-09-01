@@ -32,8 +32,9 @@ import {
   Legend
 } from "recharts";
 import { AdminLayout } from "@/components/admin/admin-layout";
-import { useAdminStore } from "@/lib/store/useAdminStore";
 import { useCatalogStore } from "@/lib/store/useCatalogStore";
+import { ordersApi } from "@/lib/api/lamsa-api";
+import { OrderRecord } from "@/lib/store/useAdminStore";
 
 const SALES_CHART_DATA = [
   { month: "Jan", revenue: 145000, orders: 24 },
@@ -55,21 +56,35 @@ const CATEGORY_DISTRIBUTION_DATA = [
 ];
 
 export default function AdminDashboardPage() {
-  const {
-    getTotalRevenue,
-    getActiveOrdersCount,
-    getYalidineDispatchesCount,
-    getRecentOrders,
-    orders,
-    updateOrderStatus
-  } = useAdminStore();
-
   const { products } = useCatalogStore();
 
-  const totalRevenue = getTotalRevenue();
-  const activeOrders = getActiveOrdersCount();
-  const yalidineDispatches = getYalidineDispatchesCount();
-  const recentOrders = getRecentOrders(6);
+  const [stats, setStats] = React.useState<{
+    totalRevenue: number;
+    activeOrders: number;
+    yalidineDispatches: number;
+    recentOrders: OrderRecord[];
+  } | null>(null);
+
+  const [isLoading, setIsLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function fetchStats() {
+      try {
+        const data = await ordersApi.getAdminStats();
+        setStats(data);
+      } catch (err) {
+        console.error("Erreur de chargement des statistiques", err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchStats();
+  }, []);
+
+  const totalRevenue = stats?.totalRevenue || 0;
+  const activeOrders = stats?.activeOrders || 0;
+  const yalidineDispatches = stats?.yalidineDispatches || 0;
+  const recentOrders = stats?.recentOrders || [];
 
   const kpis = [
     {
@@ -351,7 +366,7 @@ export default function AdminDashboardPage() {
                     <td className="py-3.5 px-4">{getStatusBadge(ord.status)}</td>
                     <td className="py-3.5 px-4 text-right">
                       <Link
-                        href={`/admin/single-invoice`}
+                        href={`/admin/single-invoice?id=${ord.id}`}
                         className="inline-flex items-center gap-1 rounded-lg border border-brand-light-gray bg-white px-2.5 py-1 text-xs font-bold text-brand-charcoal transition-colors hover:border-brand-red hover:text-brand-red"
                       >
                         <Eye className="h-3.5 w-3.5" />

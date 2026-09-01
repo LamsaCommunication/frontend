@@ -4,76 +4,89 @@ import * as React from "react";
 import Link from "next/link";
 import {
   Search,
-  Filter,
   Eye,
-  FileText,
   Truck,
   CheckCircle2,
   Clock,
   Printer,
-  ChevronRight,
-  Download
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
-import { useAdminStore, OrderStatus } from "@/lib/store/useAdminStore";
+import { PaginationBar } from "@/components/ui/pagination-bar";
+import { usePaginatedApi } from "@/lib/hooks/usePaginatedApi";
+import { ordersApi } from "@/lib/api/lamsa-api";
+import type { OrderRecord, OrderStatus } from "@/lib/store/useAdminStore";
+
+const STATUS_LABELS: Record<string, string> = {
+  ALL: "Toutes",
+  PENDING: "En attente",
+  CONFIRMED: "Confirmées",
+  SHIPPED: "Expédiées",
+  DELIVERED: "Livrées",
+  CANCELLED: "Annulées"
+};
+
+function getStatusBadge(status: OrderStatus) {
+  switch (status) {
+    case "DELIVERED":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-200">
+          <CheckCircle2 className="h-3 w-3" /> Livrée
+        </span>
+      );
+    case "SHIPPED":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-200">
+          <Truck className="h-3 w-3" /> Expédiée
+        </span>
+      );
+    case "CONFIRMED":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-[10px] font-bold text-purple-600 border border-purple-200">
+          <Clock className="h-3 w-3" /> Confirmée
+        </span>
+      );
+    case "PENDING":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-200">
+          <Clock className="h-3 w-3" /> En attente
+        </span>
+      );
+    case "CANCELLED":
+      return (
+        <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">
+          Annulée
+        </span>
+      );
+  }
+}
 
 export default function AdminInvoicesPage() {
-  const { orders, updateOrderStatus, generateYalidineWaybill } = useAdminStore();
-
   const [search, setSearch] = React.useState("");
-  const [statusFilter, setStatusFilter] = React.useState<string>("ALL");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
+  const [statusFilter, setStatusFilter] = React.useState("ALL");
 
-  const filteredOrders = React.useMemo(() => {
-    return orders.filter((ord) => {
-      if (statusFilter !== "ALL" && ord.status !== statusFilter) return false;
-      if (search.trim()) {
-        const q = search.toLowerCase();
-        return (
-          ord.orderNumber.toLowerCase().includes(q) ||
-          ord.firstName.toLowerCase().includes(q) ||
-          ord.lastName.toLowerCase().includes(q) ||
-          ord.phone.includes(q) ||
-          ord.wilaya.toLowerCase().includes(q) ||
-          (ord.yalidineTracking && ord.yalidineTracking.toLowerCase().includes(q))
-        );
-      }
-      return true;
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  const { data: orders, pagination, isLoading, error, page, setPage, refetch } =
+    usePaginatedApi<OrderRecord>({
+      url: "/api/v1/orders",
+      limit: 15,
+      params: {
+        status: statusFilter !== "ALL" ? statusFilter : undefined,
+        search: debouncedSearch || undefined
+      },
+      deps: [statusFilter, debouncedSearch]
     });
-  }, [orders, statusFilter, search]);
 
-  const getStatusBadge = (status: OrderStatus) => {
-    switch (status) {
-      case "DELIVERED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[10px] font-bold text-emerald-600 border border-emerald-200">
-            <CheckCircle2 className="h-3 w-3" /> Livrée
-          </span>
-        );
-      case "SHIPPED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2.5 py-0.5 text-[10px] font-bold text-blue-600 border border-blue-200">
-            <Truck className="h-3 w-3" /> Expédiée
-          </span>
-        );
-      case "CONFIRMED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-0.5 text-[10px] font-bold text-purple-600 border border-purple-200">
-            <Clock className="h-3 w-3" /> Confirmée
-          </span>
-        );
-      case "PENDING":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-[10px] font-bold text-amber-600 border border-amber-200">
-            <Clock className="h-3 w-3" /> En attente
-          </span>
-        );
-      case "CANCELLED":
-        return (
-          <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-[10px] font-bold text-red-600 border border-red-200">
-            Annulée
-          </span>
-        );
-    }
+  const handleDeleteOrder = async (id: string, orderNumber: string) => {
+    if (!confirm(`Supprimer la commande ${orderNumber} définitivement ?`)) return;
+    await ordersApi.deleteOrder(id);
+    refetch();
   };
 
   return (
@@ -83,13 +96,12 @@ export default function AdminInvoicesPage() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-black text-brand-charcoal sm:text-3xl">
-              Factures & Commandes Clients
+              Factures &amp; Commandes Clients
             </h1>
             <p className="mt-1 text-xs text-brand-warm-gray">
               Suivi en temps réel des factures, règlements à la livraison et expéditions.
             </p>
           </div>
-
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -104,9 +116,8 @@ export default function AdminInvoicesPage() {
 
         {/* Filter Pills & Search */}
         <div className="flex flex-col gap-3 rounded-2xl border border-brand-light-gray bg-white p-4 sm:flex-row sm:items-center sm:justify-between shadow-sm">
-          {/* Status Tabs */}
           <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
-            {["ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED"].map((status) => (
+            {["ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"].map((status) => (
               <button
                 key={status}
                 type="button"
@@ -117,20 +128,12 @@ export default function AdminInvoicesPage() {
                     : "text-brand-dark/70 hover:bg-brand-soft-white"
                 }`}
               >
-                {status === "ALL"
-                  ? `Toutes (${orders.length})`
-                  : status === "PENDING"
-                  ? "En attente"
-                  : status === "CONFIRMED"
-                  ? "Confirmées"
-                  : status === "SHIPPED"
-                  ? "Expédiées"
-                  : "Livrées"}
+                {STATUS_LABELS[status]}
+                {status === "ALL" && pagination ? ` (${pagination.total})` : ""}
               </button>
             ))}
           </div>
 
-          {/* Search */}
           <div className="relative sm:w-64">
             <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-brand-warm-gray" />
             <input
@@ -150,7 +153,7 @@ export default function AdminInvoicesPage() {
               <thead>
                 <tr className="border-b border-brand-light-gray bg-brand-soft-white/60 text-brand-warm-gray uppercase tracking-wider font-bold">
                   <th className="py-3.5 px-4">Facture / Date</th>
-                  <th className="py-3.5 px-4">Client & Téléphone</th>
+                  <th className="py-3.5 px-4">Client &amp; Téléphone</th>
                   <th className="py-3.5 px-4">Wilaya (Yalidine)</th>
                   <th className="py-3.5 px-4">Articles</th>
                   <th className="py-3.5 px-4">Montant Total</th>
@@ -159,19 +162,29 @@ export default function AdminInvoicesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light-gray/60">
-                {filteredOrders.length === 0 ? (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="py-16 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-red" />
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={7} className="py-10 text-center text-xs text-brand-red font-bold">
+                      {error}
+                    </td>
+                  </tr>
+                ) : orders.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="py-8 text-center text-brand-warm-gray">
                       Aucune commande ne correspond aux critères sélectionnés.
                     </td>
                   </tr>
                 ) : (
-                  filteredOrders.map((ord) => (
+                  orders.map((ord) => (
                     <tr key={ord.id} className="hover:bg-brand-soft-white/50 transition-colors">
                       <td className="py-3.5 px-4">
-                        <span className="font-bold text-brand-charcoal block">
-                          {ord.orderNumber}
-                        </span>
+                        <span className="font-bold text-brand-charcoal block">{ord.orderNumber}</span>
                         <span className="text-[10px] text-brand-warm-gray">
                           {new Date(ord.createdAt).toLocaleDateString("fr-FR", {
                             day: "2-digit",
@@ -189,9 +202,7 @@ export default function AdminInvoicesPage() {
                       </td>
 
                       <td className="py-3.5 px-4">
-                        <span className="font-semibold text-brand-dark block">
-                          {ord.wilaya}
-                        </span>
+                        <span className="font-semibold text-brand-dark block">{ord.wilaya}</span>
                         <span className="text-[10px] text-brand-warm-gray">
                           {ord.isStopDesk ? "Bureau StopDesk" : "À domicile"}
                         </span>
@@ -204,7 +215,7 @@ export default function AdminInvoicesPage() {
                       </td>
 
                       <td className="py-3.5 px-4 font-black text-brand-charcoal">
-                        {ord.totalAmount.toLocaleString()}{" "}
+                        {Number(ord.totalAmount).toLocaleString()}{" "}
                         <span className="text-xs text-brand-red font-bold">DZD</span>
                       </td>
 
@@ -213,12 +224,21 @@ export default function AdminInvoicesPage() {
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <Link
-                            href="/admin/single-invoice"
+                            href={`/admin/single-invoice?id=${ord.id}`}
                             className="inline-flex items-center gap-1 rounded-lg border border-brand-light-gray bg-white px-2.5 py-1 text-xs font-bold text-brand-charcoal hover:border-brand-red hover:text-brand-red transition-colors"
                           >
                             <Eye className="h-3.5 w-3.5" />
                             <span>Voir</span>
                           </Link>
+                          {/* Hard Delete */}
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteOrder(ord.id, ord.orderNumber)}
+                            title="Supprimer définitivement"
+                            className="flex h-7 w-7 items-center justify-center rounded-lg border border-brand-light-gray bg-white text-brand-warm-gray hover:border-brand-red hover:text-brand-red transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -227,6 +247,14 @@ export default function AdminInvoicesPage() {
               </tbody>
             </table>
           </div>
+
+          {/* Server-side Pagination */}
+          <PaginationBar
+            pagination={pagination}
+            page={page}
+            setPage={setPage}
+            label="commandes"
+          />
         </div>
       </div>
     </AdminLayout>

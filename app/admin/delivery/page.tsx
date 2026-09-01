@@ -24,17 +24,43 @@ import {
   Check,
   X,
   AlertCircle,
-  Loader2
+  Loader2,
+  Trash2
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
+import { PaginationBar } from "@/components/ui/pagination-bar";
+import { usePaginatedApi } from "@/lib/hooks/usePaginatedApi";
+import { ordersApi } from "@/lib/api/lamsa-api";
 import { useAdminStore, OrderRecord } from "@/lib/store/useAdminStore";
 
 export default function AdminDeliveryPage() {
-  const { orders, generateYalidineWaybill, updateOrderStatus, yalidineSettings, setYalidineSettings } = useAdminStore();
+  const { generateYalidineWaybill, updateOrderStatus, yalidineSettings, setYalidineSettings } = useAdminStore();
   const [selectedOrderForLabel, setSelectedOrderForLabel] = React.useState<OrderRecord | null>(null);
   const [search, setSearch] = React.useState("");
+  const [debouncedSearch, setDebouncedSearch] = React.useState("");
 
-  // Yalidine API Settings Modal State
+  // Debounce search
+  React.useEffect(() => {
+    const id = setTimeout(() => setDebouncedSearch(search), 350);
+    return () => clearTimeout(id);
+  }, [search]);
+
+  // ── Server-side paginated orders ─────────────────────────────────────────────────
+  const {
+    data: orders,
+    pagination,
+    isLoading,
+    error,
+    page,
+    setPage,
+    refetch
+  } = usePaginatedApi<OrderRecord>({
+    url: "/api/v1/orders",
+    limit: 15,
+    params: { search: debouncedSearch || undefined },
+    deps: [debouncedSearch]
+  });
+
   const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false);
   const [apiIdInput, setApiIdInput] = React.useState("");
   const [apiTokenInput, setApiTokenInput] = React.useState("");
@@ -43,15 +69,6 @@ export default function AdminDeliveryPage() {
   const [saveToast, setSaveToast] = React.useState<string | null>(null);
   const [testingConnection, setTestingConnection] = React.useState(false);
   const [testResult, setTestResult] = React.useState<"success" | "error" | null>(null);
-
-  // Sync settings when opening modal or store hydration
-  React.useEffect(() => {
-    if (yalidineSettings) {
-      setApiIdInput(yalidineSettings.apiId || "");
-      setApiTokenInput(yalidineSettings.apiToken || "");
-      setIsLiveInput(yalidineSettings.isLive ?? true);
-    }
-  }, [yalidineSettings, isSettingsModalOpen]);
 
   const isConfigured = Boolean(yalidineSettings?.apiId?.trim() && yalidineSettings?.apiToken?.trim());
 
@@ -82,26 +99,9 @@ export default function AdminDeliveryPage() {
     }, 1000);
   };
 
-  const dispatchableOrders = orders.filter((ord) => {
-    if (search.trim()) {
-      const q = search.toLowerCase();
-      return (
-        ord.orderNumber.toLowerCase().includes(q) ||
-        ord.firstName.toLowerCase().includes(q) ||
-        ord.lastName.toLowerCase().includes(q) ||
-        ord.wilaya.toLowerCase().includes(q) ||
-        (ord.yalidineTracking && ord.yalidineTracking.toLowerCase().includes(q))
-      );
-    }
-    return true;
-  });
-
-  const handleGenerateWaybill = (orderId: string) => {
-    const { tracking } = generateYalidineWaybill(orderId);
-    const updated = orders.find((o) => o.id === orderId);
-    if (updated) {
-      setSelectedOrderForLabel(updated);
-    }
+  const handleGenerateWaybill = async (orderId: string) => {
+    await ordersApi.dispatchYalidine(orderId);
+    refetch();
   };
 
   return (
@@ -156,9 +156,8 @@ export default function AdminDeliveryPage() {
               className="w-full rounded-full border border-brand-light-gray bg-brand-soft-white/60 py-2 pl-10 pr-4 text-xs font-medium text-brand-charcoal placeholder-brand-warm-gray focus:border-brand-red focus:bg-white focus:outline-none"
             />
           </div>
-
           <span className="text-xs font-bold text-brand-warm-gray">
-            {dispatchableOrders.length} colis gérés
+            {pagination ? `${pagination.total} colis gérés` : "—"}
           </span>
         </div>
 
@@ -177,7 +176,22 @@ export default function AdminDeliveryPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light-gray/60">
-                {dispatchableOrders.map((ord) => (
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={6} className="py-16 text-center">
+                      <Loader2 className="mx-auto h-6 w-6 animate-spin text-brand-red" />
+                    </td>
+                  </tr>
+                ) : error ? (
+                  <tr>
+                    <td colSpan={6} className="py-10 text-center text-xs text-brand-red font-bold">{error}</td>
+                  </tr>
+                ) : orders.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-8 text-center text-brand-warm-gray">Aucune commande trouvée.</td>
+                  </tr>
+                ) : (
+                  orders.map((ord) => (
                   <tr key={ord.id} className="hover:bg-brand-soft-white/50 transition-colors">
                     <td className="py-3.5 px-4 font-bold text-brand-charcoal">
                       {ord.orderNumber}
@@ -217,31 +231,49 @@ export default function AdminDeliveryPage() {
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
-                      {ord.yalidineTracking ? (
+                      <div className="flex items-center justify-end gap-1.5">
+                        {ord.yalidineTracking ? (
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrderForLabel(ord)}
+                            className="inline-flex items-center gap-1.5 rounded-full border border-brand-light-gray bg-white px-3.5 py-1.5 text-xs font-bold text-brand-charcoal transition-colors hover:bg-brand-charcoal hover:text-white cursor-pointer"
+                          >
+                            <Printer className="h-3.5 w-3.5" />
+                            <span>Voir Bordereau</span>
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleGenerateWaybill(ord.id)}
+                            className="inline-flex items-center gap-1.5 rounded-full bg-brand-red px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover cursor-pointer"
+                          >
+                            <Truck className="h-3.5 w-3.5" />
+                            <span>1-Click Waybill</span>
+                          </button>
+                        )}
+                        {/* Hard Delete */}
                         <button
                           type="button"
-                          onClick={() => setSelectedOrderForLabel(ord)}
-                          className="inline-flex items-center gap-1.5 rounded-full border border-brand-light-gray bg-white px-3.5 py-1.5 text-xs font-bold text-brand-charcoal transition-colors hover:bg-brand-charcoal hover:text-white cursor-pointer"
+                          onClick={async () => {
+                            if (confirm(`Supprimer ${ord.orderNumber} définitivement ?`)) {
+                              await ordersApi.deleteOrder(ord.id);
+                              refetch();
+                            }
+                          }}
+                          className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand-light-gray bg-white text-brand-warm-gray hover:border-brand-red hover:text-brand-red transition-colors cursor-pointer"
                         >
-                          <Printer className="h-3.5 w-3.5" />
-                          <span>Voir Bordereau</span>
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
-                      ) : (
-                        <button
-                          type="button"
-                          onClick={() => handleGenerateWaybill(ord.id)}
-                          className="inline-flex items-center gap-1.5 rounded-full bg-brand-red px-3.5 py-1.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover cursor-pointer"
-                        >
-                          <Truck className="h-3.5 w-3.5" />
-                          <span>1-Click Waybill</span>
-                        </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
-                ))}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
+          {/* Server-side Pagination */}
+          <PaginationBar pagination={pagination} page={page} setPage={setPage} label="colis" />
         </div>
 
         {/* ── Yalidine API Settings Modal ────────────────────────────── */}

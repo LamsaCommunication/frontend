@@ -3,14 +3,15 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, EyeOff, Lock, User, ArrowRight, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
 import { useAdminStore } from "@/lib/store/useAdminStore";
 
-export default function AdminLoginPage() {
+function AdminLoginContent() {
   const router = useRouter();
-  const { login, isAuthenticated } = useAdminStore();
+  const searchParams = useSearchParams();
+  const { login, logout, isAuthenticated } = useAdminStore();
 
   const [username, setUsername] = React.useState("");
   const [password, setPassword] = React.useState("");
@@ -19,10 +20,17 @@ export default function AdminLoginPage() {
   const [isLoading, setIsLoading] = React.useState(false);
 
   React.useEffect(() => {
-    if (isAuthenticated) {
+    // If the URL tells us to clear the state (e.g. from middleware or API interceptor)
+    const shouldClear = searchParams.get("clearState") === "true" || searchParams.get("sessionExpired") === "true";
+    
+    if (shouldClear && isAuthenticated) {
+      logout();
+      // Remove query params to clean up URL
+      router.replace("/admin/login");
+    } else if (isAuthenticated && !shouldClear) {
       router.push("/admin");
     }
-  }, [isAuthenticated, router]);
+  }, [isAuthenticated, router, searchParams, logout]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,112 +68,134 @@ export default function AdminLoginPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md overflow-hidden rounded-3xl border border-white/10 bg-[#1c1c1c] p-8 shadow-2xl sm:p-10"
+        className="relative w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
       >
-        {/* Brand Header */}
-        <div className="text-center">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-white p-2 shadow-lg">
-            <div className="relative h-full w-full">
+        {/* Top Accent Line */}
+        <div className="absolute left-0 top-0 h-1.5 w-full bg-brand-red" />
+
+        <div className="p-8 sm:p-10">
+          <div className="mb-8 text-center">
+            <Link href="/" className="inline-block transition-transform hover:scale-105">
               <Image
-                src="/lamsa2.png"
-                alt="Lamsa Studio"
-                fill
-                className="object-contain"
+                src="/images/lamsa-black.png"
+                alt="Lamsa Logo"
+                width={140}
+                height={50}
+                className="mx-auto"
+                priority
               />
-            </div>
+            </Link>
+            <h1 className="mt-6 text-2xl font-black uppercase tracking-tight text-brand-charcoal">
+              Espace Administrateur
+            </h1>
+            <p className="mt-2 text-sm text-brand-warm-gray font-medium">
+              Authentification requise pour l'accès
+            </p>
           </div>
 
-          <h1 className="heading-display mt-6 text-2xl font-black text-white sm:text-3xl">
-            LAMSA <span className="text-brand-red">ADMIN</span>
-          </h1>
-          <p className="mt-2 text-xs text-brand-warm-gray">
-            Espace d&apos;administration & Gestion SaaS TailAdmin
-          </p>
-        </div>
-
-        {/* Error Alert */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="mt-6 flex items-center gap-2 rounded-xl border border-brand-red/30 bg-brand-red/10 p-3 text-xs font-semibold text-brand-red"
-          >
-            <AlertCircle className="h-4 w-4 flex-shrink-0" />
-            <span>{error}</span>
-          </motion.div>
-        )}
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-brand-warm-gray block mb-1.5">
-              Identifiant
-            </label>
-            <div className="relative">
-              <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-warm-gray" />
-              <input
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="admin"
-                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-4 text-xs font-semibold text-white placeholder-white/30 focus:border-brand-red focus:bg-white/10 focus:outline-none"
-              />
-            </div>
-          </div>
-
-          <div>
-            <label className="text-xs font-bold uppercase tracking-wider text-brand-warm-gray block mb-1.5">
-              Mot de passe
-            </label>
-            <div className="relative">
-              <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-brand-warm-gray" />
-              <input
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pl-10 pr-10 text-xs font-semibold text-white placeholder-white/30 focus:border-brand-red focus:bg-white/10 focus:outline-none"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-brand-warm-gray hover:text-white"
-                aria-label="Basculer la visibilité du mot de passe"
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center gap-2 rounded-lg bg-red-50 p-3 text-sm font-medium text-brand-red border border-red-100"
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-              </button>
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <p>{error}</p>
+              </motion.div>
+            )}
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal" htmlFor="username">
+                  Identifiant
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-warm-gray">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <input
+                    id="username"
+                    type="text"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/50 py-2.5 pl-10 pr-4 text-sm font-medium text-brand-charcoal placeholder-brand-warm-gray/60 focus:border-brand-red focus:bg-white focus:outline-none transition-colors"
+                    placeholder="Saisissez votre identifiant"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal" htmlFor="password">
+                  Mot de passe
+                </label>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-brand-warm-gray">
+                    <Lock className="h-4 w-4" />
+                  </div>
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/50 py-2.5 pl-10 pr-10 text-sm font-medium text-brand-charcoal placeholder-brand-warm-gray/60 focus:border-brand-red focus:bg-white focus:outline-none transition-colors"
+                    placeholder="••••••••"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-brand-warm-gray hover:text-brand-charcoal transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
+                </div>
+              </div>
             </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="group relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-brand-charcoal py-3 font-bold text-white transition-transform hover:scale-[1.02] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              {isLoading ? (
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+              ) : (
+                <>
+                  <span className="relative z-10">Connexion Sécurisée</span>
+                  <ArrowRight className="relative z-10 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Quick Demo Login Fill */}
+          <div className="mt-8 pt-6 border-t border-brand-light-gray text-center">
+            <button
+              onClick={handleFillDemo}
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-warm-gray hover:text-brand-red transition-colors"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              Remplir les identifiants démo
+            </button>
           </div>
-
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="group mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-brand-red py-3 text-xs font-extrabold text-white transition-all duration-200 hover:bg-brand-red-hover hover:shadow-[0_8px_25px_-6px_rgba(227,6,19,0.7)] cursor-pointer"
-          >
-            <span>{isLoading ? "Connexion en cours..." : "Se connecter"}</span>
-            <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
-          </button>
-        </form>
-
-        {/* Demo Helper Button */}
-        <div className="mt-6 border-t border-white/10 pt-4 text-center">
-          <button
-            type="button"
-            onClick={handleFillDemo}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-red hover:underline cursor-pointer"
-          >
-            <Sparkles className="h-3.5 w-3.5" />
-            Remplir avec identifiants démo (admin / admin123)
-          </button>
         </div>
 
         {/* Footer info */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-brand-warm-gray">
-          <ShieldCheck className="h-3.5 w-3.5 text-emerald-500" />
-          Session sécurisée avec RBAC & DevSecOps
+        <div className="bg-brand-soft-white px-8 py-4 text-center">
+          <p className="flex items-center justify-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-brand-warm-gray">
+            <ShieldCheck className="h-3.5 w-3.5 text-green-500" />
+            Accès Protégé et Restreint
+          </p>
         </div>
       </motion.div>
     </div>
+  );
+}
+
+export default function AdminLoginPage() {
+  return (
+    <React.Suspense fallback={<div className="flex min-h-screen items-center justify-center"><div className="h-5 w-5 animate-spin rounded-full border-2 border-brand-red border-t-transparent" /></div>}>
+      <AdminLoginContent />
+    </React.Suspense>
   );
 }

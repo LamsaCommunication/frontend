@@ -154,6 +154,7 @@ export const viewport: Viewport = {
 };
 
 import { CartDrawer } from "@/components/cart/cart-drawer";
+import { CatalogProvider } from "@/components/providers/catalog-provider";
 
 export default function RootLayout({
   children,
@@ -171,7 +172,9 @@ export default function RootLayout({
           dangerouslySetInnerHTML={{ __html: JSON.stringify(localBusinessSchema) }}
         />
         <MotionProvider>
-          {children}
+          <CatalogProvider>
+            {children}
+          </CatalogProvider>
           <CartDrawer />
         </MotionProvider>
       </body>

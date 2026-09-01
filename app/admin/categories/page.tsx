@@ -27,6 +27,7 @@ import { AdminLayout } from "@/components/admin/admin-layout";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 import { useCatalogStore, Category, SubCategory, CategoryService } from "@/lib/store/useCatalogStore";
+import { categoriesApi } from "@/lib/api/lamsa-api";
 
 const ICON_OPTIONS = [
   { label: "Pencil (Graphisme & Print)", value: "Pencil" },
@@ -41,9 +42,7 @@ export default function AdminCategoriesPage() {
   const {
     categories,
     products,
-    addCategory,
-    updateCategory,
-    deleteCategory,
+    fetchCatalog,
     addSubCategory,
     updateSubCategory,
     deleteSubCategory
@@ -171,7 +170,7 @@ export default function AdminCategoriesPage() {
   };
 
   // Submit Category
-  const handleSaveCategory = (e: React.FormEvent) => {
+  const handleSaveCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     setCatError(null);
 
@@ -188,33 +187,39 @@ export default function AdminCategoriesPage() {
     const finalImage = catImage.trim() || undefined;
     const finalImages = finalImage ? [finalImage] : [];
 
-    if (editingCategory) {
-      updateCategory(editingCategory.id, {
-        name: catName.trim(),
-        slug: catSlug.trim(),
-        description: catDescription.trim(),
-        icon: catIcon,
-        image: finalImage,
-        images: finalImages,
-        services: sanitizedServices,
-      });
-      showNotification(`Catégorie "${catName}" mise à jour avec succès !`);
-    } else {
-      addCategory({
-        name: catName.trim(),
-        slug: catSlug.trim(),
-        description: catDescription.trim() || "Catégorie de services et produits Lamsa.",
-        icon: catIcon,
-        tags: ["Nouveau", "Sur Mesure"],
-        image: finalImage,
-        images: finalImages,
-        services: sanitizedServices,
-        subCategories: []
-      });
-      showNotification(`Nouvelle catégorie "${catName}" créée avec succès !`);
-    }
+    try {
+      if (editingCategory) {
+        await categoriesApi.update(editingCategory.id, {
+          name: catName.trim(),
+          slug: catSlug.trim(),
+          description: catDescription.trim(),
+          icon: catIcon,
+          image: finalImage,
+          images: finalImages,
+          services: sanitizedServices,
+        });
+        showNotification(`Catégorie "${catName}" mise à jour avec succès !`);
+      } else {
+        await categoriesApi.create({
+          name: catName.trim(),
+          slug: catSlug.trim(),
+          description: catDescription.trim() || "Catégorie de services et produits Lamsa.",
+          icon: catIcon,
+          tags: ["Nouveau", "Sur Mesure"],
+          image: finalImage,
+          images: finalImages,
+          services: sanitizedServices,
+          subCategories: []
+        });
+        showNotification(`Nouvelle catégorie "${catName}" créée avec succès !`);
+      }
 
-    setIsCategoryModalOpen(false);
+      await fetchCatalog();
+      setIsCategoryModalOpen(false);
+    } catch (err: any) {
+      console.error("Erreur save category:", err);
+      setCatError(err.response?.data?.message || "Erreur serveur.");
+    }
   };
 
   // Open Create Sub-Category Modal
@@ -322,9 +327,15 @@ export default function AdminCategoriesPage() {
       itemName: cat.name,
       description: `Êtes-vous sûr de vouloir supprimer définitivement la catégorie « ${cat.name} » ? Cette action est irréversible.`,
       blockedReason: null,
-      onConfirm: () => {
-        deleteCategory(cat.id);
-        showNotification(`Catégorie "${cat.name}" supprimée.`);
+      onConfirm: async () => {
+        try {
+          await categoriesApi.delete(cat.id);
+          showNotification(`Catégorie "${cat.name}" supprimée.`);
+          await fetchCatalog();
+        } catch (err) {
+          console.error("Delete category error:", err);
+          showNotification("Erreur lors de la suppression.", "error");
+        }
         setDeleteModalState((prev) => ({ ...prev, isOpen: false }));
       }
     });
