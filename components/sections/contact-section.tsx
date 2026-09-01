@@ -5,7 +5,8 @@ import { motion } from "framer-motion";
 import { Mail, Phone, MapPin, Send, Loader2, AlertCircle } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
-import { site, agenceCategories } from "@/lib/site";
+import { site } from "@/lib/site";
+import { useCatalogStore } from "@/lib/store/useCatalogStore";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { cn } from "@/lib/utils";
 
@@ -598,15 +599,17 @@ function ServiceChips({
   selected: string;
   onSelect: (s: string) => void;
 }) {
+  const { categories } = useCatalogStore();
+
   return (
     <div>
       <label className="label-eyebrow mb-2 block text-brand-charcoal/50">
         Type de projet
       </label>
       <div className="flex flex-wrap gap-2">
-        {agenceCategories.map((cat) => (
+        {categories.map((cat) => (
           <button
-            key={cat.id}
+            key={cat.slug || cat.id}
             type="button"
             onClick={() => onSelect(selected === cat.name ? "" : cat.name)}
             className={cn(

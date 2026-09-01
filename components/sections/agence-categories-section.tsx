@@ -22,7 +22,6 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
-import { agenceCategories, categoryImages } from "@/lib/site";
 import { useCatalogStore } from "@/lib/store/useCatalogStore";
 
 const ICON_MAP: Record<
@@ -37,7 +36,7 @@ const ICON_MAP: Record<
   Sparkles,
 };
 
-type Category = (typeof agenceCategories)[number];
+type Category = any; // Will be properly typed from store in inner component
 
 // ── Professional Bento Gallery with Lightbox ──────────────────────────────
 
@@ -237,27 +236,24 @@ function AgenceCategoriesSectionInner() {
   const { categories: catalogCategories } = useCatalogStore();
   const searchParams = useSearchParams();
   const param = searchParams.get("category") ?? "";
-  const defaultId =
-    agenceCategories.find((c) => c.id === param)?.id ?? agenceCategories[0].id;
+  const defaultId = catalogCategories.length > 0 
+    ? (catalogCategories.find((c) => c.slug === param)?.slug ?? catalogCategories[0].slug)
+    : "";
 
   const [activeId, setActiveId] = useState<string>(defaultId);
 
-  const active = agenceCategories.find((c) => c.id === activeId) as Category;
-  const ActiveIcon = ICON_MAP[active.icon] ?? Sparkles;
+  // If no categories loaded yet, show empty state or fallback
+  if (catalogCategories.length === 0) {
+    return <div className="py-20 text-center">Chargement des catégories...</div>;
+  }
 
-  const matchedStoreCat = catalogCategories.find(
-    (c) => c.slug === activeId || c.id === activeId || c.slug === active?.id
-  );
-  const images =
-    matchedStoreCat?.images && matchedStoreCat.images.length > 0
-      ? matchedStoreCat.images
-      : categoryImages[activeId] ?? [];
-  const categoryName = matchedStoreCat?.name || active?.name || "";
-  const categoryDescription = matchedStoreCat?.description || active?.description || "";
-  const services =
-    matchedStoreCat?.services && matchedStoreCat.services.length > 0
-      ? matchedStoreCat.services
-      : active?.services || [];
+  const active = catalogCategories.find((c) => c.slug === activeId) || catalogCategories[0];
+  const ActiveIcon = ICON_MAP[active?.icon] ?? Sparkles;
+
+  const images = active?.images || [];
+  const categoryName = active?.name || "";
+  const categoryDescription = active?.description || "";
+  const services = active?.services || [];
 
   return (
     <section
@@ -293,13 +289,13 @@ function AgenceCategoriesSectionInner() {
           className="-mx-6 mt-10 md:mx-0"
         >
           <div className="flex gap-2 overflow-x-auto px-6 pb-2 md:flex-wrap md:justify-center md:overflow-visible md:px-0 md:pb-0">
-            {agenceCategories.map((category) => {
+            {catalogCategories.map((category) => {
               const CatIcon = ICON_MAP[category.icon] ?? Sparkles;
-              const isActive = category.id === activeId;
+              const isActive = category.slug === activeId;
               return (
                 <button
-                  key={category.id}
-                  onClick={() => setActiveId(category.id)}
+                  key={category.slug}
+                  onClick={() => setActiveId(category.slug)}
                   className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
                       ? "border-brand-red bg-brand-red text-white shadow-[0_6px_20px_-6px_rgba(227,6,19,0.45)]"
                       : "border-brand-light-gray bg-white text-brand-dark/70 hover:border-brand-red/30 hover:text-brand-charcoal shadow-xs"
@@ -399,7 +395,7 @@ function AgenceCategoriesSectionInner() {
                 <BentoImageGrid
                   images={images}
                   categoryId={activeId}
-                  categoryName={active.name}
+                  categoryName={categoryName}
                 />
               </div>
             </motion.div>

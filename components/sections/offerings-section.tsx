@@ -12,7 +12,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
-import { agenceCategories } from "@/lib/site";
+import { useCatalogStore } from "@/lib/store/useCatalogStore";
 
 // ── Visual components ──────────────────────────────────────────────────────
 
@@ -243,7 +243,8 @@ function BentoCard({
 // ── Section ────────────────────────────────────────────────────────────────
 
 export function OfferingsSection() {
-  const categoryMap = Object.fromEntries(agenceCategories.map((c) => [c.id, c]));
+  const { categories } = useCatalogStore();
+  const categoryMap = Object.fromEntries(categories.map((c) => [c.slug || c.id, c]));
 
   return (
     <section

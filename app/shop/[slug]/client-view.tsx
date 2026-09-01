@@ -28,6 +28,20 @@ const Product3DStudio = dynamic(
 export function ProductCustomizerClient({ slug }: { slug: string }) {
   const { products, categories } = useCatalogStore();
   const product = products.find((p) => p.slug === slug) || products[0];
+
+  if (!product) {
+    return (
+      <div className="flex min-h-[400px] w-full items-center justify-center rounded-3xl border border-brand-light-gray bg-[#f7f5f2]">
+        <div className="flex flex-col items-center gap-3 text-brand-charcoal">
+          <Loader2 className="h-8 w-8 animate-spin text-brand-red" />
+          <span className="text-xs font-bold uppercase tracking-wider text-brand-warm-gray">
+            Chargement du produit...
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   const category = categories.find((c) => c.id === product.categoryId);
 
   const has3D = product.modelType && product.modelType !== "none";
