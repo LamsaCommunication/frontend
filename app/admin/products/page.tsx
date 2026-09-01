@@ -508,8 +508,13 @@ function AdminProductsContent() {
                               type="button"
                               onClick={async () => {
                                 if (confirm(`Supprimer "${prod.name}" définitivement ?`)) {
-                                  await productsApi.delete(prod.id);
-                                  refetch();
+                                  try {
+                                    await productsApi.delete(prod.id);
+                                    refetch();
+                                  } catch (err: any) {
+                                    console.error("Erreur de suppression:", err);
+                                    alert(err.response?.data?.message || "Impossible de supprimer ce produit. Il est peut-être lié à des commandes.");
+                                  }
                                 }
                               }}
                               title="Supprimer le produit"

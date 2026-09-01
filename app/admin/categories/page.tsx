@@ -259,7 +259,7 @@ export default function AdminCategoriesPage() {
   };
 
   // Submit Sub-Category
-  const handleSaveSubCategory = (e: React.FormEvent) => {
+  const handleSaveSubCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubError(null);
 
@@ -277,22 +277,32 @@ export default function AdminCategoriesPage() {
     }
 
     if (editingSubCategory) {
-      updateSubCategory(parentCategoryIdForSub, editingSubCategory.id, {
-        name: subName.trim(),
-        slug: subSlug.trim(),
-        description: subDescription.trim(),
-      });
-      showNotification(`Sous-catégorie "${subName}" mise à jour !`);
-    } else {
-      addSubCategory(parentCategoryIdForSub, {
-        name: subName.trim(),
-        slug: subSlug.trim(),
-        description: subDescription.trim(),
-      });
-      showNotification(`Sous-catégorie "${subName}" ajoutée avec succès !`);
+    try {
+      if (editingSubCategory) {
+        await categoriesApi.update(editingSubCategory.id, {
+          name: subName.trim(),
+          slug: subSlug.trim(),
+          description: subDescription.trim() || undefined,
+          parentId: parentCategoryIdForSub,
+        });
+        showNotification("Sous-catégorie modifiée avec succès.");
+      } else {
+        await categoriesApi.create({
+          name: subName.trim(),
+          slug: subSlug.trim(),
+          description: subDescription.trim() || undefined,
+          parentId: parentCategoryIdForSub,
+        });
+        showNotification("Sous-catégorie ajoutée avec succès.");
+      }
+      
+      await fetchCatalog();
+      setIsSubCategoryModalOpen(false);
+    } catch (err: any) {
+      console.error("Save sub-category error:", err);
+      setSubError(err.response?.data?.message || "Erreur lors de la sauvegarde.");
     }
-
-    setIsSubCategoryModalOpen(false);
+  };
   };
 
   // Handle Category Delete with Safeguards
@@ -332,9 +342,9 @@ export default function AdminCategoriesPage() {
           await categoriesApi.delete(cat.id);
           showNotification(`Catégorie "${cat.name}" supprimée.`);
           await fetchCatalog();
-        } catch (err) {
+        } catch (err: any) {
           console.error("Delete category error:", err);
-          showNotification("Erreur lors de la suppression.", "error");
+          showNotification(err.response?.data?.message || "Erreur lors de la suppression.", "error");
         }
         setDeleteModalState((prev) => ({ ...prev, isOpen: false }));
       }
@@ -360,9 +370,15 @@ export default function AdminCategoriesPage() {
       itemName: sub.name,
       description: `Êtes-vous sûr de vouloir supprimer définitivement la sous-catégorie « ${sub.name} » ?`,
       blockedReason: null,
-      onConfirm: () => {
-        deleteSubCategory(parentCatId, sub.id);
-        showNotification(`Sous-catégorie "${sub.name}" supprimée.`);
+      onConfirm: async () => {
+        try {
+          await categoriesApi.delete(sub.id);
+          showNotification(`Sous-catégorie "${sub.name}" supprimée.`);
+          await fetchCatalog();
+        } catch (err: any) {
+          console.error("Delete sub-category error:", err);
+          showNotification(err.response?.data?.message || "Erreur lors de la suppression de la sous-catégorie.", "error");
+        }
         setDeleteModalState((prev) => ({ ...prev, isOpen: false }));
       }
     });
