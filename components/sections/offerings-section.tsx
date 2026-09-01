@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -10,9 +11,37 @@ import {
   Zap,
   Shirt,
   Sparkles,
+  Folder,
+  Package,
+  Layers,
+  Tag,
+  Box,
+  ShoppingBag,
+  ArrowRight,
+  Sparkle
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
-import { useCatalogStore } from "@/lib/store/useCatalogStore";
+import { useCatalogStore, Category } from "@/lib/store/useCatalogStore";
+
+// ── Icon Registry ──────────────────────────────────────────────────────────
+
+const ICON_MAP: Record<
+  string,
+  React.ComponentType<{ className?: string; strokeWidth?: number }>
+> = {
+  Pencil,
+  Palette,
+  Printer,
+  Zap,
+  Shirt,
+  Sparkles,
+  Folder,
+  Package,
+  Layers,
+  Tag,
+  Box,
+  ShoppingBag,
+};
 
 // ── Visual components ──────────────────────────────────────────────────────
 
@@ -125,32 +154,71 @@ function IconVisual({
   );
 }
 
-// ── Bento layout config — maps category IDs to visual + col-span ───────────
+function ImageVisual({ imageUrl, alt, isLarge }: { imageUrl: string; alt: string; isLarge?: boolean }) {
+  return (
+    <div
+      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#faf9f6] to-[#ffffff] border border-[#ebebeb] p-3 flex items-center justify-center ${
+        isLarge ? "h-48 md:h-52" : "h-36 md:h-40"
+      }`}
+    >
+      <div className="absolute -right-8 -top-8 h-28 w-28 rounded-full bg-brand-red/5 blur-2xl" />
+      <div className="relative h-full w-full overflow-hidden rounded-xl bg-white p-2 flex items-center justify-center shadow-2xs">
+        <img
+          src={imageUrl}
+          alt={alt}
+          className="max-h-full max-w-full object-contain transition-transform duration-500 group-hover:scale-105"
+        />
+      </div>
+    </div>
+  );
+}
 
-type BentoEntry = {
-  categoryId: string;
-  colSpan: string;
-  visual: React.ReactNode;
-  large: boolean;
-};
+// ── Dynamic Visual Resolver ────────────────────────────────────────────────
 
-const BENTO: BentoEntry[] = [
-  {
-    categoryId: "communication-visuelle",
-    colSpan: "sm:col-span-1 lg:col-span-3",
-    visual: <DesignVisual />,
-    large: true,
-  },
-  {
-    categoryId: "impression-production",
-    colSpan: "sm:col-span-1 lg:col-span-3",
-    visual: <PrintVisual />,
-    large: true,
-  },
-  {
-    categoryId: "identite-visuelle",
-    colSpan: "sm:col-span-1 lg:col-span-2",
-    visual: (
+function getCategoryVisual(category: Category, isLarge: boolean) {
+  // 1. ALWAYS check and show the principle/pinned image from the database first!
+  const customImage =
+    category.image ||
+    (category.images && category.images.length > 0 ? category.images[0] : null);
+
+  if (customImage && !customImage.includes("placeholder")) {
+    return <ImageVisual imageUrl={customImage} alt={category.name} isLarge={isLarge} />;
+  }
+
+  const iconKey = category.icon;
+  const slug = category.slug;
+
+  // 2. Signature visuals fallback if no image configured in DB
+  if (slug === "communication-visuelle" || iconKey === "Pencil") {
+    return isLarge ? <DesignVisual /> : (
+      <IconVisual
+        icon={Pencil}
+        from="#fef2f2"
+        to="#fff8f8"
+        iconColor="text-brand-red"
+        blobColor="rgba(227,6,19,0.2)"
+      />
+    );
+  }
+
+  if (slug === "impression-production" || iconKey === "Printer") {
+    return isLarge ? <PrintVisual /> : (
+      <IconVisual
+        icon={Printer}
+        from="#f5f5f5"
+        to="#fafafa"
+        iconColor="text-brand-charcoal/70"
+        blobColor="rgba(20,20,20,0.12)"
+      />
+    );
+  }
+
+  if (slug === "signaletique-led" || iconKey === "Zap") {
+    return <NeonVisual />;
+  }
+
+  if (slug === "identite-visuelle" || iconKey === "Palette") {
+    return (
       <IconVisual
         icon={Palette}
         from="#fef2f2"
@@ -158,19 +226,11 @@ const BENTO: BentoEntry[] = [
         iconColor="text-brand-red"
         blobColor="rgba(227,6,19,0.2)"
       />
-    ),
-    large: false,
-  },
-  {
-    categoryId: "signaletique-led",
-    colSpan: "sm:col-span-1 lg:col-span-2",
-    visual: <NeonVisual />,
-    large: false,
-  },
-  {
-    categoryId: "textile-personnalise",
-    colSpan: "sm:col-span-1 lg:col-span-2",
-    visual: (
+    );
+  }
+
+  if (slug === "textile-personnalise" || iconKey === "Shirt") {
+    return (
       <IconVisual
         icon={Shirt}
         from="#f5f5f5"
@@ -178,24 +238,69 @@ const BENTO: BentoEntry[] = [
         iconColor="text-brand-charcoal/60"
         blobColor="rgba(20,20,20,0.12)"
       />
-    ),
-    large: false,
-  },
-  {
-    categoryId: "commandes-sur-mesure",
-    colSpan: "sm:col-span-2 lg:col-span-6",
-    visual: (
+    );
+  }
+
+  if (slug === "commandes-sur-mesure" || iconKey === "Sparkles") {
+    return (
       <IconVisual
         icon={Sparkles}
-        from="#f5f5f5"
-        to="#fafafa"
-        iconColor="text-brand-charcoal/60"
-        blobColor="rgba(20,20,20,0.12)"
+        from="#fbf8f2"
+        to="#fffdf9"
+        iconColor="text-amber-600"
+        blobColor="rgba(217,119,6,0.15)"
       />
-    ),
-    large: false,
-  },
-];
+    );
+  }
+
+  // 3. Fallback to IconVisual with mapped or default icon
+  const FallbackIcon = ICON_MAP[iconKey] || Sparkle;
+  return (
+    <IconVisual
+      icon={FallbackIcon}
+      from="#f8f8f8"
+      to="#ffffff"
+      iconColor="text-brand-charcoal/70"
+      blobColor="rgba(227,6,19,0.12)"
+    />
+  );
+}
+
+// ── Bento Col-Span calculation ────────────────────────────────────────────
+
+function getBentoLayout(index: number, total: number): { colSpan: string; large: boolean } {
+  if (total <= 2) {
+    return { colSpan: "sm:col-span-1 lg:col-span-3", large: true };
+  }
+  if (total === 3) {
+    return { colSpan: "sm:col-span-1 lg:col-span-2", large: false };
+  }
+  if (total === 4) {
+    return { colSpan: "sm:col-span-1 lg:col-span-3", large: true };
+  }
+  if (total === 5) {
+    if (index < 2) return { colSpan: "sm:col-span-1 lg:col-span-3", large: true };
+    return { colSpan: "sm:col-span-1 lg:col-span-2", large: false };
+  }
+  if (total === 6) {
+    if (index === 0 || index === 1) return { colSpan: "sm:col-span-1 lg:col-span-3", large: true };
+    if (index === 5) return { colSpan: "sm:col-span-2 lg:col-span-6", large: false };
+    return { colSpan: "sm:col-span-1 lg:col-span-2", large: false };
+  }
+
+  // For 7+ categories: 2 large cards at top, remainder 3-col grid
+  if (index === 0 || index === 1) {
+    return { colSpan: "sm:col-span-1 lg:col-span-3", large: true };
+  }
+  const isLast = index === total - 1;
+  const remainder = (total - 2) % 3;
+  if (isLast && remainder === 1) {
+    return { colSpan: "sm:col-span-2 lg:col-span-6", large: false };
+  }
+  return { colSpan: "sm:col-span-1 lg:col-span-2", large: false };
+}
+
+// ── Card Component ─────────────────────────────────────────────────────────
 
 const CARD_CLASS =
   "group flex flex-col rounded-3xl border border-[#ebebeb] bg-white p-6 shadow-[0_1px_12px_-4px_rgba(0,0,0,0.06)] transition-all duration-300 hover:border-brand-red/20 hover:shadow-[0_16px_48px_-12px_rgba(227,6,19,0.10)] md:p-8";
@@ -204,14 +309,14 @@ type BentoCardProps = {
   children: React.ReactNode;
   className?: string;
   delay?: number;
-  categoryId?: string;
+  categorySlug?: string;
 };
 
 function BentoCard({
   children,
   className = "",
   delay = 0,
-  categoryId,
+  categorySlug,
 }: BentoCardProps) {
   const motionNode = (
     <motion.div
@@ -220,16 +325,16 @@ function BentoCard({
       whileHover={{ y: -5, transition: { duration: 0.2, ease: "easeOut" } }}
       viewport={{ once: true, margin: "-60px" }}
       transition={{ duration: 0.55, ease: "easeOut", delay }}
-      className={`${CARD_CLASS}${categoryId ? " h-full cursor-pointer" : ` ${className}`}`}
+      className={`${CARD_CLASS}${categorySlug ? " h-full cursor-pointer" : ` ${className}`}`}
     >
       {children}
     </motion.div>
   );
 
-  if (categoryId) {
+  if (categorySlug) {
     return (
       <Link
-        href={`/agence?category=${categoryId}#categories`}
+        href={`/agence?category=${categorySlug}#categories`}
         className={`block rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-red focus-visible:ring-offset-2 ${className}`}
       >
         {motionNode}
@@ -240,11 +345,62 @@ function BentoCard({
   return motionNode;
 }
 
+// ── Skeleton Loader ────────────────────────────────────────────────────────
+
+function OfferingsSkeleton() {
+  return (
+    <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 md:mt-16 animate-pulse">
+      <div className="sm:col-span-1 lg:col-span-3 h-80 rounded-3xl bg-neutral-100 p-6 md:p-8 flex flex-col justify-between">
+        <div className="h-44 w-full rounded-2xl bg-neutral-200/70" />
+        <div className="space-y-2 mt-4">
+          <div className="h-6 w-1/2 rounded-md bg-neutral-200" />
+          <div className="h-4 w-3/4 rounded-md bg-neutral-200/60" />
+        </div>
+      </div>
+      <div className="sm:col-span-1 lg:col-span-3 h-80 rounded-3xl bg-neutral-100 p-6 md:p-8 flex flex-col justify-between">
+        <div className="h-44 w-full rounded-2xl bg-neutral-200/70" />
+        <div className="space-y-2 mt-4">
+          <div className="h-6 w-1/2 rounded-md bg-neutral-200" />
+          <div className="h-4 w-3/4 rounded-md bg-neutral-200/60" />
+        </div>
+      </div>
+      <div className="sm:col-span-1 lg:col-span-2 h-64 rounded-3xl bg-neutral-100 p-6 flex flex-col justify-between">
+        <div className="h-32 w-full rounded-2xl bg-neutral-200/70" />
+        <div className="space-y-2 mt-4">
+          <div className="h-5 w-1/2 rounded-md bg-neutral-200" />
+          <div className="h-3.5 w-3/4 rounded-md bg-neutral-200/60" />
+        </div>
+      </div>
+      <div className="sm:col-span-1 lg:col-span-2 h-64 rounded-3xl bg-neutral-100 p-6 flex flex-col justify-between">
+        <div className="h-32 w-full rounded-2xl bg-neutral-200/70" />
+        <div className="space-y-2 mt-4">
+          <div className="h-5 w-1/2 rounded-md bg-neutral-200" />
+          <div className="h-3.5 w-3/4 rounded-md bg-neutral-200/60" />
+        </div>
+      </div>
+      <div className="sm:col-span-1 lg:col-span-2 h-64 rounded-3xl bg-neutral-100 p-6 flex flex-col justify-between">
+        <div className="h-32 w-full rounded-2xl bg-neutral-200/70" />
+        <div className="space-y-2 mt-4">
+          <div className="h-5 w-1/2 rounded-md bg-neutral-200" />
+          <div className="h-3.5 w-3/4 rounded-md bg-neutral-200/60" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Section ────────────────────────────────────────────────────────────────
 
 export function OfferingsSection() {
-  const { categories } = useCatalogStore();
-  const categoryMap = Object.fromEntries(categories.map((c) => [c.slug || c.id, c]));
+  const { categories, isLoading, fetchCatalog } = useCatalogStore();
+
+  useEffect(() => {
+    if (!categories || categories.length === 0) {
+      fetchCatalog();
+    }
+  }, [categories, fetchCatalog]);
+
+  const totalCategories = categories.length;
 
   return (
     <section
@@ -269,34 +425,62 @@ export function OfferingsSection() {
           </p>
         </motion.div>
 
-        <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 md:mt-16">
-          {BENTO.map((entry, idx) => {
-            const cat = categoryMap[entry.categoryId];
-            if (!cat) return null;
-            return (
-              <BentoCard
-                key={entry.categoryId}
-                delay={idx * 0.06}
-                className={entry.colSpan}
-                categoryId={entry.categoryId}
-              >
-                {entry.visual}
-                <div className={`flex-1 ${entry.large ? "mt-6" : "mt-5"}`}>
-                  <h3
-                    className={`font-bold text-brand-charcoal ${entry.large ? "text-xl" : "text-base"}`}
-                  >
-                    {cat.name}
-                  </h3>
-                  <p
-                    className={`leading-relaxed text-brand-dark/65 ${entry.large ? "mt-2 text-sm md:text-base" : "mt-1.5 text-sm"}`}
-                  >
-                    {cat.description}
-                  </p>
-                </div>
-              </BentoCard>
-            );
-          })}
-        </div>
+        {isLoading && totalCategories === 0 ? (
+          <OfferingsSkeleton />
+        ) : totalCategories === 0 ? (
+          <div className="mt-12 rounded-3xl border border-dashed border-neutral-200 bg-neutral-50/50 p-12 text-center">
+            <p className="text-sm font-medium text-brand-dark/60">
+              Aucune catégorie disponible pour le moment.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6 md:mt-16">
+            {categories.map((cat, idx) => {
+              const { colSpan, large } = getBentoLayout(idx, totalCategories);
+              const visual = getCategoryVisual(cat, large);
+              const targetSlug = cat.slug || cat.id;
+
+              return (
+                <BentoCard
+                  key={cat.id || cat.slug || idx}
+                  delay={idx * 0.05}
+                  className={colSpan}
+                  categorySlug={targetSlug}
+                >
+                  {visual}
+                  <div className={`flex flex-col flex-1 ${large ? "mt-6" : "mt-5"}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <h3
+                        className={`font-bold text-brand-charcoal ${
+                          large ? "text-xl" : "text-base"
+                        }`}
+                      >
+                        {cat.name}
+                      </h3>
+                      {cat.subCategories && cat.subCategories.length > 0 && (
+                        <span className="hidden sm:inline-flex items-center rounded-full bg-brand-soft-white px-2.5 py-0.5 text-[10px] font-semibold text-brand-charcoal/60">
+                          {cat.subCategories.length} options
+                        </span>
+                      )}
+                    </div>
+                    <p
+                      className={`leading-relaxed text-brand-dark/65 ${
+                        large ? "mt-2 text-sm md:text-base" : "mt-1.5 text-sm"
+                      }`}
+                    >
+                      {cat.description}
+                    </p>
+
+                    <div className="mt-4 pt-2 flex items-center gap-1.5 text-xs font-bold text-brand-red opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <span>Découvrir l&apos;offre</span>
+                      <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
+                    </div>
+                  </div>
+                </BentoCard>
+              );
+            })}
+          </div>
+        )}
       </Container>
     </section>
   );

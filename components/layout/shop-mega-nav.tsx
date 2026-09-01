@@ -460,34 +460,45 @@ export function ShopMegaNav() {
                 </div>
 
                 {/* Right column: Promotional Showcase Card */}
-                <div className="col-span-4 border-l border-brand-light-gray/60 pl-8">
-                  <div className="relative overflow-hidden rounded-2xl border border-brand-light-gray/70 bg-white p-6 shadow-sm">
-                    <h3 className="text-base font-black text-brand-charcoal">
-                      {megaData?.promo.title || currentHoveredCat.name}
-                    </h3>
-                    <p className="mt-1 text-xs text-brand-warm-gray leading-relaxed">
-                      {megaData?.promo.subtitle || currentHoveredCat.description}
-                    </p>
+                {(() => {
+                  const categoryMainImage =
+                    currentHoveredCat.image ||
+                    (currentHoveredCat.images && currentHoveredCat.images.length > 0
+                      ? currentHoveredCat.images[0]
+                      : null) ||
+                    megaData?.promo.image ||
+                    "/lamsa2.png";
 
-                    <div className="relative mt-4 h-28 w-full overflow-hidden rounded-xl bg-brand-soft-white/60 border border-brand-light-gray/50 p-2">
-                      <Image
-                        src={megaData?.promo.image || "/lamsa2.png"}
-                        alt={megaData?.promo.title || currentHoveredCat.name}
-                        fill
-                        className="object-contain"
-                      />
+                  return (
+                    <div className="col-span-4 border-l border-brand-light-gray/60 pl-8">
+                      <div className="relative overflow-hidden rounded-2xl border border-brand-light-gray/70 bg-white p-6 shadow-sm">
+                        <h3 className="text-base font-black text-brand-charcoal">
+                          {currentHoveredCat.name || megaData?.promo.title}
+                        </h3>
+                        <p className="mt-1 text-xs text-brand-warm-gray leading-relaxed">
+                          {currentHoveredCat.description || megaData?.promo.subtitle}
+                        </p>
+
+                        <div className="relative mt-4 h-32 w-full overflow-hidden rounded-xl bg-brand-soft-white/60 border border-brand-light-gray/50 p-2.5 flex items-center justify-center">
+                          <img
+                            src={categoryMainImage}
+                            alt={currentHoveredCat.name || "Catégorie"}
+                            className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
+                          />
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => handleSelectSub(currentHoveredCat.id)}
+                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-brand-red py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
+                        >
+                          <span>{megaData?.promo.actionText || "Voir tous les modèles"}</span>
+                          <ArrowRight className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
-
-                    <button
-                      type="button"
-                      onClick={() => handleSelectSub(currentHoveredCat.id)}
-                      className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-brand-red py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
-                    >
-                      <span>{megaData?.promo.actionText || "Voir tous les modèles"}</span>
-                      <ArrowRight className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
+                  );
+                })()}
               </div>
             </Container>
           </motion.div>
@@ -587,12 +598,20 @@ export function ShopMegaNav() {
                               className="flex flex-1 items-center gap-2.5 text-left rounded-xl p-1.5 transition-colors hover:bg-brand-soft-white cursor-pointer"
                             >
                               <div
-                                className={`flex h-8 w-8 items-center justify-center rounded-xl transition-colors ${isCatActive
+                                className={`relative flex h-8 w-8 flex-shrink-0 items-center justify-center overflow-hidden rounded-xl transition-colors ${isCatActive
                                   ? "bg-brand-red text-white"
                                   : "bg-brand-soft-white text-brand-charcoal"
                                   }`}
                               >
-                                <IconComp className="h-4 w-4" />
+                                {cat.image || (cat.images && cat.images.length > 0 ? cat.images[0] : null) ? (
+                                  <img
+                                    src={cat.image || (cat.images && cat.images[0]) || ""}
+                                    alt={cat.name}
+                                    className="h-full w-full object-contain p-1"
+                                  />
+                                ) : (
+                                  <IconComp className="h-4 w-4" />
+                                )}
                               </div>
                               <div className="flex flex-col">
                                 <span

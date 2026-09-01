@@ -11,6 +11,12 @@ import {
   Zap,
   Shirt,
   Sparkles,
+  Folder,
+  Package,
+  Layers,
+  Tag,
+  Box,
+  ShoppingBag,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
@@ -22,7 +28,7 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
-import { useCatalogStore } from "@/lib/store/useCatalogStore";
+import { useCatalogStore, Category } from "@/lib/store/useCatalogStore";
 
 const ICON_MAP: Record<
   string,
@@ -34,9 +40,13 @@ const ICON_MAP: Record<
   Zap,
   Shirt,
   Sparkles,
+  Folder,
+  Package,
+  Layers,
+  Tag,
+  Box,
+  ShoppingBag,
 };
-
-type Category = any; // Will be properly typed from store in inner component
 
 // ── Professional Bento Gallery with Lightbox ──────────────────────────────
 
@@ -233,24 +243,55 @@ function BentoImageGrid({
 // ── Inner section (reads URL params) ──────────────────────────────────────
 
 function AgenceCategoriesSectionInner() {
-  const { categories: catalogCategories } = useCatalogStore();
+  const { categories: catalogCategories, isLoading, fetchCatalog } = useCatalogStore();
   const searchParams = useSearchParams();
   const param = searchParams.get("category") ?? "";
-  const defaultId = catalogCategories.length > 0 
-    ? (catalogCategories.find((c) => c.slug === param)?.slug ?? catalogCategories[0].slug)
-    : "";
 
-  const [activeId, setActiveId] = useState<string>(defaultId);
+  // Always refresh catalog on mount so DB changes in Admin are synced
+  useEffect(() => {
+    fetchCatalog();
+  }, [fetchCatalog]);
 
-  // If no categories loaded yet, show empty state or fallback
+  const [activeId, setActiveId] = useState<string>("");
+
+  // Sync activeId whenever categories or URL param change
+  useEffect(() => {
+    if (catalogCategories.length > 0) {
+      if (param && catalogCategories.some((c) => c.slug === param || c.id === param)) {
+        const found = catalogCategories.find((c) => c.slug === param || c.id === param);
+        setActiveId(found?.slug || catalogCategories[0].slug);
+      } else if (!activeId || !catalogCategories.some((c) => c.slug === activeId)) {
+        setActiveId(catalogCategories[0].slug);
+      }
+    }
+  }, [catalogCategories, param, activeId]);
+
+  // If loading and no categories loaded yet
   if (catalogCategories.length === 0) {
-    return <div className="py-20 text-center">Chargement des catégories...</div>;
+    return (
+      <section id="categories" className="py-20 md:py-32 text-center">
+        <Container as="div">
+          <div className="animate-pulse space-y-4">
+            <div className="mx-auto h-8 w-48 rounded-full bg-neutral-200" />
+            <div className="mx-auto h-12 w-96 rounded-2xl bg-neutral-200/80" />
+            <div className="mt-12 h-96 w-full rounded-3xl bg-neutral-100" />
+          </div>
+        </Container>
+      </section>
+    );
   }
 
-  const active = catalogCategories.find((c) => c.slug === activeId) || catalogCategories[0];
+  const active =
+    catalogCategories.find((c) => c.slug === activeId || c.id === activeId) ||
+    catalogCategories[0];
   const ActiveIcon = ICON_MAP[active?.icon] ?? Sparkles;
 
-  const images = active?.images || [];
+  // Retrieve all realization images with fallback to single pinned image
+  const rawImages = active?.images && active.images.length > 0
+    ? active.images
+    : (active?.image ? [active.image] : []);
+  const images = rawImages.filter(Boolean);
+
   const categoryName = active?.name || "";
   const categoryDescription = active?.description || "";
   const services = active?.services || [];
@@ -294,12 +335,13 @@ function AgenceCategoriesSectionInner() {
               const isActive = category.slug === activeId;
               return (
                 <button
-                  key={category.slug}
+                  key={category.slug || category.id}
                   onClick={() => setActiveId(category.slug)}
-                  className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
+                  className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
+                    isActive
                       ? "border-brand-red bg-brand-red text-white shadow-[0_6px_20px_-6px_rgba(227,6,19,0.45)]"
                       : "border-brand-light-gray bg-white text-brand-dark/70 hover:border-brand-red/30 hover:text-brand-charcoal shadow-xs"
-                    }`}
+                  }`}
                 >
                   <CatIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                   {category.name}
@@ -345,34 +387,40 @@ function AgenceCategoriesSectionInner() {
                   <p className="mb-5 text-[11px] font-bold uppercase tracking-[0.2em] text-brand-red">
                     Nos engagements & livrables
                   </p>
-                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                    {services.map((service, idx) => (
-                      <motion.div
-                        key={service.id || idx}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{
-                          duration: 0.28,
-                          ease: "easeOut",
-                          delay: 0.04 * idx,
-                        }}
-                        className="flex gap-3 rounded-2xl border border-[#f0f0f0] bg-[#fafafa] p-4 transition-colors duration-200 hover:border-brand-red/20 hover:bg-[#fff8f8]"
-                      >
-                        <CheckCircle2
-                          className="mt-0.5 h-4 w-4 shrink-0 text-brand-red"
-                          strokeWidth={2}
-                        />
-                        <div>
-                          <p className="text-sm font-bold text-brand-charcoal">
-                            {service.name}
-                          </p>
-                          <p className="mt-0.5 text-xs leading-relaxed text-brand-dark/60">
-                            {service.description}
-                          </p>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
+                  {services.length === 0 ? (
+                    <p className="text-xs text-brand-warm-gray italic">
+                      Aucun livrable configuré pour cette catégorie.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {services.map((service, idx) => (
+                        <motion.div
+                          key={service.id || idx}
+                          initial={{ opacity: 0, y: 8 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{
+                            duration: 0.28,
+                            ease: "easeOut",
+                            delay: 0.04 * idx,
+                          }}
+                          className="flex gap-3 rounded-2xl border border-[#f0f0f0] bg-[#fafafa] p-4 transition-colors duration-200 hover:border-brand-red/20 hover:bg-[#fff8f8]"
+                        >
+                          <CheckCircle2
+                            className="mt-0.5 h-4 w-4 shrink-0 text-brand-red"
+                            strokeWidth={2}
+                          />
+                          <div>
+                            <p className="text-sm font-bold text-brand-charcoal">
+                              {service.name}
+                            </p>
+                            <p className="mt-0.5 text-xs leading-relaxed text-brand-dark/60">
+                              {service.description}
+                            </p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -388,7 +436,7 @@ function AgenceCategoriesSectionInner() {
                     </p>
                   </div>
                   <span className="hidden sm:inline-block rounded-full bg-brand-soft-white px-3 py-1 text-[11px] font-bold text-brand-warm-gray">
-                    {images.length} visuels haute résolution
+                    {images.length} visuel{images.length > 1 ? "s" : ""} haute résolution
                   </span>
                 </div>
 

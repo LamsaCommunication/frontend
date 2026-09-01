@@ -21,7 +21,10 @@ import {
   Shirt,
   HelpCircle,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Star,
+  Pin,
+  Images
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { CustomSelect } from "@/components/ui/custom-select";
@@ -61,7 +64,8 @@ export default function AdminCategoriesPage() {
   const [catSlug, setCatSlug] = React.useState("");
   const [catDescription, setCatDescription] = React.useState("");
   const [catIcon, setCatIcon] = React.useState("Sparkles");
-  const [catImage, setCatImage] = React.useState("");
+  const [catImages, setCatImages] = React.useState<string[]>([]);
+  const [catPinnedImage, setCatPinnedImage] = React.useState<string>("");
   const [catServices, setCatServices] = React.useState<CategoryService[]>([]);
   const [catError, setCatError] = React.useState<string | null>(null);
 
@@ -99,7 +103,8 @@ export default function AdminCategoriesPage() {
     setCatSlug("");
     setCatDescription("");
     setCatIcon("Sparkles");
-    setCatImage("");
+    setCatImages([]);
+    setCatPinnedImage("");
     setCatServices([]);
     setCatError(null);
     setIsCategoryModalOpen(true);
@@ -112,22 +117,66 @@ export default function AdminCategoriesPage() {
     setCatSlug(cat.slug);
     setCatDescription(cat.description || "");
     setCatIcon(cat.icon || "Sparkles");
-    setCatImage(cat.image || cat.images?.[0] || "");
+
+    // Collect all existing realization images
+    let initialImages: string[] = [];
+    if (Array.isArray(cat.images) && cat.images.length > 0) {
+      initialImages = [...cat.images];
+    }
+    if (cat.image && !initialImages.includes(cat.image)) {
+      initialImages.unshift(cat.image);
+    }
+
+    setCatImages(initialImages);
+    setCatPinnedImage(cat.image || initialImages[0] || "");
     setCatServices(cat.services || []);
     setCatError(null);
     setIsCategoryModalOpen(true);
   };
 
-  const handleCategorySingleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        setCatImage(result);
-      };
-      reader.readAsDataURL(file);
-    }
+  // Handle Multi-Images Upload
+  const handleCategoryImagesUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    const fileArray = Array.from(files);
+    const promises = fileArray.map((file) => {
+      return new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (uploadEvent) => {
+          resolve(uploadEvent.target?.result as string);
+        };
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(promises).then((newImages) => {
+      setCatImages((prev) => {
+        const updated = [...prev, ...newImages];
+        if (!catPinnedImage && updated.length > 0) {
+          setCatPinnedImage(updated[0]);
+        }
+        return updated;
+      });
+    });
+    e.target.value = "";
+  };
+
+  // Pin Main Category Image
+  const handlePinCategoryImage = (imgUrl: string) => {
+    setCatPinnedImage(imgUrl);
+  };
+
+  // Remove One Realization Image
+  const handleRemoveCategoryImage = (index: number) => {
+    setCatImages((prev) => {
+      const removedImage = prev[index];
+      const updated = prev.filter((_, idx) => idx !== index);
+      if (catPinnedImage === removedImage) {
+        setCatPinnedImage(updated[0] || "");
+      }
+      return updated;
+    });
   };
 
   const handleAddServiceItem = () => {
@@ -189,8 +238,14 @@ export default function AdminCategoriesPage() {
         name: s.name.trim(),
         description: s.description?.trim() || "",
       }));
-    const finalImage = catImage.trim() || undefined;
-    const finalImages = finalImage ? [finalImage] : [];
+
+    const validImages = catImages.filter(Boolean);
+    const finalPinnedImage = catPinnedImage.trim() || validImages[0] || undefined;
+
+    let finalImagesList = [...validImages];
+    if (finalPinnedImage && !finalImagesList.includes(finalPinnedImage)) {
+      finalImagesList.unshift(finalPinnedImage);
+    }
 
     try {
       if (editingCategory) {
@@ -199,8 +254,8 @@ export default function AdminCategoriesPage() {
           slug: catSlug.trim(),
           description: catDescription.trim() || undefined,
           icon: catIcon,
-          image: finalImage,
-          images: finalImages,
+          image: finalPinnedImage,
+          images: finalImagesList,
           services: sanitizedServices,
         });
         showNotification(`Catégorie "${catName}" mise à jour avec succès !`);
@@ -211,8 +266,8 @@ export default function AdminCategoriesPage() {
           description: catDescription.trim() || "Catégorie de services et produits Lamsa.",
           icon: catIcon,
           tags: ["Nouveau", "Sur Mesure"],
-          image: finalImage,
-          images: finalImages,
+          image: finalPinnedImage,
+          images: finalImagesList,
           services: sanitizedServices,
         });
         showNotification(`Nouvelle catégorie "${catName}" créée avec succès !`);
@@ -472,9 +527,16 @@ export default function AdminCategoriesPage() {
                       </div>
                     </div>
 
-                    <span className="rounded-full bg-brand-charcoal px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
-                      {productCount} produit{productCount > 1 ? "s" : ""}
-                    </span>
+                    <div className="flex items-center gap-1.5">
+                      {cat.images && cat.images.length > 0 && (
+                        <span className="rounded-full bg-brand-soft-white border border-brand-light-gray px-2 py-0.5 text-[9px] font-bold text-brand-charcoal">
+                          {cat.images.length} visuel{cat.images.length > 1 ? "s" : ""}
+                        </span>
+                      )}
+                      <span className="rounded-full bg-brand-charcoal px-2.5 py-1 text-[10px] font-extrabold uppercase tracking-wider text-white">
+                        {productCount} produit{productCount > 1 ? "s" : ""}
+                      </span>
+                    </div>
                   </div>
 
                   <p className="mt-3 text-xs text-brand-dark/70 line-clamp-2 leading-relaxed">
@@ -651,71 +713,97 @@ export default function AdminCategoriesPage() {
                   />
                 </div>
 
-                {/* ── Main Category Single Image Upload ── */}
-                <div className="rounded-2xl border border-brand-light-gray/80 bg-brand-soft-white/40 p-4 space-y-2.5">
+                {/* ── Category Realization Images Gallery & Pinned Main Image ── */}
+                <div className="rounded-2xl border border-brand-light-gray/80 bg-brand-soft-white/40 p-4 space-y-3">
                   <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block">
-                      Image de la catégorie
-                    </label>
-                    {catImage && (
-                      <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-                        <Check className="h-3 w-3" /> Image configurée
+                    <div>
+                      <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block">
+                        Images & Réalisations (/agence)
+                      </label>
+                      <p className="text-[11px] text-brand-warm-gray mt-0.5">
+                        Téléversez les photos de vos réalisations. Cliquez sur ★ pour épingler l&apos;image principale.
+                      </p>
+                    </div>
+                    {catImages.length > 0 && (
+                      <span className="rounded-full bg-brand-soft-white border border-brand-light-gray px-2.5 py-0.5 text-[10px] font-bold text-brand-charcoal">
+                        {catImages.length} image{catImages.length > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-brand-warm-gray leading-relaxed">
-                    Téléversez une image représentative pour cette catégorie principale (1 seule image).
-                  </p>
 
-                  {catImage ? (
-                    <div className="flex items-center gap-3 pt-1">
-                      <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-2xl border border-brand-light-gray bg-white p-1.5 shadow-sm">
-                        <img
-                          src={catImage}
-                          alt="Aperçu de la catégorie"
-                          className="h-full w-full object-contain"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-2">
-                        <label className="inline-flex items-center gap-1.5 rounded-full border border-brand-light-gray bg-white px-3.5 py-1.5 text-xs font-bold text-brand-charcoal hover:bg-brand-soft-white transition-colors cursor-pointer shadow-2xs">
-                          <Upload className="h-3.5 w-3.5 text-brand-red" />
-                          <span>Changer l&apos;image</span>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleCategorySingleImageUpload}
-                            className="hidden"
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          onClick={() => setCatImage("")}
-                          className="inline-flex items-center gap-1 text-[11px] font-bold text-brand-warm-gray hover:text-brand-red transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                          <span>Supprimer l&apos;image</span>
-                        </button>
-                      </div>
+                  {/* Images Gallery Grid */}
+                  {catImages.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-1 max-h-60 overflow-y-auto pr-1">
+                      {catImages.map((imgSrc, idx) => {
+                        const isPinned = imgSrc === catPinnedImage || (!catPinnedImage && idx === 0);
+                        return (
+                          <div
+                            key={idx}
+                            className={`group relative aspect-square rounded-xl overflow-hidden border-2 bg-white transition-all shadow-xs ${
+                              isPinned
+                                ? "border-brand-red ring-2 ring-brand-red/20 shadow-sm"
+                                : "border-brand-light-gray hover:border-brand-charcoal/30"
+                            }`}
+                          >
+                            <img
+                              src={imgSrc}
+                              alt={`Visuel ${idx + 1}`}
+                              className="h-full w-full object-contain p-1.5"
+                            />
+
+                            {/* Top Badge / Pin Action */}
+                            <div className="absolute top-1.5 left-1.5 right-1.5 flex items-center justify-between">
+                              <button
+                                type="button"
+                                onClick={() => handlePinCategoryImage(imgSrc)}
+                                title={isPinned ? "Image principale épinglée" : "Épingler comme image principale"}
+                                className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-[9px] font-extrabold shadow-sm transition-all cursor-pointer ${
+                                  isPinned
+                                    ? "bg-brand-red text-white"
+                                    : "bg-white/90 text-brand-charcoal hover:bg-brand-red hover:text-white backdrop-blur-xs opacity-90 group-hover:opacity-100"
+                                }`}
+                              >
+                                <Star className={`h-2.5 w-2.5 ${isPinned ? "fill-white" : ""}`} />
+                                <span>{isPinned ? "Principale" : "Épingler"}</span>
+                              </button>
+
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCategoryImage(idx)}
+                                title="Supprimer ce visuel"
+                                className="flex h-6 w-6 items-center justify-center rounded-full bg-white/90 text-brand-charcoal hover:bg-brand-red hover:text-white shadow-sm backdrop-blur-xs transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
+                            </div>
+
+                            {/* Bottom Index Pill */}
+                            <div className="absolute bottom-1.5 right-1.5 rounded bg-black/60 px-1.5 py-0.2 text-[8px] font-mono font-bold text-white backdrop-blur-xs">
+                              #{idx + 1}
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  ) : (
-                    <label className="mt-1 flex flex-col items-center justify-center rounded-2xl border-2 border-dashed border-brand-light-gray hover:border-brand-red bg-white hover:bg-brand-soft-white/80 p-5 text-center transition-all cursor-pointer shadow-2xs">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-soft-white text-brand-red mb-2">
-                        <Upload className="h-5 w-5" />
-                      </div>
-                      <span className="text-xs font-bold text-brand-charcoal">
-                        Cliquez pour choisir une image
-                      </span>
-                      <span className="text-[10px] text-brand-warm-gray mt-0.5">
-                        PNG, JPG, WebP ou SVG (1 seule image)
-                      </span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleCategorySingleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
                   )}
+
+                  {/* Upload Area */}
+                  <label className="flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-brand-light-gray hover:border-brand-red bg-white hover:bg-brand-soft-white/80 p-3.5 text-center transition-all cursor-pointer shadow-2xs">
+                    <Upload className="h-4 w-4 text-brand-red" />
+                    <span className="text-xs font-bold text-brand-charcoal">
+                      {catImages.length > 0 ? "Ajouter d'autres visuels" : "Téléverser des visuels de réalisations"}
+                    </span>
+                    <span className="text-[10px] text-brand-warm-gray font-medium">
+                      (Sélection multiple possible)
+                    </span>
+                    <input
+                      type="file"
+                      multiple
+                      accept="image/*"
+                      onChange={handleCategoryImagesUpload}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
 
                 {/* ── Main Category Engagements & Livrables (for /agence) ── */}
