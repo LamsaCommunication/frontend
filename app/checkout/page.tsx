@@ -27,7 +27,8 @@ import { Footer } from "@/components/layout/footer";
 import { Container } from "@/components/ui/container";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { useCartStore } from "@/lib/store/useCartStore";
-import { useAdminStore, OrderRecord } from "@/lib/store/useAdminStore";
+import { ordersApi } from "@/lib/api/lamsa-api";
+import { OrderRecord } from "@/lib/store/useAdminStore";
 import { formatPrice } from "@/lib/utils";
 import { ALGERIA_WILAYAS } from "@/lib/data/algeria-wilayas";
 
@@ -46,8 +47,6 @@ export default function CheckoutPage() {
     getTotalAmount,
     clearCart
   } = useCartStore();
-
-  const { createOrder } = useAdminStore();
 
   // Form State
   const [firstName, setFirstName] = React.useState("");
@@ -93,7 +92,7 @@ export default function CheckoutPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handlePlaceOrder = (e: React.FormEvent) => {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     if (items.length === 0) return;
@@ -101,7 +100,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const newOrder = createOrder({
+      const newOrder = await ordersApi.checkout({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         phone: phone.trim(),
@@ -113,7 +112,6 @@ export default function CheckoutPage() {
         shippingFee,
         totalAmount: grandTotal,
         items: items.map((it) => ({
-          id: `item-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
           productId: it.productId,
           productName: it.name,
           quantity: it.quantity,

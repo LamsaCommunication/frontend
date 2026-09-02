@@ -8,17 +8,19 @@ import {
   Package,
   ArrowRight
 } from "lucide-react";
-import { useAdminStore } from "@/lib/store/useAdminStore";
+import { ordersApi } from "@/lib/api/lamsa-api";
 import { formatPrice } from "@/lib/utils";
+import { io } from "socket.io-client";
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
 }
 
 export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
-  const { getActiveOrdersCount, orders } = useAdminStore();
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
-  const activeOrdersCount = getActiveOrdersCount();
+  const [unreadCount, setUnreadCount] = React.useState(0);
+  const [liveNotifications, setLiveNotifications] = React.useState<any[]>([]);
+  
   const dropdownRef = React.useRef<HTMLDivElement>(null);
 
   // Close dropdown on click outside
@@ -36,7 +38,41 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     };
   }, [notificationsOpen]);
 
-  const recentNotifications = orders.slice(0, 5);
+  // Fetch initial notifications from DB
+  React.useEffect(() => {
+    ordersApi.getOrders({ limit: 10 }).then(res => {
+      if (res && res.orders) {
+        setLiveNotifications(res.orders);
+      }
+    }).catch(console.error);
+  }, []);
+
+  // Handle Socket.IO connection for global notifications
+  React.useEffect(() => {
+    const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001");
+    
+    socket.on("new_order", (order) => {
+      setLiveNotifications((prev) => {
+        const updated = [order, ...prev];
+        return Array.from(new Map(updated.map((item) => [item.id || item.orderNumber, item])).values()).slice(0, 10);
+      });
+      if (!notificationsOpen) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [notificationsOpen]);
+
+  // Reset unread count when opening notifications
+  const handleToggleNotifications = () => {
+    setNotificationsOpen((v) => {
+      if (!v) setUnreadCount(0);
+      return !v;
+    });
+  };
 
   return (
     <header className="sticky top-0 z-30 flex h-20 items-center justify-between lg:justify-end border-b border-brand-light-gray/80 bg-white/95 px-6 backdrop-blur-md lg:px-8">
@@ -54,7 +90,7 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       <div className="relative" ref={dropdownRef}>
         <button
           type="button"
-          onClick={() => setNotificationsOpen((v) => !v)}
+          onClick={handleToggleNotifications}
           aria-label="Notifications"
           className={`relative flex h-11 w-11 items-center justify-center rounded-full border transition-all cursor-pointer ${notificationsOpen
             ? "border-brand-red bg-brand-red text-white shadow-md shadow-brand-red/20 ring-4 ring-brand-red/10"
@@ -62,9 +98,9 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             }`}
         >
           <Bell className="h-4 w-4" />
-          {activeOrdersCount > 0 && (
+          {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-black text-white ring-2 ring-white">
-              {activeOrdersCount}
+              {unreadCount}
             </span>
           )}
         </button>
@@ -77,24 +113,21 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                 <span className="text-sm font-black text-brand-charcoal">
                   Notifications
                 </span>
-                {activeOrdersCount > 0 && (
+                {unreadCount > 0 && (
                   <span className="rounded-full bg-brand-red/10 px-2 py-0.5 text-[10px] font-extrabold text-brand-red">
-                    {activeOrdersCount} active{activeOrdersCount > 1 ? "s" : ""}
+                    {unreadCount} nouvelle{unreadCount > 1 ? "s" : ""}
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-bold text-brand-warm-gray">
-                {orders.length} commande{orders.length > 1 ? "s" : ""} au total
-              </span>
             </div>
 
-            {recentNotifications.length === 0 ? (
+            {liveNotifications.length === 0 ? (
               <div className="py-8 text-center text-xs text-brand-warm-gray">
                 Aucune nouvelle commande pour le moment.
               </div>
             ) : (
               <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
-                {recentNotifications.map((ord) => {
+                {liveNotifications.map((ord) => {
                   const statusColors: Record<string, string> = {
                     PENDING: "bg-amber-50 text-amber-700 border-amber-200",
                     CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",

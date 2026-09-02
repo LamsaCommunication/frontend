@@ -17,6 +17,7 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { usePaginatedApi } from "@/lib/hooks/usePaginatedApi";
 import { ordersApi } from "@/lib/api/lamsa-api";
 import type { OrderRecord, OrderStatus } from "@/lib/store/useAdminStore";
+import { io } from "socket.io-client";
 
 const STATUS_LABELS: Record<string, string> = {
   ALL: "Toutes",
@@ -66,6 +67,7 @@ export default function AdminInvoicesPage() {
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("ALL");
+  const [toastMessage, setToastMessage] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 350);
@@ -88,6 +90,23 @@ export default function AdminInvoicesPage() {
     await ordersApi.deleteOrder(id);
     refetch();
   };
+
+  React.useEffect(() => {
+    const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001");
+    
+    socket.on("new_order", (order) => {
+      setToastMessage(`Nouvelle commande reçue : ${order.orderNumber} (${order.firstName} ${order.lastName})`);
+      refetch();
+      
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 5000);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [refetch]);
 
   return (
     <AdminLayout>
@@ -257,6 +276,26 @@ export default function AdminInvoicesPage() {
           />
         </div>
       </div>
+
+      {/* Toast Notification for Real-Time Orders */}
+      {toastMessage && (
+        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border border-brand-red/20 bg-white p-4 shadow-lg animate-in slide-in-from-bottom-5">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-red/10 text-brand-red">
+            <CheckCircle2 className="h-5 w-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-brand-charcoal">Alerte temps réel</h4>
+            <p className="text-xs text-brand-warm-gray">{toastMessage}</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setToastMessage(null)}
+            className="ml-4 text-brand-warm-gray hover:text-brand-charcoal font-bold text-lg"
+          >
+            &times;
+          </button>
+        </div>
+      )}
     </AdminLayout>
   );
 }
