@@ -1,0 +1,525 @@
+"use client";
+
+import * as React from "react";
+import Image from "next/image";
+import {
+  Megaphone,
+  Plus,
+  Edit2,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  Sparkles,
+  ExternalLink,
+  Eye,
+  EyeOff,
+  Upload,
+  Layers,
+  ArrowUpRight,
+  ArrowRight,
+  RefreshCw,
+  Clock,
+  Check
+} from "lucide-react";
+import { AdminLayout } from "@/components/admin/admin-layout";
+import { Announcement, announcementsApi } from "@/lib/api/lamsa-api";
+import { useAnnouncementStore } from "@/lib/store/useAnnouncementStore";
+
+export default function AdminAnnouncementsPage() {
+  const { fetchAnnouncements } = useAnnouncementStore();
+  const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
+  const [isLoading, setIsLoading] = React.useState(true);
+  const [notification, setNotification] = React.useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Modal State
+  const [isModalOpen, setIsModalOpen] = React.useState(false);
+  const [editingItem, setEditingItem] = React.useState<Announcement | null>(null);
+
+  // Form Fields
+  const [formImage, setFormImage] = React.useState("/donner_vie_vos_idees_hero.svg");
+  const [formIsActive, setFormIsActive] = React.useState(true);
+  const [formOrder, setFormOrder] = React.useState(0);
+  const [formError, setFormError] = React.useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
+  // Delete Confirmation Modal
+  const [deleteModal, setDeleteModal] = React.useState<{ isOpen: boolean; item: Announcement | null }>({
+    isOpen: false,
+    item: null
+  });
+
+  const showNotification = (text: string, type: "success" | "error" = "success") => {
+    setNotification({ text, type });
+    setTimeout(() => setNotification(null), 3500);
+  };
+
+  const loadData = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await announcementsApi.getAllAdmin();
+      setAnnouncements(data);
+    } catch (err: any) {
+      console.error("Failed to load announcements:", err);
+      showNotification("Impossible de charger les annonces.", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  React.useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleOpenCreate = () => {
+    setEditingItem(null);
+    setFormImage("");
+    setFormIsActive(true);
+    setFormOrder(announcements.length + 1);
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEdit = (item: Announcement) => {
+    setEditingItem(item);
+    setFormImage(item.image);
+    setFormIsActive(item.isActive);
+    setFormOrder(item.order);
+    setFormError(null);
+    setIsModalOpen(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = () => {
+        if (typeof reader.result === "string") {
+          setFormImage(reader.result);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formImage.trim()) {
+      setFormError("Veuillez saisir une URL d'image valide.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setFormError(null);
+
+    const payload = {
+      image: formImage.trim(),
+      isActive: formIsActive,
+      order: formOrder
+    };
+
+    try {
+      if (editingItem) {
+        await announcementsApi.update(editingItem.id, payload);
+        showNotification(`Annonce mise à jour !`);
+      } else {
+        await announcementsApi.create(payload);
+        showNotification(`Nouvelle annonce créée !`);
+      }
+
+      await loadData();
+      await fetchAnnouncements();
+      setIsModalOpen(false);
+    } catch (err: any) {
+      console.error("Save announcement error:", err);
+      setFormError(err.response?.data?.message || err.message || "Erreur lors de la sauvegarde.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleToggleActive = async (item: Announcement) => {
+    try {
+      await announcementsApi.update(item.id, { isActive: !item.isActive });
+      setAnnouncements((prev) =>
+        prev.map((a) => (a.id === item.id ? { ...a, isActive: !a.isActive } : a))
+      );
+      showNotification(`Statut de l'annonce mis à jour.`);
+      await fetchAnnouncements();
+    } catch (err: any) {
+      console.error("Toggle active error:", err);
+      showNotification("Erreur lors de la mise à jour du statut.", "error");
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deleteModal.item) return;
+
+    try {
+      await announcementsApi.delete(deleteModal.item.id);
+      setAnnouncements((prev) => prev.filter((a) => a.id !== deleteModal.item!.id));
+      showNotification(`Annonce supprimée.`);
+      await fetchAnnouncements();
+      setDeleteModal({ isOpen: false, item: null });
+    } catch (err: any) {
+      console.error("Delete error:", err);
+      showNotification("Erreur lors de la suppression.", "error");
+    }
+  };
+
+  const activeCount = announcements.filter((a) => a.isActive).length;
+
+  return (
+    <AdminLayout>
+      <div className="space-y-6">
+        {/* Toast Notification */}
+        {notification && (
+          <div
+            className={`fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-2xl p-4 shadow-xl text-xs font-bold ${notification.type === "success"
+              ? "bg-brand-charcoal text-white border border-white/10"
+              : "bg-brand-red text-white"
+              }`}
+          >
+            <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+            <span>{notification.text}</span>
+          </div>
+        )}
+
+        {/* Top Header */}
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-black text-brand-charcoal sm:text-3xl flex items-center gap-2.5">
+              <Megaphone className="h-7 w-7 text-brand-red" />
+              <span>Bannières & Annonces Promo</span>
+            </h1>
+            <p className="mt-1 text-xs text-brand-warm-gray">
+              Gérez les images promotionnelles synchronisées avec la boutique, la méga navigation et le studio.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={loadData}
+              className="inline-flex items-center gap-2 rounded-full border border-brand-light-gray bg-white px-4 py-2.5 text-xs font-bold text-brand-charcoal shadow-sm transition-all hover:bg-brand-soft-white cursor-pointer"
+            >
+              <RefreshCw className="h-3.5 w-3.5 text-brand-warm-gray" />
+              <span>Actualiser</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="inline-flex items-center gap-2 rounded-full bg-brand-red px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Nouvelle Annonce</span>
+            </button>
+          </div>
+        </div>
+
+        {/* KPI Stats Cards */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
+              Total des Annonces
+            </span>
+            <span className="mt-2 text-2xl font-black text-brand-charcoal block">
+              {announcements.length}
+            </span>
+          </div>
+
+          <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">
+              Annonces Actives (En rotation)
+            </span>
+            <span className="mt-2 text-2xl font-black text-emerald-600 block">
+              {activeCount}
+            </span>
+          </div>
+
+          <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
+              Délai de Transition
+            </span>
+            <span className="mt-2 text-2xl font-black text-brand-charcoal block">
+              4 secondes
+            </span>
+          </div>
+        </div>
+
+        {/* Announcement Cards Grid */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((n) => (
+              <div
+                key={n}
+                className="h-64 rounded-3xl border border-brand-light-gray bg-white p-6 animate-pulse space-y-4"
+              >
+                <div className="h-4 bg-gray-200 rounded w-1/3" />
+                <div className="h-28 bg-gray-100 rounded-2xl" />
+                <div className="h-4 bg-gray-200 rounded w-2/3" />
+              </div>
+            ))}
+          </div>
+        ) : announcements.length === 0 ? (
+          <div className="rounded-3xl border border-dashed border-brand-light-gray bg-white p-12 text-center">
+            <Megaphone className="mx-auto h-10 w-10 text-brand-warm-gray" />
+            <p className="mt-3 text-sm font-bold text-brand-charcoal">Aucune annonce configurée</p>
+            <p className="mt-1 text-xs text-brand-warm-gray">
+              Créez votre première annonce pour la diffuser en rotation sur la méga-navigation.
+            </p>
+            <button
+              type="button"
+              onClick={handleOpenCreate}
+              className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-red px-4 py-2 text-xs font-bold text-white hover:bg-brand-red-hover cursor-pointer"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              <span>Créer une annonce</span>
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {announcements.map((item) => (
+              <div
+                key={item.id}
+                className={`relative flex flex-col justify-between rounded-3xl border bg-white p-6 shadow-sm transition-all hover:shadow-md ${item.isActive ? "border-brand-light-gray" : "border-gray-200 opacity-60 bg-gray-50/50"
+                  }`}
+              >
+                <div>
+                  {/* Top Bar: Badge, Order & Status */}
+                  <div className="flex items-center justify-between gap-2 border-b border-brand-light-gray/60 pb-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-full bg-brand-soft-white border border-brand-light-gray px-2 py-0.5 text-[10px] font-mono text-brand-warm-gray">
+                        Ordre: #{item.order}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleToggleActive(item)}
+                        title={item.isActive ? "Désactiver" : "Activer"}
+                        className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold cursor-pointer transition-colors ${item.isActive
+                          ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                          : "bg-gray-100 text-gray-500 border border-gray-300"
+                          }`}
+                      >
+                        {item.isActive ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                        <span>{item.isActive ? "Actif" : "Inactif"}</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Visual Preview */}
+                  <div className="relative mt-4 h-32 w-full overflow-hidden rounded-2xl bg-brand-soft-white/60 border border-brand-light-gray/60 p-2 flex items-center justify-center">
+                    <img
+                      src={item.image || "/lamsa2.png"}
+                      alt="Annonce Preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
+                </div>
+
+                {/* Card Actions */}
+                <div className="mt-5 flex items-center justify-end gap-2 border-t border-brand-light-gray/60 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => handleOpenEdit(item)}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-brand-light-gray px-3.5 py-1.5 text-xs font-bold text-brand-charcoal hover:bg-brand-soft-white cursor-pointer"
+                  >
+                    <Edit2 className="h-3 w-3 text-brand-warm-gray" />
+                    <span>Modifier</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setDeleteModal({ isOpen: true, item })}
+                    className="inline-flex items-center gap-1.5 rounded-full border border-brand-red/20 bg-brand-red/5 px-3.5 py-1.5 text-xs font-bold text-brand-red hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Trash2 className="h-3 w-3" />
+                    <span>Supprimer</span>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Modal: Create / Edit Announcement */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
+            <div className="relative w-full max-w-lg rounded-3xl border border-brand-light-gray bg-white p-6 sm:p-8 shadow-2xl my-8">
+              <div className="flex items-center justify-between border-b border-brand-light-gray pb-4 mb-6">
+                <div>
+                  <h2 className="text-lg font-black text-brand-charcoal">
+                    {editingItem ? "Modifier l'Annonce" : "Nouvelle Annonce Promo"}
+                  </h2>
+                  <p className="text-xs text-brand-warm-gray mt-0.5">
+                    Configurez le visuel et les informations de la bannière.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsModalOpen(false)}
+                  className="rounded-full p-2 text-brand-warm-gray hover:bg-brand-soft-white hover:text-brand-charcoal"
+                >
+                  ✕
+                </button>
+              </div>
+
+              {formError && (
+                <div className="mb-4 rounded-2xl border border-brand-red/20 bg-brand-red/5 p-3 text-xs font-bold text-brand-red flex items-center gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSave} className="space-y-4">
+                {/* Visual Image Uploader & Preview - Modern Design */}
+                <div className="space-y-3">
+                  <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal">
+                    Visuel de la Bannière Promo *
+                  </label>
+
+                  <div className="relative w-full rounded-2xl border-2 border-dashed border-brand-light-gray bg-brand-soft-white/30 p-2 transition-colors hover:border-brand-red/30 hover:bg-brand-red/5">
+                    {formImage ? (
+                      <div className="relative group w-full h-[180px] sm:h-[220px] rounded-xl overflow-hidden bg-white border border-brand-light-gray/50 flex items-center justify-center shadow-sm">
+                        <img
+                          src={formImage}
+                          alt="Banner Preview"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
+                        />
+                        <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                          <label className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-brand-charcoal hover:text-brand-red cursor-pointer shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                            <Upload className="h-4 w-4" />
+                            <span>Changer l&apos;image</span>
+                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => setFormImage("")}
+                            className="inline-flex items-center justify-center rounded-full bg-white p-2.5 text-brand-charcoal hover:text-brand-red shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 cursor-pointer"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <label className="flex flex-col items-center justify-center py-10 px-6 cursor-pointer">
+                        <div className="h-12 w-12 rounded-full bg-brand-red/10 flex items-center justify-center mb-3 transition-transform hover:scale-110">
+                          <Upload className="h-5 w-5 text-brand-red" />
+                        </div>
+                        <span className="text-sm font-bold text-brand-charcoal">
+                          Cliquez pour téléverser
+                        </span>
+                        <span className="text-xs text-brand-warm-gray mt-1 text-center max-w-xs">
+                          Format recommandé : 1920x600px. PNG, JPG ou SVG (max 50MB).
+                        </span>
+                        <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                      </label>
+                    )}
+                  </div>
+                </div>
+
+                {/* Settings Row */}
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal mb-2">
+                      Ordre d&apos;affichage
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={formOrder}
+                      onChange={(e) => setFormOrder(Number(e.target.value))}
+                      className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/60 p-3 text-xs font-semibold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none transition-all"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal mb-2">
+                      Visibilité
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setFormIsActive(!formIsActive)}
+                      className={`group flex w-full items-center gap-3 rounded-xl border p-3 transition-all duration-300 cursor-pointer ${
+                        formIsActive 
+                          ? "border-brand-red/40 bg-brand-red/5 shadow-sm" 
+                          : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white hover:border-brand-red/30 hover:shadow-sm"
+                      }`}
+                    >
+                      <div className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-300 ${
+                        formIsActive 
+                          ? "border-brand-red bg-brand-red" 
+                          : "border-brand-light-gray bg-white group-hover:border-brand-red/50"
+                      }`}>
+                        <Check className={`h-3.5 w-3.5 text-white transition-transform duration-300 ${
+                          formIsActive ? "scale-100 opacity-100" : "scale-50 opacity-0"
+                        }`} strokeWidth={3} />
+                      </div>
+                      <span className={`text-xs font-bold transition-colors ${
+                        formIsActive ? "text-brand-red" : "text-brand-charcoal"
+                      }`}>
+                        Actif dans le carrousel
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-brand-light-gray">
+                  <button
+                    type="button"
+                    onClick={() => setIsModalOpen(false)}
+                    className="rounded-full border border-brand-light-gray px-5 py-2.5 text-xs font-bold text-brand-charcoal hover:bg-brand-soft-white cursor-pointer"
+                  >
+                    Annuler
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="inline-flex items-center gap-2 rounded-full bg-brand-red px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer disabled:opacity-50"
+                  >
+                    <span>{editingItem ? "Mettre à jour" : "Enregistrer l'Annonce"}</span>
+                    <ArrowRight className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteModal.isOpen && deleteModal.item && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+            <div className="relative w-full max-w-sm rounded-3xl border border-brand-light-gray bg-white p-6 shadow-2xl text-center">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-red/10 text-brand-red mb-4">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              <h3 className="text-base font-black text-brand-charcoal">Supprimer cette annonce ?</h3>
+              <p className="mt-1 text-xs text-brand-warm-gray">
+                Êtes-vous sûr de vouloir supprimer cette annonce ? Cette action est irréversible.
+              </p>
+
+              <div className="mt-6 flex items-center justify-center gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteModal({ isOpen: false, item: null })}
+                  className="rounded-full border border-brand-light-gray px-4 py-2 text-xs font-bold text-brand-charcoal hover:bg-brand-soft-white cursor-pointer"
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  className="rounded-full bg-brand-red px-5 py-2 text-xs font-bold text-white hover:bg-brand-red-hover cursor-pointer"
+                >
+                  Confirmer la suppression
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AdminLayout>
+  );
+}

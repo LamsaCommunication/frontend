@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { useCatalogStore } from "@/lib/store/useCatalogStore";
+import { AnnouncementCarousel } from "./AnnouncementCarousel";
 
 const CATEGORY_ICON_MAP: Record<
   string,
@@ -34,226 +35,7 @@ const CATEGORY_ICON_MAP: Record<
   Sparkles,
 };
 
-// Rich section configurations mimicking enterprise print platforms like Vistaprint
-interface MegaMenuSection {
-  title: string;
-  items: { name: string; subSlug?: string; is3D?: boolean }[];
-}
-
-const CATEGORY_MEGA_DATA: Record<
-  string,
-  {
-    sections: MegaMenuSection[];
-    promo: {
-      title: string;
-      subtitle: string;
-      image: string;
-      actionText: string;
-    };
-  }
-> = {
-  "communication-visuelle": {
-    sections: [
-      {
-        title: "Cartes & Formats",
-        items: [
-          { name: "Cartes de visite Standard", subSlug: "cartes-visite" },
-          { name: "Coins arrondis & Carré", subSlug: "cartes-visite" },
-          { name: "Format Slim & Déplié", subSlug: "cartes-visite" },
-          { name: "Cartes de fidélité & RDV", subSlug: "cartes-visite" },
-        ],
-      },
-      {
-        title: "Papiers & Finitions",
-        items: [
-          { name: "Mat & Brillant classique", subSlug: "affiches-flyers" },
-          { name: "Pelliculage Soft-Touch", subSlug: "cartes-visite" },
-          { name: "Vernis sélectif 3D relief", subSlug: "cartes-visite", is3D: true },
-          { name: "Dorure à chaud Or / Argent", subSlug: "cartes-visite" },
-        ],
-      },
-      {
-        title: "Flyers & Événementiel",
-        items: [
-          { name: "Flyers A5 & A6 promotionnels", subSlug: "affiches-flyers" },
-          { name: "Brochures & Catalogues multipages", subSlug: "brochures" },
-          { name: "Roll-Up & Kakémonos alu", subSlug: "supports-evenementiels", is3D: true },
-          { name: "Banderoles & Affiches grand format", subSlug: "supports-evenementiels" },
-        ],
-      },
-    ],
-    promo: {
-      title: "Cartes de Visite Soft-Touch",
-      subtitle: "Effet velours & vernis sélectif pour une première impression inoubliable.",
-      image: "/lamsa2.png",
-      actionText: "Voir les options",
-    },
-  },
-  "identite-visuelle": {
-    sections: [
-      {
-        title: "Création de Marque",
-        items: [
-          { name: "Création de Logo Unique", subSlug: "creation-logo" },
-          { name: "Charte Graphique Complète", subSlug: "charte-graphique" },
-          { name: "Guide de Marque & Normes", subSlug: "guide-marque" },
-        ],
-      },
-      {
-        title: "Supports Corporate",
-        items: [
-          { name: "Papier en-tête & Enveloppes", subSlug: "charte-graphique" },
-          { name: "Pochettes à rabat d'entreprise", subSlug: "charte-graphique" },
-          { name: "Signature mail & Templates", subSlug: "palette-typo" },
-        ],
-      },
-      {
-        title: "Univers Graphique",
-        items: [
-          { name: "Palette de couleurs calibrée", subSlug: "palette-typo" },
-          { name: "Pack Typographies officielles", subSlug: "palette-typo" },
-          { name: "Éléments visuels & Motifs", subSlug: "guide-marque" },
-        ],
-      },
-    ],
-    promo: {
-      title: "Pack Identité Complète",
-      subtitle: "Logo vectoriel, charte graphique et déclinaisons tous supports.",
-      image: "/lamsa2.png",
-      actionText: "Découvrir les offres",
-    },
-  },
-  "impression-production": {
-    sections: [
-      {
-        title: "Stickers & Découpes",
-        items: [
-          { name: "Stickers Vinyle Forme Libre", subSlug: "stickers", is3D: true },
-          { name: "Stickers Holographiques & Dorés", subSlug: "stickers" },
-          { name: "Planches d'autocollants", subSlug: "stickers" },
-          { name: "Stickers vitrine & micro-perforé", subSlug: "stickers" },
-        ],
-      },
-      {
-        title: "Étiquettes & Packaging",
-        items: [
-          { name: "Étiquettes Produits en rouleau", subSlug: "etiquettes" },
-          { name: "Boîtes & Packaging sur-mesure", subSlug: "packaging", is3D: true },
-          { name: "Coffrets cadeaux luxe cartonnés", subSlug: "packaging" },
-          { name: "Cartes de remerciement personnalisées", subSlug: "cartes-remerciement" },
-        ],
-      },
-      {
-        title: "Finitions Industrielles",
-        items: [
-          { name: "Résistant à l'eau & UV", subSlug: "stickers" },
-          { name: "Pelliculage mat & brillant", subSlug: "etiquettes" },
-          { name: "Finition Kraft & Écologique", subSlug: "packaging" },
-        ],
-      },
-    ],
-    promo: {
-      title: "Packaging Luxe & Stickers",
-      subtitle: "Sublimez vos produits avec nos boîtes rigides et autocollants pro.",
-      image: "/lamsa2.png",
-      actionText: "Configurer les options",
-    },
-  },
-  "signaletique-led": {
-    sections: [
-      {
-        title: "Néons Lumineux",
-        items: [
-          { name: "Néon LED Personnalisé", subSlug: "neon-led", is3D: true },
-          { name: "Néon Logo d'Entreprise", subSlug: "neon-led" },
-          { name: "Néon Décoratif Événements", subSlug: "decoration-murale" },
-        ],
-      },
-      {
-        title: "Enseignes & Caissons",
-        items: [
-          { name: "Enseignes Lumineuses Rétroéclairées", subSlug: "enseignes-lumineuses" },
-          { name: "Caissons lumineux double face", subSlug: "enseignes-lumineuses" },
-          { name: "Lettres découpées en relief 3D", subSlug: "enseignes-lumineuses" },
-        ],
-      },
-      {
-        title: "Signalétique Bâtiment",
-        items: [
-          { name: "Plaques professionnelles plexiglas", subSlug: "signaletique-interieure" },
-          { name: "Panneaux directionnels intérieurs", subSlug: "signaletique-interieure" },
-          { name: "Habillage mural décoratif", subSlug: "decoration-murale" },
-        ],
-      },
-    ],
-    promo: {
-      title: "Signalétique & Néons LED",
-      subtitle: "Donnez vie à votre espace avec nos enseignes lumineuses.",
-      image: "/lamsa2.png",
-      actionText: "Voir les réalisations",
-    },
-  },
-  "textile-personnalise": {
-    sections: [
-      {
-        title: "Vêtements Personnalisés",
-        items: [
-          { name: "T-Shirts Coton Bio 220g", subSlug: "tshirts-polos", is3D: true },
-          { name: "Polos brodés d'entreprise", subSlug: "tshirts-polos" },
-          { name: "Sweats & Hoodies personnalisés", subSlug: "tshirts-polos" },
-        ],
-      },
-      {
-        title: "Uniformes Professionnels",
-        items: [
-          { name: "Tabliers & Tenues restauration", subSlug: "uniformes" },
-          { name: "Gilets de sécurité & Vêtements de travail", subSlug: "uniformes" },
-          { name: "Uniformes médicaux & blouses", subSlug: "uniformes" },
-        ],
-      },
-      {
-        title: "Accessoires & Goodies",
-        items: [
-          { name: "Tote-Bags en coton naturel", subSlug: "accessoires-textiles" },
-          { name: "Casquettes brodées", subSlug: "accessoires-textiles" },
-          { name: "Packs textile événementiel", subSlug: "textile-evenementiel" },
-        ],
-      },
-    ],
-    promo: {
-      title: "Textile & Sérigraphie DTF",
-      subtitle: "Marquage haute définition résistant aux lavages fréquents.",
-      image: "/lamsa2.png",
-      actionText: "Personnaliser T-shirt 3D",
-    },
-  },
-  "commandes-sur-mesure": {
-    sections: [
-      {
-        title: "Packs Startup & Entreprise",
-        items: [
-          { name: "Pack Démarrage Startup", subSlug: "kits-communication" },
-          { name: "Kit Événementiel & Salons", subSlug: "kits-communication" },
-          { name: "Goodies & Coffrets VIP Entreprise", subSlug: "cadeaux-entreprise" },
-        ],
-      },
-      {
-        title: "Grandes Séries & B2B",
-        items: [
-          { name: "Commandes Grand Volume (Devis dégressif)", subSlug: "grandes-series" },
-          { name: "Production multi-sites 58 Wilayas", subSlug: "grandes-series" },
-          { name: "Accompagnement Graphiste Dédié", subSlug: "kits-communication" },
-        ],
-      },
-    ],
-    promo: {
-      title: "Packs Sur Mesure Lamsa",
-      subtitle: "Tout votre branding réuni dans une commande unique prête à l'emploi.",
-      image: "/lamsa2.png",
-      actionText: "Demander un devis",
-    },
-  },
-};
+// Removed CATEGORY_MEGA_DATA since data is loaded from the DB
 
 export function ShopMegaNav() {
   const {
@@ -287,7 +69,6 @@ export function ShopMegaNav() {
   };
 
   const currentHoveredCat = categories.find((c) => c.slug === hoveredCategorySlug);
-  const megaData = hoveredCategorySlug ? CATEGORY_MEGA_DATA[hoveredCategorySlug] : null;
   const currentActiveCat = categories.find((c) => c.id === activeCategoryId);
 
   React.useEffect(() => {
@@ -401,60 +182,28 @@ export function ShopMegaNav() {
             <Container as="div" className="py-8">
               <div className="grid grid-cols-12 gap-8">
                 {/* Left columns: Sub-Categories & Organized Sections */}
-                <div className="col-span-8 grid grid-cols-3 gap-6">
-                  {megaData?.sections && megaData.sections.length > 0 ? (
-                    megaData.sections.map((section, sIdx) => (
-                      <div key={sIdx} className="space-y-3">
-                        <h4 className="text-xs font-black uppercase tracking-wider text-brand-charcoal border-b border-brand-light-gray/60 pb-2">
-                          {section.title}
-                        </h4>
-                        <ul className="space-y-1.5">
-                          {section.items.map((item, iIdx) => {
-                            const matchedSub = currentHoveredCat.subCategories.find(
-                              (s) => s.slug === item.subSlug
-                            );
-                            return (
-                              <li key={iIdx}>
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    handleSelectSub(currentHoveredCat.id, matchedSub?.id)
-                                  }
-                                  className="group flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-left text-xs font-medium text-brand-dark/75 transition-colors hover:bg-brand-soft-white hover:text-brand-charcoal cursor-pointer"
-                                >
-                                  <span className="group-hover:text-brand-red transition-colors flex items-center gap-1.5">
-                                    {item.name}
-                                    {item.is3D && (
-                                      <span className="rounded bg-brand-red/10 px-1 py-0.2 text-[9px] font-bold text-brand-red">
-                                        3D
-                                      </span>
-                                    )}
-                                  </span>
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      </div>
-                    ))
-                  ) : (
-                    // Default fallback: direct list of subcategories
-                    <div className="col-span-3">
-                      <h4 className="text-xs font-black uppercase tracking-wider text-brand-charcoal border-b border-brand-light-gray/60 pb-2">
-                        Sous-catégories {currentHoveredCat.name}
-                      </h4>
-                      <div className="grid grid-cols-3 gap-2 mt-3">
-                        {currentHoveredCat.subCategories.map((sub) => (
-                          <button
-                            key={sub.id}
-                            type="button"
-                            onClick={() => handleSelectSub(currentHoveredCat.id, sub.id)}
-                            className="rounded-lg p-2.5 text-left text-xs font-semibold text-brand-charcoal hover:bg-brand-soft-white hover:text-brand-red transition-colors"
-                          >
+                <div className="col-span-8">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-brand-charcoal border-b border-brand-light-gray/60 pb-2 mb-4">
+                    Sous-catégories {currentHoveredCat.name}
+                  </h4>
+                  {currentHoveredCat.subCategories.length > 0 ? (
+                    <div className="grid grid-cols-3 gap-x-6 gap-y-3">
+                      {currentHoveredCat.subCategories.map((sub) => (
+                        <button
+                          key={sub.id}
+                          type="button"
+                          onClick={() => handleSelectSub(currentHoveredCat.id, sub.id)}
+                          className="group flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs font-medium text-brand-dark/75 transition-colors hover:bg-brand-soft-white hover:text-brand-charcoal cursor-pointer"
+                        >
+                          <span className="group-hover:text-brand-red transition-colors flex items-center gap-1.5 line-clamp-1">
                             {sub.name}
-                          </button>
-                        ))}
-                      </div>
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-xs text-brand-warm-gray py-4">
+                      Aucune sous-catégorie trouvée.
                     </div>
                   )}
                 </div>
@@ -466,20 +215,21 @@ export function ShopMegaNav() {
                     (currentHoveredCat.images && currentHoveredCat.images.length > 0
                       ? currentHoveredCat.images[0]
                       : null) ||
-                    megaData?.promo.image ||
                     "/lamsa2.png";
 
                   return (
                     <div className="col-span-4 border-l border-brand-light-gray/60 pl-8">
-                      <div className="relative overflow-hidden rounded-2xl border border-brand-light-gray/70 bg-white p-6 shadow-sm">
-                        <h3 className="text-base font-black text-brand-charcoal">
-                          {currentHoveredCat.name || megaData?.promo.title}
+                      <div className="relative overflow-hidden rounded-2xl border border-brand-light-gray/70 bg-white p-6 shadow-sm flex flex-col h-full justify-center">
+                        <h3 className="text-base font-black text-brand-charcoal text-center">
+                          {currentHoveredCat.name}
                         </h3>
-                        <p className="mt-1 text-xs text-brand-warm-gray leading-relaxed">
-                          {currentHoveredCat.description || megaData?.promo.subtitle}
-                        </p>
+                        {currentHoveredCat.description && (
+                          <p className="mt-2 text-xs text-brand-warm-gray leading-relaxed text-center">
+                            {currentHoveredCat.description}
+                          </p>
+                        )}
 
-                        <div className="relative mt-4 h-32 w-full overflow-hidden rounded-xl bg-brand-soft-white/60 border border-brand-light-gray/50 p-2.5 flex items-center justify-center">
+                        <div className="relative mt-6 h-40 w-full overflow-hidden rounded-xl bg-brand-soft-white/60 border border-brand-light-gray/50 p-2.5 flex items-center justify-center">
                           <img
                             src={categoryMainImage}
                             alt={currentHoveredCat.name || "Catégorie"}
@@ -490,9 +240,9 @@ export function ShopMegaNav() {
                         <button
                           type="button"
                           onClick={() => handleSelectSub(currentHoveredCat.id)}
-                          className="mt-4 flex w-full items-center justify-center gap-2 rounded-full bg-brand-red py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
+                          className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-brand-red py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
                         >
-                          <span>{megaData?.promo.actionText || "Voir tous les modèles"}</span>
+                          <span>Explorer la catégorie</span>
                           <ArrowRight className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -500,6 +250,23 @@ export function ShopMegaNav() {
                   );
                 })()}
               </div>
+            </Container>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ── Promotional Banner (Shown when no mega menu is active) ────── */}
+      <AnimatePresence>
+        {!hoveredCategorySlug && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.2 }}
+            className="hidden lg:block overflow-hidden"
+          >
+            <Container as="div" className="py-4">
+              <AnnouncementCarousel className="mx-auto w-full max-w-7xl" />
             </Container>
           </motion.div>
         )}

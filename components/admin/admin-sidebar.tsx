@@ -15,7 +15,8 @@ import {
   LogOut,
   X,
   Sparkles,
-  AlertOctagon
+  AlertOctagon,
+  Megaphone
 } from "lucide-react";
 import { useAdminStore } from "@/lib/store/useAdminStore";
 
@@ -32,6 +33,7 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
     { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
     { label: "Catégories", href: "/admin/categories", icon: FolderTree },
     { label: "Produits", href: "/admin/products", icon: Package },
+    { label: "Annonces & Bannières", href: "/admin/announcements", icon: Megaphone },
     { label: "Factures & Commandes", href: "/admin/invoices", icon: FileText },
     { label: "Expéditions Yalidine", href: "/admin/delivery", icon: Truck },
   ];

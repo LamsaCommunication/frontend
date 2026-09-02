@@ -205,21 +205,46 @@ export const categoriesApi = {
   }
 };
 
-// ── Yalidine Admin API ─────────────────────────────────────────────────────
+// ── Announcements API ───────────────────────────────────────────────────
 
-export const yalidineApi = {
-  getConfig: async () => {
-    const res = await apiClient.get("/api/v1/delivery/yalidine/config");
+export interface Announcement {
+  id: string;
+  image: string;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const announcementsApi = {
+  /** Public: Get all active announcements */
+  getActive: async (): Promise<Announcement[]> => {
+    const res = await apiClient.get("/api/v1/announcements");
     return res.data.data;
   },
 
-  updateConfig: async (config: { apiId: string; apiToken: string; isLive?: boolean }) => {
-    const res = await apiClient.post("/api/v1/delivery/yalidine/config", config);
+  /** Admin: Get all announcements */
+  getAllAdmin: async (): Promise<Announcement[]> => {
+    const res = await apiClient.get("/api/v1/announcements/admin");
+    return res.data.data;
+  },
+
+  /** Admin: Create announcement */
+  create: async (data: Partial<Announcement>): Promise<Announcement> => {
+    const res = await apiClient.post("/api/v1/announcements", data);
+    return res.data.data;
+  },
+
+  /** Admin: Update announcement */
+  update: async (id: string, data: Partial<Announcement>): Promise<Announcement> => {
+    const res = await apiClient.patch(`/api/v1/announcements/${id}`, data);
+    return res.data.data;
+  },
+
+  /** Admin: Delete announcement */
+  delete: async (id: string): Promise<{ message: string }> => {
+    const res = await apiClient.delete(`/api/v1/announcements/${id}`);
     return res.data;
-  },
-
-  trackParcel: async (trackingCode: string) => {
-    const res = await apiClient.get(`/api/v1/delivery/yalidine/tracking/${trackingCode}`);
-    return res.data.data;
   }
 };
+
