@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { ordersApi } from "@/lib/api/lamsa-api";
 import { formatPrice } from "@/lib/utils";
-import { io } from "socket.io-client";
+import { getSocket } from "@/lib/socket/socket-client";
 
 interface AdminHeaderProps {
   onToggleSidebar: () => void;
@@ -47,24 +47,32 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     }).catch(console.error);
   }, []);
 
+  const notificationsOpenRef = React.useRef(notificationsOpen);
+  React.useEffect(() => {
+    notificationsOpenRef.current = notificationsOpen;
+  }, [notificationsOpen]);
+
   // Handle Socket.IO connection for global notifications
   React.useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001");
-    
-    socket.on("new_order", (order) => {
+    const socket = getSocket();
+    if (!socket) return;
+
+    const handleNewOrder = (order: any) => {
       setLiveNotifications((prev) => {
         const updated = [order, ...prev];
         return Array.from(new Map(updated.map((item) => [item.id || item.orderNumber, item])).values()).slice(0, 10);
       });
-      if (!notificationsOpen) {
+      if (!notificationsOpenRef.current) {
         setUnreadCount((prev) => prev + 1);
       }
-    });
+    };
+
+    socket.on("new_order", handleNewOrder);
 
     return () => {
-      socket.disconnect();
+      socket.off("new_order", handleNewOrder);
     };
-  }, [notificationsOpen]);
+  }, []);
 
   // Reset unread count when opening notifications
   const handleToggleNotifications = () => {

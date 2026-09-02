@@ -6,7 +6,8 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // We only want to protect /admin/* routes
-  if (pathname.startsWith('/admin') && pathname !== '/admin/login') {
+  const isLoginPage = pathname === '/admin/login' || pathname === '/admin/login/';
+  if (pathname.startsWith('/admin') && !isLoginPage) {
     // Check if the user has the HttpOnly tokens from the backend
     const hasAccessToken = request.cookies.has('access_token');
     const hasRefreshToken = request.cookies.has('refresh_token');

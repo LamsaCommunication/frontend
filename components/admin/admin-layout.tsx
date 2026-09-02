@@ -19,7 +19,8 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     // If not authenticated and not on login page, route to login
-    if (isMounted && !isAuthenticated && pathname !== "/admin/login") {
+    const isLoginPage = pathname === "/admin/login" || pathname === "/admin/login/";
+    if (isMounted && !isAuthenticated && !isLoginPage) {
       router.push("/admin/login");
     }
   }, [isMounted, isAuthenticated, pathname, router]);
@@ -27,7 +28,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   if (!isMounted) return null;
 
   // Render children directly on login page
-  if (pathname === "/admin/login") {
+  if (pathname === "/admin/login" || pathname === "/admin/login/") {
     return <>{children}</>;
   }
 

@@ -103,8 +103,8 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                   href={item.href}
                   onClick={onClose}
                   className={`group flex items-center gap-3.5 rounded-xl px-3.5 py-3 text-xs font-bold transition-all ${isActive
-                      ? "bg-brand-red text-white shadow-[0_6px_20px_-6px_rgba(227,6,19,0.6)]"
-                      : "text-white/75 hover:bg-white/10 hover:text-white"
+                    ? "bg-brand-red text-white shadow-[0_6px_20px_-6px_rgba(227,6,19,0.6)]"
+                    : "text-white/75 hover:bg-white/10 hover:text-white"
                     }`}
                 >
                   <Icon
@@ -135,17 +135,6 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                 Live
               </span>
             </Link>
-
-            <Link
-              href="/shop"
-              target="_blank"
-              className="flex items-center justify-between rounded-xl px-3.5 py-2.5 text-xs font-semibold text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-            >
-              <span className="flex items-center gap-3">
-                <Sparkles className="h-4 w-4 text-brand-red" />
-                Boutique 3D
-              </span>
-            </Link>
           </div>
         </div>
 
@@ -159,9 +148,6 @@ export function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
               <div className="overflow-hidden">
                 <span className="text-xs font-bold text-white block truncate">
                   {adminUser?.username || "Admin"}
-                </span>
-                <span className="text-[10px] text-brand-warm-gray block truncate">
-                  {adminUser?.role || "SUPER_ADMIN"}
                 </span>
               </div>
             </div>

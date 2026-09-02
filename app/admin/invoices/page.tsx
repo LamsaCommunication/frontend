@@ -17,7 +17,7 @@ import { PaginationBar } from "@/components/ui/pagination-bar";
 import { usePaginatedApi } from "@/lib/hooks/usePaginatedApi";
 import { ordersApi } from "@/lib/api/lamsa-api";
 import type { OrderRecord, OrderStatus } from "@/lib/store/useAdminStore";
-import { io } from "socket.io-client";
+import { getSocket } from "@/lib/socket/socket-client";
 
 const STATUS_LABELS: Record<string, string> = {
   ALL: "Toutes",
@@ -91,22 +91,30 @@ export default function AdminInvoicesPage() {
     refetch();
   };
 
+  const refetchRef = React.useRef(refetch);
   React.useEffect(() => {
-    const socket = io(process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001");
+    refetchRef.current = refetch;
+  }, [refetch]);
+
+  React.useEffect(() => {
+    const socket = getSocket();
+    if (!socket) return;
     
-    socket.on("new_order", (order) => {
+    const handleNewOrder = (order: any) => {
       setToastMessage(`Nouvelle commande reçue : ${order.orderNumber} (${order.firstName} ${order.lastName})`);
-      refetch();
+      refetchRef.current();
       
       setTimeout(() => {
         setToastMessage(null);
       }, 5000);
-    });
+    };
+
+    socket.on("new_order", handleNewOrder);
 
     return () => {
-      socket.disconnect();
+      socket.off("new_order", handleNewOrder);
     };
-  }, [refetch]);
+  }, []);
 
   return (
     <AdminLayout>

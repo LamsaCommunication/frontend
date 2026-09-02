@@ -169,16 +169,6 @@ export default function AdminDashboardPage() {
               Aperçu analytique en direct de la boutique, des commandes et des expéditions Yalidine.
             </p>
           </div>
-
-          <div className="flex items-center gap-2.5">
-            <Link
-              href="/admin/products?action=add"
-              className="inline-flex items-center gap-2 rounded-full bg-brand-red px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
-            >
-              <span>Ajouter un produit</span>
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          </div>
         </div>
 
         {/* ── Metric KPI Cards Grid ──────────────────────────────────── */}
