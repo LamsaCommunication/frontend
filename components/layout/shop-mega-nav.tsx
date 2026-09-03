@@ -21,7 +21,9 @@ import {
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { useCatalogStore } from "@/lib/store/useCatalogStore";
+import { useAnnouncementStore } from "@/lib/store/useAnnouncementStore";
 import { AnnouncementCarousel } from "./AnnouncementCarousel";
+import { formatPrice } from "@/lib/utils";
 
 const CATEGORY_ICON_MAP: Record<
   string,
@@ -35,33 +37,73 @@ const CATEGORY_ICON_MAP: Record<
   Sparkles,
 };
 
-// Removed CATEGORY_MEGA_DATA since data is loaded from the DB
-
 export function ShopMegaNav() {
   const {
     categories,
+    products,
     activeCategoryId,
     activeSubCategoryId,
     setActiveCategory,
     setActiveSubCategory,
   } = useCatalogStore();
 
+  const { announcements, fetchAnnouncements } = useAnnouncementStore();
+
   const [hoveredCategorySlug, setHoveredCategorySlug] = React.useState<string | null>(null);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = React.useState(false);
   const [mobileExpandedCat, setMobileExpandedCat] = React.useState<string | null>(null);
   const [mounted, setMounted] = React.useState(false);
   const navContainerRef = React.useRef<HTMLDivElement>(null);
+  const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   React.useEffect(() => {
     setMounted(true);
-  }, []);
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
 
-  // Close mega menu on mouse leave
-  const handleMouseLeave = () => {
-    setHoveredCategorySlug(null);
+  const hasActiveAnnouncements = React.useMemo(() => {
+    return announcements.some((a) => a.isActive);
+  }, [announcements]);
+
+  // Handle category hover with immediate switch and debounce cancel
+  const handleCategoryHover = (slug: string | null) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    setHoveredCategorySlug(slug);
   };
 
+  // Debounced mouse leave so the menu doesn't jitter/flicker if moving cursor across borders
+  const handleNavMouseLeave = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    timeoutRef.current = setTimeout(() => {
+      setHoveredCategorySlug(null);
+    }, 140);
+  };
+
+  const handleNavMouseEnter = () => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+  };
+
+  React.useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
   const handleSelectSub = (catId: string | null, subId?: string | null) => {
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
     setActiveCategory(catId);
     setActiveSubCategory(subId || null);
     setHoveredCategorySlug(null);
@@ -83,194 +125,317 @@ export function ShopMegaNav() {
   }, [isMobileDrawerOpen]);
 
   return (
-    <nav
-      ref={navContainerRef}
-      onMouseLeave={handleMouseLeave}
-      className={`relative w-full transition-colors duration-150 ${hoveredCategorySlug ? "bg-background" : ""} ${isMobileDrawerOpen ? "z-[999]" : "z-40"}`}
-    >
-      <Container as="div">
-        {/* ── Desktop Category Navigation Strip ───────────────────────── */}
-        <div className="hidden lg:flex items-center justify-between">
-          <div className="flex items-center gap-1 overflow-x-auto py-2.5">
+    <>
+      <nav
+        ref={navContainerRef}
+        onMouseEnter={handleNavMouseEnter}
+        onMouseLeave={handleNavMouseLeave}
+        className={`relative w-full border-b border-brand-light-gray/80 bg-white transition-colors duration-150 ${isMobileDrawerOpen ? "z-[999]" : "z-40"}`}
+      >
+        <Container as="div">
+          {/* ── Desktop Category Navigation Strip (VistaPrint Style, No scrollbar, No Offres & Packs) ──────── */}
+          <div className="hidden lg:flex items-center gap-1 w-full flex-wrap">
             {/* All Products Tab */}
             <button
               type="button"
+              onMouseEnter={() => handleCategoryHover(null)}
               onClick={() => {
                 setActiveCategory(null);
                 setActiveSubCategory(null);
                 setHoveredCategorySlug(null);
               }}
-              className={`relative cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-150 ${activeCategoryId === null
-                ? "bg-brand-charcoal text-white shadow-sm"
-                : "text-brand-charcoal hover:bg-brand-soft-white"
+              className={`relative py-3 px-3.5 text-[12.5px] font-medium whitespace-nowrap transition-colors cursor-pointer ${activeCategoryId === null
+                  ? "font-bold text-neutral-900"
+                  : "text-neutral-700 hover:text-neutral-900"
                 }`}
             >
-              Tous les produits
+              <span>Tous les produits</span>
+              {activeCategoryId === null && (
+                <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-neutral-900" />
+              )}
             </button>
 
-            {/* Category Tabs with hover mega-menu triggers */}
+            {/* Category Tabs directly loaded from DB */}
             {categories.map((cat) => {
               const isActive = activeCategoryId === cat.id;
               const isHovered = hoveredCategorySlug === cat.slug;
 
               return (
-                <div
+                <button
                   key={cat.id}
-                  onMouseEnter={() => setHoveredCategorySlug(cat.slug)}
-                  className="relative py-1"
+                  type="button"
+                  onMouseEnter={() => handleCategoryHover(cat.slug)}
+                  onClick={() => {
+                    setActiveCategory(cat.id);
+                    setActiveSubCategory(null);
+                    setHoveredCategorySlug(null);
+                  }}
+                  className={`relative py-3 px-3.5 text-[12.5px] font-medium whitespace-nowrap transition-colors cursor-pointer ${isActive || isHovered
+                      ? "font-bold text-neutral-900"
+                      : "text-neutral-700 hover:text-neutral-900"
+                    }`}
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveCategory(cat.id);
-                      setActiveSubCategory(null);
-                      setHoveredCategorySlug(null);
-                    }}
-                    className={`flex items-center gap-1.5 cursor-pointer rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-150 ${isActive
-                      ? "bg-brand-red text-white shadow-[0_4px_14px_-3px_rgba(227,6,19,0.5)]"
-                      : isHovered
-                        ? "bg-brand-soft-white text-brand-red"
-                        : "text-brand-charcoal/80 hover:bg-brand-soft-white hover:text-brand-charcoal"
-                      }`}
-                  >
-                    <span>{cat.name}</span>
-                    <ChevronDown
-                      className={`h-3 w-3 transition-transform duration-200 ${isHovered ? "rotate-180 text-brand-red" : "text-brand-warm-gray"
-                        }`}
-                    />
-                  </button>
-                </div>
+                  <span>{cat.name}</span>
+                  {(isActive || isHovered) && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2.5px] bg-neutral-900" />
+                  )}
+                </button>
               );
             })}
           </div>
-        </div>
 
-        {/* ── Mobile Category Navigation Bar (Clean Rayons Trigger) ────── */}
-        <div className="py-2 lg:hidden">
-          <button
-            type="button"
-            onClick={() => setIsMobileDrawerOpen(true)}
-            className="flex w-full items-center justify-between gap-3 rounded-2xl border border-brand-light-gray/80 bg-white p-2 shadow-2xs transition-all active:scale-[0.99] cursor-pointer"
-          >
-            <div className="flex items-center gap-2.5 px-1 min-w-0">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-soft-white text-brand-red flex-shrink-0">
-                <SlidersHorizontal className="h-4 w-4" />
-              </div>
-              <div className="flex flex-col text-left truncate">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-warm-gray">
-                  Rayon sélectionné
-                </span>
-                <span className="text-xs font-black text-brand-charcoal truncate">
-                  {currentActiveCat?.name || "Tous les produits"}
-                </span>
-              </div>
-            </div>
-          </button>
-        </div>
-      </Container>
-
-      {/* ── Desktop Mega Menu Dropdown Panel (Vistaprint Style) ─────── */}
-      <AnimatePresence>
-        {hoveredCategorySlug && currentHoveredCat && (
-          <motion.div
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className="absolute inset-x-0 top-full z-50 hidden border-b border-brand-light-gray/80 bg-background shadow-[0_20px_50px_rgba(0,0,0,0.06)] lg:block"
-          >
-            <Container as="div" className="py-8">
-              <div className="grid grid-cols-12 gap-8">
-                {/* Left columns: Sub-Categories & Organized Sections */}
-                <div className="col-span-8">
-                  <h4 className="text-xs font-black uppercase tracking-wider text-brand-charcoal border-b border-brand-light-gray/60 pb-2 mb-4">
-                    Sous-catégories {currentHoveredCat.name}
-                  </h4>
-                  {currentHoveredCat.subCategories.length > 0 ? (
-                    <div className="grid grid-cols-3 gap-x-6 gap-y-3">
-                      {currentHoveredCat.subCategories.map((sub) => (
-                        <button
-                          key={sub.id}
-                          type="button"
-                          onClick={() => handleSelectSub(currentHoveredCat.id, sub.id)}
-                          className="group flex w-full items-center justify-between rounded-lg px-2 py-2 text-left text-xs font-medium text-brand-dark/75 transition-colors hover:bg-brand-soft-white hover:text-brand-charcoal cursor-pointer"
-                        >
-                          <span className="group-hover:text-brand-red transition-colors flex items-center gap-1.5 line-clamp-1">
-                            {sub.name}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-xs text-brand-warm-gray py-4">
-                      Aucune sous-catégorie trouvée.
-                    </div>
-                  )}
+          {/* ── Mobile Category Navigation Bar (Clean Rayons Trigger) ────── */}
+          <div className="py-2 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setIsMobileDrawerOpen(true)}
+              className="flex w-full items-center justify-between gap-3 rounded-2xl border border-brand-light-gray/80 bg-white p-2 shadow-2xs transition-all active:scale-[0.99] cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5 px-1 min-w-0">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-soft-white text-brand-red flex-shrink-0">
+                  <SlidersHorizontal className="h-4 w-4" />
                 </div>
+                <div className="flex flex-col text-left truncate">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-brand-warm-gray">
+                    Rayon sélectionné
+                  </span>
+                  <span className="text-xs font-black text-brand-charcoal truncate">
+                    {currentActiveCat?.name || "Tous les produits"}
+                  </span>
+                </div>
+              </div>
+            </button>
+          </div>
+        </Container>
 
-                {/* Right column: Promotional Showcase Card */}
-                {(() => {
-                  const categoryMainImage =
-                    currentHoveredCat.image ||
-                    (currentHoveredCat.images && currentHoveredCat.images.length > 0
-                      ? currentHoveredCat.images[0]
-                      : null) ||
-                    "/lamsa2.png";
+        {/* ── Desktop Mega Menu Dropdown Panel (100% Data from DB) ─────── */}
+        <AnimatePresence>
+          {hoveredCategorySlug && currentHoveredCat && (
+            <motion.div
+              initial={{ opacity: 0, y: -2 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -2 }}
+              transition={{ duration: 0.14, ease: "easeOut" }}
+              className="absolute inset-x-0 top-full z-50 hidden border-b border-neutral-200 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.08)] lg:block"
+            >
+              <Container as="div" className="py-7">
+                <motion.div
+                  key={currentHoveredCat.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.12 }}
+                  className="grid grid-cols-12 gap-6 lg:gap-8 items-start min-h-[260px]"
+                >
+                  {(() => {
+                    const catSubs = currentHoveredCat.subCategories || [];
+                    const half = Math.ceil(catSubs.length / 2);
+                    const col1Subs = catSubs.slice(0, half);
+                    const col2Subs = catSubs.slice(half);
 
-                  return (
-                    <div className="col-span-4 border-l border-brand-light-gray/60 pl-8">
-                      <div className="relative overflow-hidden rounded-2xl border border-brand-light-gray/70 bg-white p-6 shadow-sm flex flex-col h-full justify-center">
-                        <h3 className="text-base font-black text-brand-charcoal text-center">
-                          {currentHoveredCat.name}
-                        </h3>
-                        {currentHoveredCat.description && (
-                          <p className="mt-2 text-xs text-brand-warm-gray leading-relaxed text-center">
-                            {currentHoveredCat.description}
-                          </p>
-                        )}
+                    const categoryProducts = products.filter(
+                      (p) => p.categoryId === currentHoveredCat.id
+                    );
 
-                        <div className="relative mt-6 h-40 w-full overflow-hidden rounded-xl bg-brand-soft-white/60 border border-brand-light-gray/50 p-2.5 flex items-center justify-center">
-                          <img
-                            src={categoryMainImage}
-                            alt={currentHoveredCat.name || "Catégorie"}
-                            className="max-h-full max-w-full object-contain transition-transform duration-300 hover:scale-105"
-                          />
+                    // Last 3 products related to the main category (sorted by newest)
+                    const newestProducts = [...categoryProducts]
+                      .sort((a, b) => {
+                        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+                        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+                        return timeB - timeA;
+                      })
+                      .slice(0, 3);
+
+                    return (
+                      <>
+                        {/* ── Column 1: Subcategories Group 1 (Max 5 products each from DB) ── */}
+                        <div className="col-span-3 space-y-6">
+                          {col1Subs.map((sub) => {
+                            const subProds = products
+                              .filter(
+                                (p) =>
+                                  p.subCategoryId === sub.id ||
+                                  (p.categoryId === currentHoveredCat.id &&
+                                    p.slug.toLowerCase().includes(sub.slug.toLowerCase()))
+                              )
+                              .slice(0, 5);
+
+                            return (
+                              <div key={sub.id} className="space-y-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectSub(currentHoveredCat.id, sub.id)}
+                                  className="text-[13px] font-bold text-neutral-900 hover:text-brand-red transition-colors block text-left cursor-pointer"
+                                >
+                                  {sub.name}
+                                </button>
+                                {subProds.length > 0 ? (
+                                  <ul className="space-y-1">
+                                    {subProds.map((prod) => (
+                                      <li key={prod.id}>
+                                        <Link
+                                          href={`/shop/${prod.slug}`}
+                                          onClick={() => setHoveredCategorySlug(null)}
+                                          className="text-[12px] text-neutral-600 hover:text-neutral-900 hover:underline transition-colors block py-0.5 leading-snug"
+                                        >
+                                          {prod.name}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectSub(currentHoveredCat.id, null)}
+                                      className="text-[11px] font-medium text-neutral-400 hover:text-brand-red hover:underline transition-colors block py-0.5 text-left cursor-pointer"
+                                    >
+                                      Voir les articles &rarr;
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
 
-                        <button
-                          type="button"
-                          onClick={() => handleSelectSub(currentHoveredCat.id)}
-                          className="mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-brand-red py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
-                        >
-                          <span>Explorer la catégorie</span>
-                          <ArrowRight className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })()}
-              </div>
-            </Container>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                        {/* ── Column 2: Subcategories Group 2 (Max 5 products each from DB) ── */}
+                        <div className="col-span-3 space-y-6">
+                          {col2Subs.map((sub) => {
+                            const subProds = products
+                              .filter(
+                                (p) =>
+                                  p.subCategoryId === sub.id ||
+                                  (p.categoryId === currentHoveredCat.id &&
+                                    p.slug.toLowerCase().includes(sub.slug.toLowerCase()))
+                              )
+                              .slice(0, 5);
 
-      {/* ── Promotional Banner (Shown when no mega menu is active) ────── */}
-      <AnimatePresence>
-        {!hoveredCategorySlug && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.2 }}
-            className="hidden lg:block overflow-hidden"
-          >
-            <Container as="div" className="py-4">
-              <AnnouncementCarousel className="mx-auto w-full max-w-7xl" />
-            </Container>
-          </motion.div>
-        )}
-      </AnimatePresence>
+                            return (
+                              <div key={sub.id} className="space-y-1.5">
+                                <button
+                                  type="button"
+                                  onClick={() => handleSelectSub(currentHoveredCat.id, sub.id)}
+                                  className="text-[13px] font-bold text-neutral-900 hover:text-brand-red transition-colors block text-left cursor-pointer"
+                                >
+                                  {sub.name}
+                                </button>
+                                {subProds.length > 0 ? (
+                                  <ul className="space-y-1">
+                                    {subProds.map((prod) => (
+                                      <li key={prod.id}>
+                                        <Link
+                                          href={`/shop/${prod.slug}`}
+                                          onClick={() => setHoveredCategorySlug(null)}
+                                          className="text-[12px] text-neutral-600 hover:text-neutral-900 hover:underline transition-colors block py-0.5 leading-snug"
+                                        >
+                                          {prod.name}
+                                        </Link>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                ) : (
+                                  <div>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleSelectSub(currentHoveredCat.id, null)}
+                                      className="text-[11px] font-medium text-neutral-400 hover:text-brand-red hover:underline transition-colors block py-0.5 text-left cursor-pointer"
+                                    >
+                                      Voir les articles &rarr;
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+
+                        {/* ── Column 3: Nouveautés (Last 3 products related to main category) ── */}
+                        <div className="col-span-3 border-l border-neutral-200/80 pl-6 flex flex-col justify-between h-full">
+                          <div>
+                            <h5 className="text-[13px] font-bold text-neutral-900 mb-3">
+                              Nouveautés
+                            </h5>
+                            {newestProducts.length > 0 ? (
+                              <div className="space-y-3">
+                                {newestProducts.map((prod) => (
+                                  <Link
+                                    key={prod.id}
+                                    href={`/shop/${prod.slug}`}
+                                    onClick={() => setHoveredCategorySlug(null)}
+                                    className="group flex items-center gap-3 rounded-xl border border-neutral-200/70 bg-neutral-50/50 p-2.5 transition-all hover:border-neutral-300 hover:bg-white hover:shadow-2xs"
+                                  >
+                                    <div className="h-12 w-12 flex-shrink-0 overflow-hidden rounded-lg bg-white border border-neutral-200/60 p-1 flex items-center justify-center">
+                                      <img
+                                        src={prod.images?.[0] || "/lamsa2.png"}
+                                        alt={prod.name}
+                                        className="h-full w-full object-contain"
+                                      />
+                                    </div>
+                                    <div className="flex flex-col min-w-0 flex-1">
+                                      <span className="text-[12px] font-bold text-neutral-900 group-hover:text-brand-red transition-colors line-clamp-1">
+                                        {prod.name}
+                                      </span>
+                                      <span className="text-[11px] font-bold text-brand-red mt-0.5">
+                                        {formatPrice(prod.price)} DA
+                                      </span>
+                                    </div>
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-[12px] text-neutral-400">
+                                Aucun produit pour cette catégorie.
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* ── Column 4: Right Visual Card (from DB) ── */}
+                        <div className="col-span-3 flex flex-col items-center justify-start">
+                          <div className="w-full max-w-[220px] rounded-2xl border border-neutral-200/90 bg-[#fbfbfb] p-4 flex flex-col items-center justify-center transition-all hover:border-neutral-300">
+                            <div className="relative h-36 w-full flex items-center justify-center overflow-hidden">
+                              <img
+                                src={
+                                  currentHoveredCat.image ||
+                                  (categoryProducts[0]?.images?.[0]) ||
+                                  "/lamsa2.png"
+                                }
+                                alt={currentHoveredCat.name}
+                                className="max-h-full max-w-full object-contain"
+                              />
+                            </div>
+                            {currentHoveredCat.description && (
+                              <p className="mt-2.5 text-[11px] text-neutral-500 text-center leading-relaxed line-clamp-3">
+                                {currentHoveredCat.description}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectSub(currentHoveredCat.id)}
+                            className="mt-3 text-xs font-bold text-neutral-900 hover:text-brand-red hover:underline transition-colors text-center cursor-pointer leading-snug"
+                          >
+                            Voir tous les {currentHoveredCat.name.toLowerCase()} &rarr;
+                          </button>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </motion.div>
+              </Container>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
+
+      {/* ── Promotional Banner (Shown steadily, zero layout shift on hover) ────── */}
+      {hasActiveAnnouncements && (
+        <div className="hidden lg:block border-b border-brand-light-gray/40 bg-brand-soft-white/30">
+          <Container as="div" className="py-4">
+            <AnnouncementCarousel className="mx-auto w-full max-w-7xl" />
+          </Container>
+        </div>
+      )}
 
       {/* ── Mobile Accordion / Drawer (Rayons & Subcategories) Teleported to Body ─────── */}
       {mounted &&
@@ -483,6 +648,6 @@ export function ShopMegaNav() {
           </AnimatePresence>,
           document.body
         )}
-    </nav>
+    </>
   );
 }

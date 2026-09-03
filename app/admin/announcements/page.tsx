@@ -17,7 +17,6 @@ import {
   Layers,
   ArrowUpRight,
   ArrowRight,
-  RefreshCw,
   Clock,
   Check
 } from "lucide-react";
@@ -26,10 +25,38 @@ import { Announcement, announcementsApi } from "@/lib/api/lamsa-api";
 import { useAnnouncementStore } from "@/lib/store/useAnnouncementStore";
 
 export default function AdminAnnouncementsPage() {
-  const { fetchAnnouncements } = useAnnouncementStore();
+  const { fetchAnnouncements, autoPlayInterval, setAutoPlayInterval } = useAnnouncementStore();
   const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [notification, setNotification] = React.useState<{ text: string; type: "success" | "error" } | null>(null);
+
+  // Transition Delay Editing State
+  const [isEditingInterval, setIsEditingInterval] = React.useState(false);
+  const [tempSeconds, setTempSeconds] = React.useState(Math.round(autoPlayInterval / 1000) || 4);
+
+  React.useEffect(() => {
+    setTempSeconds(Math.round(autoPlayInterval / 1000) || 4);
+  }, [autoPlayInterval]);
+
+  const handleSaveInterval = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const val = Number(tempSeconds);
+    if (isNaN(val) || val < 1) {
+      showNotification("Le délai doit être d'au moins 1 seconde.", "error");
+      return;
+    }
+    const ms = Math.min(Math.max(val, 1), 60) * 1000;
+    setAutoPlayInterval(ms);
+    setIsEditingInterval(false);
+    showNotification(`Délai de transition mis à jour (${val}s) !`);
+  };
+
+  const handleQuickSetInterval = (sec: number) => {
+    setAutoPlayInterval(sec * 1000);
+    setTempSeconds(sec);
+    setIsEditingInterval(false);
+    showNotification(`Délai de transition réglé sur ${sec} secondes !`);
+  };
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -199,15 +226,6 @@ export default function AdminAnnouncementsPage() {
           <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={loadData}
-              className="inline-flex items-center gap-2 rounded-full border border-brand-light-gray bg-white px-4 py-2.5 text-xs font-bold text-brand-charcoal shadow-sm transition-all hover:bg-brand-soft-white cursor-pointer"
-            >
-              <RefreshCw className="h-3.5 w-3.5 text-brand-warm-gray" />
-              <span>Actualiser</span>
-            </button>
-
-            <button
-              type="button"
               onClick={handleOpenCreate}
               className="inline-flex items-center gap-2 rounded-full bg-brand-red px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
             >
@@ -237,13 +255,81 @@ export default function AdminAnnouncementsPage() {
             </span>
           </div>
 
-          <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
-              Délai de Transition
-            </span>
-            <span className="mt-2 text-2xl font-black text-brand-charcoal block">
-              4 secondes
-            </span>
+          <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
+                Délai de Transition
+              </span>
+              <Clock className="h-3.5 w-3.5 text-brand-warm-gray" />
+            </div>
+
+            {!isEditingInterval ? (
+              <div className="mt-2 flex items-center justify-between">
+                <span className="text-2xl font-black text-brand-charcoal">
+                  {Math.round(autoPlayInterval / 1000)} secondes
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsEditingInterval(true)}
+                  className="inline-flex items-center gap-1 rounded-full border border-brand-light-gray bg-white px-3 py-1 text-xs font-bold text-brand-charcoal shadow-2xs hover:border-brand-red/40 hover:bg-brand-red/5 hover:text-brand-red transition-all cursor-pointer"
+                >
+                  <Edit2 className="h-3 w-3" />
+                  <span>Modifier</span>
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSaveInterval} className="mt-2 flex items-center gap-2">
+                <div className="relative flex-1">
+                  <input
+                    type="number"
+                    min="1"
+                    max="60"
+                    value={tempSeconds}
+                    onChange={(e) => setTempSeconds(Number(e.target.value))}
+                    className="w-full h-9 rounded-xl border border-brand-red/50 bg-brand-soft-white/60 px-3 text-sm font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
+                    autoFocus
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-gray pointer-events-none">
+                    sec
+                  </span>
+                </div>
+                <button
+                  type="submit"
+                  className="h-9 px-3 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-hover transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                >
+                  <Check className="h-3.5 w-3.5" />
+                  <span>OK</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTempSeconds(Math.round(autoPlayInterval / 1000));
+                    setIsEditingInterval(false);
+                  }}
+                  className="h-9 px-2.5 rounded-xl border border-brand-light-gray text-xs font-bold text-brand-warm-gray hover:bg-brand-soft-white transition-colors cursor-pointer"
+                >
+                  ✕
+                </button>
+              </form>
+            )}
+
+            <div className="mt-3 flex items-center gap-1.5 pt-2 border-t border-brand-light-gray/60">
+              <span className="text-[10px] text-brand-warm-gray font-bold">Raccourcis :</span>
+              {[3, 4, 5, 8].map((sec) => (
+                <button
+                  key={sec}
+                  type="button"
+                  onClick={() => handleQuickSetInterval(sec)}
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
+                    Math.round(autoPlayInterval / 1000) === sec
+                      ? "bg-brand-charcoal text-white shadow-2xs"
+                      : "bg-brand-soft-white text-brand-warm-gray hover:bg-brand-light-gray/60 hover:text-brand-charcoal"
+                  }`}
+                >
+                  {sec}s
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -420,44 +506,56 @@ export default function AdminAnnouncementsPage() {
 
                 {/* Settings Row */}
                 <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div>
+                  <div className="flex flex-col">
                     <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal mb-2">
                       Ordre d&apos;affichage
                     </label>
-                    <input
-                      type="number"
-                      min="0"
-                      value={formOrder}
-                      onChange={(e) => setFormOrder(Number(e.target.value))}
-                      className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/60 p-3 text-xs font-semibold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none transition-all"
-                    />
+                    <div className="relative flex h-11 w-full items-center rounded-xl border border-brand-light-gray bg-brand-soft-white/60 px-3.5 transition-all focus-within:border-brand-red focus-within:bg-white focus-within:shadow-2xs">
+                      <input
+                        type="number"
+                        min="0"
+                        value={formOrder}
+                        onChange={(e) => setFormOrder(Number(e.target.value))}
+                        className="h-full w-full bg-transparent text-xs font-bold text-brand-charcoal focus:outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      />
+                      <span className="text-[10px] font-bold text-brand-warm-gray shrink-0 uppercase tracking-wider">
+                        Position
+                      </span>
+                    </div>
                   </div>
 
-                  <div>
+                  <div className="flex flex-col">
                     <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal mb-2">
                       Visibilité
                     </label>
                     <button
                       type="button"
                       onClick={() => setFormIsActive(!formIsActive)}
-                      className={`group flex w-full items-center gap-3 rounded-xl border p-3 transition-all duration-300 cursor-pointer ${
-                        formIsActive 
-                          ? "border-brand-red/40 bg-brand-red/5 shadow-sm" 
-                          : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white hover:border-brand-red/30 hover:shadow-sm"
+                      className={`group flex h-11 w-full items-center gap-3 rounded-xl border px-3.5 transition-all duration-200 cursor-pointer ${
+                        formIsActive
+                          ? "border-brand-red/40 bg-brand-red/5 shadow-2xs"
+                          : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white hover:border-brand-red/30 hover:shadow-2xs"
                       }`}
                     >
-                      <div className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-300 ${
-                        formIsActive 
-                          ? "border-brand-red bg-brand-red" 
-                          : "border-brand-light-gray bg-white group-hover:border-brand-red/50"
-                      }`}>
-                        <Check className={`h-3.5 w-3.5 text-white transition-transform duration-300 ${
-                          formIsActive ? "scale-100 opacity-100" : "scale-50 opacity-0"
-                        }`} strokeWidth={3} />
+                      <div
+                        className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-200 ${
+                          formIsActive
+                            ? "border-brand-red bg-brand-red"
+                            : "border-brand-light-gray bg-white group-hover:border-brand-red/50"
+                        }`}
+                      >
+                        <Check
+                          className={`h-3.5 w-3.5 text-white transition-transform duration-200 ${
+                            formIsActive ? "scale-100 opacity-100" : "scale-50 opacity-0"
+                          }`}
+                          strokeWidth={3}
+                        />
                       </div>
-                      <span className={`text-xs font-bold transition-colors ${
-                        formIsActive ? "text-brand-red" : "text-brand-charcoal"
-                      }`}>
+                      <span
+                        className={`text-xs font-bold transition-colors line-clamp-1 text-left ${
+                          formIsActive ? "text-brand-red" : "text-brand-charcoal"
+                        }`}
+                      >
                         Actif dans le carrousel
                       </span>
                     </button>

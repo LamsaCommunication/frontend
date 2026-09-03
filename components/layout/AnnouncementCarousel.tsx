@@ -14,11 +14,12 @@ interface AnnouncementCarouselProps {
 }
 
 export function AnnouncementCarousel({
-  autoPlayInterval = 4000,
+  autoPlayInterval: propAutoPlayInterval,
   className = "",
   onSelectAction
 }: AnnouncementCarouselProps) {
-  const { announcements, fetchAnnouncements, isLoading } = useAnnouncementStore();
+  const { announcements, fetchAnnouncements, autoPlayInterval: storeInterval, isLoading } = useAnnouncementStore();
+  const autoPlayInterval = propAutoPlayInterval ?? storeInterval ?? 4000;
   const [currentIndex, setCurrentIndex] = React.useState(0);
   const [isPaused, setIsPaused] = React.useState(false);
 

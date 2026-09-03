@@ -10,7 +10,8 @@ import {
   Clock,
   Printer,
   Loader2,
-  Trash2
+  Trash2,
+  RefreshCw
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { PaginationBar } from "@/components/ui/pagination-bar";
@@ -74,8 +75,8 @@ export default function AdminInvoicesPage() {
     return () => clearTimeout(id);
   }, [search]);
 
-  const { data: orders, pagination, isLoading, error, page, setPage, refetch } =
-    usePaginatedApi<OrderRecord>({
+  const { data: orders, pagination, meta, isLoading, error, page, setPage, refetch } =
+    usePaginatedApi<OrderRecord, { statusCounts?: Record<string, number> }>({
       url: "/api/v1/orders",
       limit: 15,
       params: {
@@ -132,6 +133,16 @@ export default function AdminInvoicesPage() {
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => refetch()}
+              disabled={isLoading}
+              className="inline-flex items-center gap-1.5 rounded-full border border-brand-light-gray bg-white px-4 py-2 text-xs font-bold text-brand-charcoal transition-colors hover:bg-brand-soft-white cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 text-brand-warm-gray ${isLoading ? "animate-spin" : ""}`} />
+              <span>Actualiser</span>
+            </button>
+
+            <button
+              type="button"
               onClick={() => window.print()}
               className="inline-flex items-center gap-1.5 rounded-full border border-brand-light-gray bg-white px-4 py-2 text-xs font-bold text-brand-charcoal transition-colors hover:bg-brand-soft-white cursor-pointer"
             >
@@ -144,21 +155,24 @@ export default function AdminInvoicesPage() {
         {/* Filter Pills & Search */}
         <div className="flex flex-col gap-3 rounded-2xl border border-brand-light-gray bg-white p-4 sm:flex-row sm:items-center sm:justify-between shadow-sm">
           <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto">
-            {["ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"].map((status) => (
-              <button
-                key={status}
-                type="button"
-                onClick={() => setStatusFilter(status)}
-                className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  statusFilter === status
-                    ? "bg-brand-charcoal text-white shadow-sm"
-                    : "text-brand-dark/70 hover:bg-brand-soft-white"
-                }`}
-              >
-                {STATUS_LABELS[status]}
-                {status === "ALL" && pagination ? ` (${pagination.total})` : ""}
-              </button>
-            ))}
+            {["ALL", "PENDING", "CONFIRMED", "SHIPPED", "DELIVERED", "CANCELLED"].map((status) => {
+              const count = meta?.statusCounts?.[status];
+              return (
+                <button
+                  key={status}
+                  type="button"
+                  onClick={() => setStatusFilter(status)}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
+                    statusFilter === status
+                      ? "bg-brand-charcoal text-white shadow-sm"
+                      : "text-brand-dark/70 hover:bg-brand-soft-white"
+                  }`}
+                >
+                  {STATUS_LABELS[status]}
+                  {count !== undefined ? ` (${count})` : (status === "ALL" && pagination ? ` (${pagination.total})` : "")}
+                </button>
+              );
+            })}
           </div>
 
           <div className="relative sm:w-64">

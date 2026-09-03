@@ -21,9 +21,10 @@ interface UsePaginatedApiOptions {
   deps?: unknown[];
 }
 
-interface UsePaginatedApiResult<T> {
+export interface UsePaginatedApiResult<T, M = any> {
   data: T[];
   pagination: PaginationMeta | null;
+  meta: M | null;
   isLoading: boolean;
   error: string | null;
   page: number;
@@ -31,21 +32,21 @@ interface UsePaginatedApiResult<T> {
   refetch: () => void;
 }
 
-export function usePaginatedApi<T = unknown>({
+export function usePaginatedApi<T = unknown, M = any>({
   url,
   limit = 15,
   params = {},
   deps = []
-}: UsePaginatedApiOptions): UsePaginatedApiResult<T> {
+}: UsePaginatedApiOptions): UsePaginatedApiResult<T, M> {
   const [page, setPage] = useState(1);
   const [data, setData] = useState<T[]>([]);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const [meta, setMeta] = useState<M | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tick, setTick] = useState(0);
 
   // Reset to page 1 when filters/deps change
-  const prevDepsRef = useState(() => deps)[0];
   useEffect(() => {
     setPage(1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -75,11 +76,13 @@ export function usePaginatedApi<T = unknown>({
         const dataKey = keys.find((k) => Array.isArray(payload[k]));
         setData(dataKey ? payload[dataKey] : []);
         setPagination(payload?.pagination ?? null);
+        setMeta(payload ?? null);
       })
       .catch((err) => {
         if (cancelled) return;
         setError(err?.response?.data?.message || "Erreur de connexion au serveur.");
         setData([]);
+        setMeta(null);
       })
       .finally(() => {
         if (!cancelled) setIsLoading(false);
@@ -89,5 +92,5 @@ export function usePaginatedApi<T = unknown>({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, page, limit, tick, ...deps]);
 
-  return { data, pagination, isLoading, error, page, setPage, refetch };
+  return { data, pagination, meta, isLoading, error, page, setPage, refetch };
 }
