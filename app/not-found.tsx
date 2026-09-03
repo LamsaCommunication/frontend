@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { motion } from "framer-motion";
 import { ArrowLeft, AlertOctagon } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Container } from "@/components/ui/container";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function NotFound() {
   return (
@@ -12,7 +15,12 @@ export default function NotFound() {
       <Navbar />
       <main className="flex-1 bg-[#faf9f6] py-20 md:py-32">
         <Container as="div">
-          <div className="mx-auto max-w-md text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: EASE }}
+            className="mx-auto max-w-md text-center"
+          >
             <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-brand-red/10 text-brand-red border border-brand-red/20 shadow-lg">
               <AlertOctagon className="h-10 w-10" />
             </div>
@@ -31,7 +39,7 @@ export default function NotFound() {
                 <span>Retour à l&apos;accueil</span>
               </Link>
             </div>
-          </div>
+          </motion.div>
         </Container>
       </main>
       <Footer />

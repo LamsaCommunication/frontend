@@ -33,12 +33,7 @@ const SORT_OPTIONS = [
 
 type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 
-const SORT_ORDER_MAP: Record<SortOption, object> = {
-  popular: { featured: "desc", createdAt: "desc" },
-  price_asc: { price: "asc" },
-  price_desc: { price: "desc" },
-  newest: { createdAt: "desc" }
-};
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 export default function ShopPage() {
   const {
@@ -107,7 +102,12 @@ export default function ShopPage() {
       <main className="flex-1">
         {/* Dynamic Category Breadcrumb / Sub-category Bar */}
         {currentCategory && (
-          <section className="border-b border-brand-light-gray/70 bg-white py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+          <motion.section
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, ease: EASE }}
+            className="border-b border-brand-light-gray/70 bg-white py-3 shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
+          >
             <Container as="div">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 {/* Breadcrumb */}
@@ -162,7 +162,7 @@ export default function ShopPage() {
                 )}
               </div>
             </Container>
-          </section>
+          </motion.section>
         )}
 
         {/* Products Section */}
@@ -221,10 +221,11 @@ export default function ShopPage() {
                     return (
                       <motion.div
                         key={product.id}
-                        initial={{ opacity: 0, y: 12 }}
+                        initial={{ opacity: 0, y: 18 }}
                         whileInView={{ opacity: 1, y: 0 }}
                         viewport={{ once: true, margin: "-30px" }}
-                        transition={{ duration: 0.3, delay: (idx % 4) * 0.04 }}
+                        transition={{ duration: 0.5, ease: EASE, delay: (idx % 4) * 0.05 }}
+                        whileHover={{ y: -4, transition: { duration: 0.25, ease: EASE } }}
                         className="group flex flex-col justify-between rounded-2xl border border-brand-light-gray/70 bg-white p-3.5 shadow-xs transition-all duration-200 hover:border-brand-charcoal/30 hover:shadow-md"
                       >
                         <Link

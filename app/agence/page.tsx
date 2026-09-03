@@ -13,6 +13,8 @@ import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { Suspense } from "react";
 import { AgenceScrollHandler } from "@/components/ui/agence-scroll-handler";
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 export default function AgencePage() {
   return (
     <>
@@ -31,7 +33,7 @@ export default function AgencePage() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.6, ease: "easeOut" }}
+              transition={{ duration: 0.65, ease: EASE }}
               className="mx-auto max-w-2xl text-center"
             >
               <span className="label-eyebrow text-brand-red">
@@ -52,7 +54,7 @@ export default function AgencePage() {
                 initial={{ opacity: 0, y: 12 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-40px" }}
-                transition={{ duration: 0.5, ease: "easeOut", delay: 0.15 }}
+                transition={{ duration: 0.5, ease: EASE, delay: 0.15 }}
                 className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
               >
                 <Link

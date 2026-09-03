@@ -5,6 +5,8 @@ import { motion } from "framer-motion";
 import { Container } from "@/components/ui/container";
 import { stats } from "@/lib/site";
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 export function AboutSection() {
   return (
     <section
@@ -19,7 +21,7 @@ export function AboutSection() {
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-80px" }}
-              transition={{ duration: 0.65, ease: "easeOut" }}
+              transition={{ duration: 0.65, ease: EASE }}
             >
               <span className="label-eyebrow text-brand-red">
                 À propos de l&apos;agence
@@ -34,7 +36,7 @@ export function AboutSection() {
               initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.6, ease: "easeOut", delay: 0.12 }}
+              transition={{ duration: 0.6, ease: EASE, delay: 0.12 }}
               className="mt-7 space-y-4"
             >
               <p className="text-base leading-[1.85] text-brand-dark/70 md:text-[1.0625rem]">
@@ -64,7 +66,7 @@ export function AboutSection() {
                   viewport={{ once: true, margin: "-40px" }}
                   transition={{
                     duration: 0.5,
-                    ease: "easeOut",
+                    ease: EASE,
                     delay: 0.1 + 0.1 * index,
                   }}
                   className="lg:py-7 lg:first:pt-0 lg:last:pb-0 "

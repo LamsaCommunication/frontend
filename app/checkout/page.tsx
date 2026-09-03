@@ -32,6 +32,8 @@ import { OrderRecord } from "@/lib/store/useAdminStore";
 import { formatPrice } from "@/lib/utils";
 import { ALGERIA_WILAYAS } from "@/lib/data/algeria-wilayas";
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 export default function CheckoutPage() {
   const router = useRouter();
   const {
@@ -254,7 +256,12 @@ export default function CheckoutPage() {
             </motion.div>
           ) : (
             /* ── Checkout Form + Summary Layout ──────────────────────── */
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start"
+            >
               {/* Form Column (7 Cols) */}
               <div className="lg:col-span-7">
                 <form onSubmit={handlePlaceOrder} className="space-y-6">
@@ -566,7 +573,7 @@ export default function CheckoutPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
         </Container>
       </main>

@@ -88,9 +88,9 @@ function AdminLoginContent() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 40, scale: 0.95 }}
+        initial={{ opacity: 0, y: 32, scale: 0.96 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
         className="relative z-10 w-full max-w-[420px] px-4"
       >
         {/* Glassmorphism Card */}

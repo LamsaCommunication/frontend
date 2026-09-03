@@ -9,13 +9,9 @@ import {
   Trash2,
   CheckCircle2,
   AlertCircle,
-  Sparkles,
-  ExternalLink,
   Eye,
   EyeOff,
   Upload,
-  Layers,
-  ArrowUpRight,
   ArrowRight,
   Clock,
   Check
@@ -68,6 +64,19 @@ export default function AdminAnnouncementsPage() {
   const [formOrder, setFormOrder] = React.useState(0);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [imageDimensions, setImageDimensions] = React.useState<{ width: number; height: number } | null>(null);
+
+  React.useEffect(() => {
+    if (!formImage) {
+      setImageDimensions(null);
+      return;
+    }
+    const img = new window.Image();
+    img.onload = () => {
+      setImageDimensions({ width: img.naturalWidth, height: img.naturalHeight });
+    };
+    img.src = formImage;
+  }, [formImage]);
 
   // Delete Confirmation Modal
   const [deleteModal, setDeleteModal] = React.useState<{ isOpen: boolean; item: Announcement | null }>({
@@ -320,11 +329,10 @@ export default function AdminAnnouncementsPage() {
                   key={sec}
                   type="button"
                   onClick={() => handleQuickSetInterval(sec)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${
-                    Math.round(autoPlayInterval / 1000) === sec
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${Math.round(autoPlayInterval / 1000) === sec
                       ? "bg-brand-charcoal text-white shadow-2xs"
                       : "bg-brand-soft-white text-brand-warm-gray hover:bg-brand-light-gray/60 hover:text-brand-charcoal"
-                  }`}
+                    }`}
                 >
                   {sec}s
                 </button>
@@ -394,11 +402,11 @@ export default function AdminAnnouncementsPage() {
                   </div>
 
                   {/* Visual Preview */}
-                  <div className="relative mt-4 h-32 w-full overflow-hidden rounded-2xl bg-brand-soft-white/60 border border-brand-light-gray/60 p-2 flex items-center justify-center">
+                  <div className="relative mt-4 w-full aspect-[1920/600] overflow-hidden rounded-2xl bg-neutral-900 border border-brand-light-gray/60 flex items-center justify-center">
                     <img
                       src={item.image || "/lamsa2.png"}
                       alt="Annonce Preview"
-                      className="max-h-full max-w-full object-contain"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                 </div>
@@ -466,26 +474,49 @@ export default function AdminAnnouncementsPage() {
 
                   <div className="relative w-full rounded-2xl border-2 border-dashed border-brand-light-gray bg-brand-soft-white/30 p-2 transition-colors hover:border-brand-red/30 hover:bg-brand-red/5">
                     {formImage ? (
-                      <div className="relative group w-full h-[180px] sm:h-[220px] rounded-xl overflow-hidden bg-white border border-brand-light-gray/50 flex items-center justify-center shadow-sm">
-                        <img
-                          src={formImage}
-                          alt="Banner Preview"
-                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
-                        />
-                        <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
-                          <label className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-brand-charcoal hover:text-brand-red cursor-pointer shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
-                            <Upload className="h-4 w-4" />
-                            <span>Changer l&apos;image</span>
-                            <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                          </label>
-                          <button
-                            type="button"
-                            onClick={() => setFormImage("")}
-                            className="inline-flex items-center justify-center rounded-full bg-white p-2.5 text-brand-charcoal hover:text-brand-red shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 cursor-pointer"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
+                      <div>
+                        <div className="relative group w-full aspect-[1920/600] rounded-xl overflow-hidden bg-neutral-900 border border-brand-light-gray/50 flex items-center justify-center shadow-sm">
+                          <img
+                            src={formImage}
+                            alt="Banner Preview"
+                            className="w-full h-full object-contain"
+                          />
+                          <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
+                            <label className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-brand-charcoal hover:text-brand-red cursor-pointer shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
+                              <Upload className="h-4 w-4" />
+                              <span>Changer l&apos;image</span>
+                              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                            </label>
+                            <button
+                              type="button"
+                              onClick={() => setFormImage("")}
+                              className="inline-flex items-center justify-center rounded-full bg-white p-2.5 text-brand-charcoal hover:text-brand-red shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300 delay-75 cursor-pointer"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
                         </div>
+
+                        {imageDimensions && (
+                          <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-brand-warm-gray px-1">
+                            <span>
+                              Résolution : <strong className="text-brand-charcoal font-mono">{imageDimensions.width} x {imageDimensions.height} px</strong>
+                            </span>
+                            {imageDimensions.width === 1920 && imageDimensions.height === 600 ? (
+                              <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                <Check className="h-3.5 w-3.5" /> 1920x600px Parfait
+                              </span>
+                            ) : Math.abs(imageDimensions.width / imageDimensions.height - 3.2) < 0.08 ? (
+                              <span className="text-blue-600 font-bold flex items-center gap-1">
+                                <Check className="h-3.5 w-3.5" /> Ratio 3.2:1 Conforme
+                              </span>
+                            ) : (
+                              <span className="text-amber-600 font-medium">
+                                Ratio recommandé : 1920x600 (3.2:1)
+                              </span>
+                            )}
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <label className="flex flex-col items-center justify-center py-10 px-6 cursor-pointer">
@@ -531,30 +562,26 @@ export default function AdminAnnouncementsPage() {
                     <button
                       type="button"
                       onClick={() => setFormIsActive(!formIsActive)}
-                      className={`group flex h-11 w-full items-center gap-3 rounded-xl border px-3.5 transition-all duration-200 cursor-pointer ${
-                        formIsActive
+                      className={`group flex h-11 w-full items-center gap-3 rounded-xl border px-3.5 transition-all duration-200 cursor-pointer ${formIsActive
                           ? "border-brand-red/40 bg-brand-red/5 shadow-2xs"
                           : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white hover:border-brand-red/30 hover:shadow-2xs"
-                      }`}
+                        }`}
                     >
                       <div
-                        className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-200 ${
-                          formIsActive
+                        className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-200 ${formIsActive
                             ? "border-brand-red bg-brand-red"
                             : "border-brand-light-gray bg-white group-hover:border-brand-red/50"
-                        }`}
+                          }`}
                       >
                         <Check
-                          className={`h-3.5 w-3.5 text-white transition-transform duration-200 ${
-                            formIsActive ? "scale-100 opacity-100" : "scale-50 opacity-0"
-                          }`}
+                          className={`h-3.5 w-3.5 text-white transition-transform duration-200 ${formIsActive ? "scale-100 opacity-100" : "scale-50 opacity-0"
+                            }`}
                           strokeWidth={3}
                         />
                       </div>
                       <span
-                        className={`text-xs font-bold transition-colors line-clamp-1 text-left ${
-                          formIsActive ? "text-brand-red" : "text-brand-charcoal"
-                        }`}
+                        className={`text-xs font-bold transition-colors line-clamp-1 text-left ${formIsActive ? "text-brand-red" : "text-brand-charcoal"
+                          }`}
                       >
                         Actif dans le carrousel
                       </span>

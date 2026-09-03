@@ -30,6 +30,8 @@ import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
 import { useCatalogStore, Category } from "@/lib/store/useCatalogStore";
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 const ICON_MAP: Record<
   string,
   React.ComponentType<{ className?: string; strokeWidth?: number }>
@@ -326,7 +328,7 @@ function AgenceCategoriesSectionInner() {
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, margin: "-60px" }}
-          transition={{ duration: 0.55, ease: "easeOut", delay: 0.15 }}
+          transition={{ duration: 0.55, ease: EASE, delay: 0.15 }}
           className="-mx-6 mt-10 md:mx-0"
         >
           <div className="flex gap-2 overflow-x-auto px-6 pb-2 md:flex-wrap md:justify-center md:overflow-visible md:px-0 md:pb-0">
@@ -359,7 +361,7 @@ function AgenceCategoriesSectionInner() {
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
+              transition={{ duration: 0.35, ease: EASE }}
               className="overflow-hidden rounded-3xl border border-[#ebebeb] bg-white shadow-[0_4px_32px_-8px_rgba(0,0,0,0.06)]"
             >
               {/* ── Top: category info + services ── */}

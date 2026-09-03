@@ -6,7 +6,10 @@ import Link from "next/link";
 import { ChevronRight, ArrowLeft, Layers, Clock, Truck, Loader2 } from "lucide-react";
 import { useCatalogStore, Product } from "@/lib/store/useCatalogStore";
 import { catalogApi } from "@/lib/api/lamsa-api";
+import { motion } from "framer-motion";
 import { ProductStandardView } from "@/components/customizer/ProductStandardView";
+
+const EASE = [0.22, 1, 0.36, 1] as const;
 
 // Dynamically import Product3DStudio with SSR disabled for optimal WebGL performance
 const Product3DStudio = dynamic(
@@ -79,7 +82,7 @@ export function ProductCustomizerClient({ slug }: { slug: string }) {
     );
   }
 
-  const product = liveProduct || products.find((p) => p.slug === slug) || products[0];
+  const product = liveProduct || products.find((p) => p.slug === slug);
 
   if (!product) {
     return (
@@ -100,9 +103,20 @@ export function ProductCustomizerClient({ slug }: { slug: string }) {
   const has3D = Boolean(product.modelType && product.modelType !== "none");
 
   return (
-    <div className="space-y-8">
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.55, ease: EASE }}
+      className="space-y-8"
+    >
       {/* ── Breadcrumbs ────────────────────────────────────────────── */}
-      <nav aria-label="Fil d'Ariane" className="flex items-center gap-2 text-xs font-medium text-brand-warm-gray">
+      <motion.nav
+        initial={{ opacity: 0, y: -6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: EASE, delay: 0.05 }}
+        aria-label="Fil d'Ariane"
+        className="flex items-center gap-2 text-xs font-medium text-brand-warm-gray"
+      >
         <Link href="/" className="hover:text-brand-charcoal transition-colors">
           Accueil
         </Link>
@@ -118,14 +132,20 @@ export function ProductCustomizerClient({ slug }: { slug: string }) {
         )}
         <ChevronRight className="h-3.5 w-3.5" />
         <span className="text-brand-red font-semibold line-clamp-1">{product.name}</span>
-      </nav>
+      </motion.nav>
 
       {/* ── Dynamic Product View: 3D Studio vs 2D Photo View ───────── */}
-      {has3D ? (
-        <Product3DStudio product={product} />
-      ) : (
-        <ProductStandardView product={product} />
-      )}
-    </div>
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: EASE, delay: 0.12 }}
+      >
+        {has3D ? (
+          <Product3DStudio product={product} />
+        ) : (
+          <ProductStandardView product={product} />
+        )}
+      </motion.div>
+    </motion.div>
   );
 }

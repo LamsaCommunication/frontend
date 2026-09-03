@@ -74,7 +74,7 @@ function AdminProductsContent() {
   const [formName, setFormName] = React.useState("");
   const [formSlug, setFormSlug] = React.useState("");
   const [formDescription, setFormDescription] = React.useState("");
-  const [formCategoryId, setFormCategoryId] = React.useState(categories[0]?.id || "cat-1");
+  const [formCategoryId, setFormCategoryId] = React.useState(categories[0]?.id || "");
   const [formSubCategoryId, setFormSubCategoryId] = React.useState("");
   const [formPrice, setFormPrice] = React.useState<number>(3500);
   const [formStock, setFormStock] = React.useState<number>(100);
@@ -95,6 +95,13 @@ function AdminProductsContent() {
 
   const [addedProductId, setAddedProductId] = React.useState<string | null>(null);
 
+  // Sync default category when categories load from database
+  React.useEffect(() => {
+    if (!formCategoryId && categories.length > 0) {
+      setFormCategoryId(categories[0].id);
+    }
+  }, [categories, formCategoryId]);
+
   // Open drawer if redirected with ?action=add or ?action=new
   React.useEffect(() => {
     if (initialAction === "add" || initialAction === "new") {
@@ -109,7 +116,7 @@ function AdminProductsContent() {
     setFormName("");
     setFormSlug("");
     setFormDescription("");
-    setFormCategoryId(categories[0]?.id || "cat-1");
+    setFormCategoryId(categories[0]?.id || "");
     setFormSubCategoryId("");
     setFormPrice(3500);
     setFormStock(100);

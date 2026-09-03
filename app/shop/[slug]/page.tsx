@@ -8,28 +8,17 @@ import { Container } from "@/components/ui/container";
 import { useCatalogStore, Product } from "@/lib/store/useCatalogStore";
 import { ProductCustomizerClient } from "./client-view";
 
+import { catalogApi } from "@/lib/api/lamsa-api";
+
 export const dynamicParams = true;
 
-const STATIC_SLUGS = [
-  "cartes-de-visite-premium-soft-touch",
-  "stickers-vinyle-decoupe-forme-libre",
-  "mug-personnalise-ceramique-hd",
-  "casquette-baseball-brodee-custom",
-  "tshirt-coton-bio-serigraphie-dtf",
-  "roll-up-kakemono-evenementiel-luxe",
-  "cartes-de-remerciement-dorees",
-  "kit-branding-startup-corporate",
-  "packaging-boite-cadeau-personnalisee",
-  "neon-led-enseigne-lumineuse-custom",
-  "mug-3d",
-  "tshirt-3d",
-  "cap-3d",
-  "casquette-3d",
-  "t-shirt-3d"
-];
-
-export function generateStaticParams() {
-  return STATIC_SLUGS.map((slug) => ({ slug }));
+export async function generateStaticParams() {
+  try {
+    const res = await catalogApi.getProducts({ limit: 100 });
+    return (res.products || []).map((p) => ({ slug: p.slug }));
+  } catch {
+    return [];
+  }
 }
 
 export default async function ProductDetailPage({

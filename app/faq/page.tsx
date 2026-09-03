@@ -8,6 +8,8 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Container } from "@/components/ui/container";
 
+const EASE = [0.22, 1, 0.36, 1] as const;
+
 const faqs = [
   {
     id: "start",
@@ -69,7 +71,7 @@ function FaqItem({
       initial={{ opacity: 0, y: 16 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, margin: "-40px" }}
-      transition={{ duration: 0.5, ease: "easeOut", delay: 0.05 * index }}
+      transition={{ duration: 0.5, ease: EASE, delay: 0.05 * index }}
     >
       <button
         onClick={() => setOpen((v) => !v)}
@@ -123,7 +125,7 @@ export default function FaqPage() {
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
+            transition={{ duration: 0.65, ease: EASE }}
             className="mx-auto max-w-2xl text-center"
           >
             <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] text-brand-red">
