@@ -38,15 +38,15 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="flex min-h-screen bg-[#faf9f6]">
-      {/* Sidebar */}
+    <div className="min-h-screen bg-[#faf9f6]">
+      {/* Fixed Sidebar */}
       <AdminSidebar
         isOpen={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex flex-1 flex-col overflow-x-hidden">
+      {/* Main Content Area - offset by sidebar width on desktop */}
+      <div className="flex flex-1 flex-col min-h-screen min-w-0 lg:pl-72">
         <AdminHeader onToggleSidebar={() => setSidebarOpen((v) => !v)} />
         <main className="flex-1 p-6 md:p-8 lg:p-10">{children}</main>
       </div>

@@ -130,7 +130,7 @@ export function ShopMegaNav() {
         ref={navContainerRef}
         onMouseEnter={handleNavMouseEnter}
         onMouseLeave={handleNavMouseLeave}
-        className={`relative w-full border-b border-brand-light-gray/80 bg-white transition-colors duration-150 ${isMobileDrawerOpen ? "z-[999]" : "z-40"}`}
+        className={`relative w-full transition-colors duration-150 ${isMobileDrawerOpen ? "z-[999]" : "z-40"}`}
       >
         <Container as="div">
           {/* ── Desktop Category Navigation Strip (VistaPrint Style, No scrollbar, No Offres & Packs) ──────── */}
@@ -145,8 +145,8 @@ export function ShopMegaNav() {
                 setHoveredCategorySlug(null);
               }}
               className={`relative py-3 px-3.5 text-[12.5px] font-medium whitespace-nowrap transition-colors cursor-pointer ${activeCategoryId === null
-                  ? "font-bold text-neutral-900"
-                  : "text-neutral-700 hover:text-neutral-900"
+                ? "font-bold text-neutral-900"
+                : "text-neutral-700 hover:text-neutral-900"
                 }`}
             >
               <span>Tous les produits</span>
@@ -171,8 +171,8 @@ export function ShopMegaNav() {
                     setHoveredCategorySlug(null);
                   }}
                   className={`relative py-3 px-3.5 text-[12.5px] font-medium whitespace-nowrap transition-colors cursor-pointer ${isActive || isHovered
-                      ? "font-bold text-neutral-900"
-                      : "text-neutral-700 hover:text-neutral-900"
+                    ? "font-bold text-neutral-900"
+                    : "text-neutral-700 hover:text-neutral-900"
                     }`}
                 >
                   <span>{cat.name}</span>
@@ -208,7 +208,7 @@ export function ShopMegaNav() {
           </div>
         </Container>
 
-        {/* ── Desktop Mega Menu Dropdown Panel (100% Data from DB) ─────── */}
+        {/* ── Desktop Mega Menu Dropdown Panel ─────── */}
         <AnimatePresence>
           {hoveredCategorySlug && currentHoveredCat && (
             <motion.div
@@ -247,7 +247,7 @@ export function ShopMegaNav() {
 
                     return (
                       <>
-                        {/* ── Column 1: Subcategories Group 1 (Max 5 products each from DB) ── */}
+                        {/* ── Column 1: Subcategories Group 1 (Max 5 products) ── */}
                         <div className="col-span-3 space-y-6">
                           {col1Subs.map((sub) => {
                             const subProds = products
@@ -298,7 +298,7 @@ export function ShopMegaNav() {
                           })}
                         </div>
 
-                        {/* ── Column 2: Subcategories Group 2 (Max 5 products each from DB) ── */}
+                        {/* ── Column 2: Subcategories Group 2 (Max 5 products) ── */}
                         <div className="col-span-3 space-y-6">
                           {col2Subs.map((sub) => {
                             const subProds = products
@@ -430,7 +430,7 @@ export function ShopMegaNav() {
 
       {/* ── Promotional Banner (Shown steadily, zero layout shift on hover) ────── */}
       {hasActiveAnnouncements && (
-        <div className="hidden lg:block border-b border-brand-light-gray/40 bg-brand-soft-white/30">
+        <div className="hidden lg:block">
           <Container as="div" className="py-4">
             <AnnouncementCarousel className="mx-auto w-full max-w-7xl" />
           </Container>

@@ -168,53 +168,6 @@ export default function ShopPage() {
         {/* Products Section */}
         <section className="py-8 md:py-12">
           <Container as="div">
-            {/* Search & Sort Controls (Powered directly by Backend & DB) */}
-            <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="relative flex-1 sm:max-w-md">
-                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-                <input
-                  type="text"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setPage(1);
-                  }}
-                  placeholder="Rechercher un produit, format, catégorie..."
-                  className="w-full rounded-full border border-neutral-200 bg-neutral-50/60 py-2.5 pl-10 pr-9 text-xs font-medium text-neutral-900 placeholder-neutral-400 focus:border-brand-red focus:bg-white focus:outline-none transition-all shadow-2xs"
-                />
-                {search && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSearch("");
-                      setPage(1);
-                    }}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-neutral-400 hover:text-neutral-700 cursor-pointer"
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <span className="text-xs text-neutral-500 font-medium whitespace-nowrap">Trier par :</span>
-                <select
-                  value={sortBy}
-                  onChange={(e) => {
-                    setSortBy(e.target.value as SortOption);
-                    setPage(1);
-                  }}
-                  className="rounded-full border border-neutral-200 bg-white px-3.5 py-2 text-xs font-bold text-neutral-800 focus:border-brand-red focus:outline-none cursor-pointer shadow-2xs"
-                >
-                  {SORT_OPTIONS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
             {/* Loading skeleton */}
             {isLoading && (
               <div className="flex items-center justify-center py-24">
