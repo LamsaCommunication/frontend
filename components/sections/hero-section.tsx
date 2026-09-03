@@ -9,21 +9,11 @@ import { Container } from "@/components/ui/container";
 import { Marquee } from "@/components/ui/marquee";
 import { site } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
+import { clientLogosApi, ClientLogo } from "@/lib/api/lamsa-api";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-const CLIENT_LOGOS = [
-  { src: "/adhesive.svg",    alt: "Adhesive" },
-  { src: "/cosidar.svg",     alt: "Cosidar" },
-  { src: "/digue.svg",       alt: "Digue" },
-  { src: "/hydagri.svg",     alt: "HydAgri" },
-  { src: "/piove.svg",       alt: "Piove" },
-  { src: "/prodimag.svg",    alt: "Prodimag" },
-  { src: "/savannah.svg",    alt: "Savannah" },
-  { src: "/syngenta.svg",    alt: "Syngenta" },
-  { src: "/vitro.svg",       alt: "Vitro" },
-  { src: "/vlux.svg",        alt: "Vlux" },
-] as const;
+
 
 /*
  * CTA buttons — rendered twice (desktop inline / mobile standalone)
@@ -54,6 +44,24 @@ function CTAButtons() {
 }
 
 export function HeroSection() {
+  const [logos, setLogos] = React.useState<{ id: string; src: string; alt: string }[]>([]);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+    const fetchLogos = async () => {
+      try {
+        const data = await clientLogosApi.getActive();
+        if (data && data.length > 0) {
+          setLogos(data.map(logo => ({ id: logo.id, src: logo.image, alt: logo.name || "Partenaire" })));
+        }
+      } catch (err) {
+        console.error("Failed to fetch client logos:", err);
+      }
+    };
+    fetchLogos();
+  }, []);
+
   return (
     <section
       id="accueil"
@@ -189,29 +197,31 @@ export function HeroSection() {
           [mask-image:linear-gradient(to_right,transparent,black_14%,black_86%,transparent)]
           [-webkit-mask-image:linear-gradient(to_right,transparent,black_14%,black_86%,transparent)]"
       >
-        <Marquee
-          speed="fast"
-          separator={null}
-          className="items-center py-5 md:py-6"
-          itemClassName="px-6 md:px-10"
-          items={CLIENT_LOGOS.map(({ src, alt }) => (
-            <div
-              key={src}
-              className="relative h-14 w-14 shrink-0 md:h-20 md:w-20"
-            >
-              <Image
-                src={src}
-                alt={alt}
-                width={80}
-                height={80}
-                loading="lazy"
-                unoptimized={src.endsWith(".svg")}
-                sizes="(max-width: 768px) 56px, 80px"
-                className="h-full w-full object-contain"
-              />
-            </div>
-          ))}
-        />
+        {isMounted && (
+          <Marquee
+            speed="fast"
+            separator={null}
+            className="items-center py-5 md:py-6"
+            itemClassName="px-6 md:px-10"
+            items={logos.map(({ id, src, alt }, index) => (
+              <div
+                key={id || `logo-${index}`}
+                className="relative h-14 w-14 shrink-0 md:h-20 md:w-20"
+              >
+                <Image
+                  src={src}
+                  alt={alt}
+                  width={80}
+                  height={80}
+                  loading="lazy"
+                  unoptimized={src.startsWith("data:") || src.endsWith(".svg")}
+                  sizes="(max-width: 768px) 56px, 80px"
+                  className="h-full w-full object-contain"
+                />
+              </div>
+            ))}
+          />
+        )}
       </motion.div>
     </section>
   );

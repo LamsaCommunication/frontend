@@ -67,7 +67,11 @@ apiClient.interceptors.response.use(
           failedQueue.push({
             resolve: (token: string) => {
               if (originalRequest.headers) {
-                originalRequest.headers.Authorization = `Bearer ${token}`;
+                if (typeof originalRequest.headers.set === "function") {
+                  originalRequest.headers.set("Authorization", `Bearer ${token}`);
+                } else {
+                  originalRequest.headers.Authorization = `Bearer ${token}`;
+                }
               }
               resolve(apiClient(originalRequest));
             },
@@ -113,7 +117,11 @@ apiClient.interceptors.response.use(
 
           apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
           if (originalRequest.headers) {
-            originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            if (typeof originalRequest.headers.set === "function") {
+              originalRequest.headers.set("Authorization", `Bearer ${newAccessToken}`);
+            } else {
+              originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+            }
           }
 
           // Process queued requests

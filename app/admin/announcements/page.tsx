@@ -14,19 +14,25 @@ import {
   Upload,
   ArrowRight,
   Clock,
-  Check
+  Check,
+  ImageIcon
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
-import { Announcement, announcementsApi } from "@/lib/api/lamsa-api";
+import { Announcement, ClientLogo, announcementsApi, clientLogosApi } from "@/lib/api/lamsa-api";
 import { useAnnouncementStore } from "@/lib/store/useAnnouncementStore";
+
+type Tab = "banners" | "logos";
 
 export default function AdminAnnouncementsPage() {
   const { fetchAnnouncements, autoPlayInterval, setAutoPlayInterval } = useAnnouncementStore();
+  const [activeTab, setActiveTab] = React.useState<Tab>("banners");
+
   const [announcements, setAnnouncements] = React.useState<Announcement[]>([]);
+  const [clientLogos, setClientLogos] = React.useState<ClientLogo[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [notification, setNotification] = React.useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  // Transition Delay Editing State
+  // Transition Delay Editing State (Banners only)
   const [isEditingInterval, setIsEditingInterval] = React.useState(false);
   const [tempSeconds, setTempSeconds] = React.useState(Math.round(autoPlayInterval / 1000) || 4);
 
@@ -56,12 +62,13 @@ export default function AdminAnnouncementsPage() {
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = React.useState(false);
-  const [editingItem, setEditingItem] = React.useState<Announcement | null>(null);
+  const [editingItem, setEditingItem] = React.useState<Announcement | ClientLogo | null>(null);
 
   // Form Fields
-  const [formImage, setFormImage] = React.useState("/donner_vie_vos_idees_hero.svg");
+  const [formImage, setFormImage] = React.useState("");
   const [formIsActive, setFormIsActive] = React.useState(true);
   const [formOrder, setFormOrder] = React.useState(0);
+  const [formName, setFormName] = React.useState(""); // For logos
   const [formError, setFormError] = React.useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [imageDimensions, setImageDimensions] = React.useState<{ width: number; height: number } | null>(null);
@@ -79,7 +86,7 @@ export default function AdminAnnouncementsPage() {
   }, [formImage]);
 
   // Delete Confirmation Modal
-  const [deleteModal, setDeleteModal] = React.useState<{ isOpen: boolean; item: Announcement | null }>({
+  const [deleteModal, setDeleteModal] = React.useState<{ isOpen: boolean; item: Announcement | ClientLogo | null }>({
     isOpen: false,
     item: null
   });
@@ -92,15 +99,20 @@ export default function AdminAnnouncementsPage() {
   const loadData = React.useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await announcementsApi.getAllAdmin();
-      setAnnouncements(data);
+      if (activeTab === "banners") {
+        const data = await announcementsApi.getAllAdmin();
+        setAnnouncements(data);
+      } else {
+        const data = await clientLogosApi.getAllAdmin();
+        setClientLogos(data);
+      }
     } catch (err: any) {
-      console.error("Failed to load announcements:", err);
-      showNotification("Impossible de charger les annonces.", "error");
+      console.error(`Failed to load ${activeTab}:`, err);
+      showNotification("Impossible de charger les données.", "error");
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [activeTab]);
 
   React.useEffect(() => {
     loadData();
@@ -110,16 +122,20 @@ export default function AdminAnnouncementsPage() {
     setEditingItem(null);
     setFormImage("");
     setFormIsActive(true);
-    setFormOrder(announcements.length + 1);
+    setFormName("");
+    setFormOrder(activeTab === "banners" ? announcements.length + 1 : clientLogos.length + 1);
     setFormError(null);
     setIsModalOpen(true);
   };
 
-  const handleOpenEdit = (item: Announcement) => {
+  const handleOpenEdit = (item: any) => {
     setEditingItem(item);
     setFormImage(item.image);
     setFormIsActive(item.isActive);
     setFormOrder(item.order);
+    if (activeTab === "logos") {
+      setFormName(item.name || "");
+    }
     setFormError(null);
     setIsModalOpen(true);
   };
@@ -140,47 +156,56 @@ export default function AdminAnnouncementsPage() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formImage.trim()) {
-      setFormError("Veuillez saisir une URL d'image valide.");
+      setFormError("Veuillez saisir ou téléverser une image valide.");
       return;
     }
 
     setIsSubmitting(true);
     setFormError(null);
 
-    const payload = {
-      image: formImage.trim(),
-      isActive: formIsActive,
-      order: formOrder
-    };
-
     try {
-      if (editingItem) {
-        await announcementsApi.update(editingItem.id, payload);
-        showNotification(`Annonce mise à jour !`);
+      if (activeTab === "banners") {
+        const payload = { image: formImage.trim(), isActive: formIsActive, order: formOrder };
+        if (editingItem) {
+          await announcementsApi.update(editingItem.id, payload);
+          showNotification(`Annonce mise à jour !`);
+        } else {
+          await announcementsApi.create(payload);
+          showNotification(`Nouvelle annonce créée !`);
+        }
+        await fetchAnnouncements();
       } else {
-        await announcementsApi.create(payload);
-        showNotification(`Nouvelle annonce créée !`);
+        const payload = { image: formImage.trim(), isActive: formIsActive, order: formOrder, name: formName.trim() || "Logo" };
+        if (editingItem) {
+          await clientLogosApi.update(editingItem.id, payload);
+          showNotification(`Logo mis à jour !`);
+        } else {
+          await clientLogosApi.create(payload);
+          showNotification(`Nouveau logo créé !`);
+        }
       }
 
       await loadData();
-      await fetchAnnouncements();
       setIsModalOpen(false);
     } catch (err: any) {
-      console.error("Save announcement error:", err);
+      console.error("Save error:", err);
       setFormError(err.response?.data?.message || err.message || "Erreur lors de la sauvegarde.");
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleToggleActive = async (item: Announcement) => {
+  const handleToggleActive = async (item: any) => {
     try {
-      await announcementsApi.update(item.id, { isActive: !item.isActive });
-      setAnnouncements((prev) =>
-        prev.map((a) => (a.id === item.id ? { ...a, isActive: !a.isActive } : a))
-      );
-      showNotification(`Statut de l'annonce mis à jour.`);
-      await fetchAnnouncements();
+      if (activeTab === "banners") {
+        await announcementsApi.update(item.id, { isActive: !item.isActive });
+        setAnnouncements((prev) => prev.map((a) => (a.id === item.id ? { ...a, isActive: !a.isActive } : a)));
+        await fetchAnnouncements();
+      } else {
+        await clientLogosApi.update(item.id, { isActive: !item.isActive });
+        setClientLogos((prev) => prev.map((a) => (a.id === item.id ? { ...a, isActive: !a.isActive } : a)));
+      }
+      showNotification(`Statut mis à jour.`);
     } catch (err: any) {
       console.error("Toggle active error:", err);
       showNotification("Erreur lors de la mise à jour du statut.", "error");
@@ -191,10 +216,15 @@ export default function AdminAnnouncementsPage() {
     if (!deleteModal.item) return;
 
     try {
-      await announcementsApi.delete(deleteModal.item.id);
-      setAnnouncements((prev) => prev.filter((a) => a.id !== deleteModal.item!.id));
-      showNotification(`Annonce supprimée.`);
-      await fetchAnnouncements();
+      if (activeTab === "banners") {
+        await announcementsApi.delete(deleteModal.item.id);
+        setAnnouncements((prev) => prev.filter((a) => a.id !== deleteModal.item!.id));
+        await fetchAnnouncements();
+      } else {
+        await clientLogosApi.delete(deleteModal.item.id);
+        setClientLogos((prev) => prev.filter((a) => a.id !== deleteModal.item!.id));
+      }
+      showNotification(`Élément supprimé.`);
       setDeleteModal({ isOpen: false, item: null });
     } catch (err: any) {
       console.error("Delete error:", err);
@@ -202,7 +232,8 @@ export default function AdminAnnouncementsPage() {
     }
   };
 
-  const activeCount = announcements.filter((a) => a.isActive).length;
+  const activeCountBanners = announcements.filter((a) => a.isActive).length;
+  const activeCountLogos = clientLogos.filter((a) => a.isActive).length;
 
   return (
     <AdminLayout>
@@ -225,10 +256,10 @@ export default function AdminAnnouncementsPage() {
           <div>
             <h1 className="text-2xl font-black text-brand-charcoal sm:text-3xl flex items-center gap-2.5">
               <Megaphone className="h-7 w-7 text-brand-red" />
-              <span>Bannières & Annonces Promo</span>
+              <span>Bannières & Logos Partenaires</span>
             </h1>
             <p className="mt-1 text-xs text-brand-warm-gray">
-              Gérez les images promotionnelles synchronisées avec la boutique, la méga navigation et le studio.
+              Gérez les images promotionnelles et le carrousel des logos partenaires.
             </p>
           </div>
 
@@ -239,128 +270,159 @@ export default function AdminAnnouncementsPage() {
               className="inline-flex items-center gap-2 rounded-full bg-brand-red px-5 py-2.5 text-xs font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer"
             >
               <Plus className="h-4 w-4" />
-              <span>Nouvelle Annonce</span>
+              <span>{activeTab === "banners" ? "Nouvelle Annonce" : "Nouveau Logo"}</span>
             </button>
           </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-4 border-b border-brand-light-gray">
+          <button
+            onClick={() => setActiveTab("banners")}
+            className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors ${activeTab === "banners" ? "border-brand-red text-brand-red" : "border-transparent text-brand-warm-gray hover:text-brand-charcoal"}`}
+          >
+            Bannières Promo (Méga Menu)
+          </button>
+          <button
+            onClick={() => setActiveTab("logos")}
+            className={`pb-3 px-1 text-sm font-bold border-b-2 transition-colors flex items-center gap-2 ${activeTab === "logos" ? "border-brand-red text-brand-red" : "border-transparent text-brand-warm-gray hover:text-brand-charcoal"}`}
+          >
+            Logos Partenaires (Marquee)
+          </button>
         </div>
 
         {/* KPI Stats Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm">
             <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
-              Total des Annonces
+              Total {activeTab === "banners" ? "des Annonces" : "des Logos"}
             </span>
             <span className="mt-2 text-2xl font-black text-brand-charcoal block">
-              {announcements.length}
+              {activeTab === "banners" ? announcements.length : clientLogos.length}
             </span>
           </div>
 
           <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm">
             <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 block">
-              Annonces Actives (En rotation)
+              {activeTab === "banners" ? "Annonces Actives (En rotation)" : "Logos Actifs"}
             </span>
             <span className="mt-2 text-2xl font-black text-emerald-600 block">
-              {activeCount}
+              {activeTab === "banners" ? activeCountBanners : activeCountLogos}
             </span>
           </div>
 
-          <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
-                Délai de Transition
-              </span>
-              <Clock className="h-3.5 w-3.5 text-brand-warm-gray" />
-            </div>
-
-            {!isEditingInterval ? (
-              <div className="mt-2 flex items-center justify-between">
-                <span className="text-2xl font-black text-brand-charcoal">
-                  {Math.round(autoPlayInterval / 1000)} secondes
+          {activeTab === "banners" ? (
+            <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
+                  Délai de Transition
                 </span>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingInterval(true)}
-                  className="inline-flex items-center gap-1 rounded-full border border-brand-light-gray bg-white px-3 py-1 text-xs font-bold text-brand-charcoal shadow-2xs hover:border-brand-red/40 hover:bg-brand-red/5 hover:text-brand-red transition-all cursor-pointer"
-                >
-                  <Edit2 className="h-3 w-3" />
-                  <span>Modifier</span>
-                </button>
+                <Clock className="h-3.5 w-3.5 text-brand-warm-gray" />
               </div>
-            ) : (
-              <form onSubmit={handleSaveInterval} className="mt-2 flex items-center gap-2">
-                <div className="relative flex-1">
-                  <input
-                    type="number"
-                    min="1"
-                    max="60"
-                    value={tempSeconds}
-                    onChange={(e) => setTempSeconds(Number(e.target.value))}
-                    className="w-full h-9 rounded-xl border border-brand-red/50 bg-brand-soft-white/60 px-3 text-sm font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
-                    autoFocus
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-gray pointer-events-none">
-                    sec
-                  </span>
-                </div>
-                <button
-                  type="submit"
-                  className="h-9 px-3 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-hover transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
-                >
-                  <Check className="h-3.5 w-3.5" />
-                  <span>OK</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTempSeconds(Math.round(autoPlayInterval / 1000));
-                    setIsEditingInterval(false);
-                  }}
-                  className="h-9 px-2.5 rounded-xl border border-brand-light-gray text-xs font-bold text-brand-warm-gray hover:bg-brand-soft-white transition-colors cursor-pointer"
-                >
-                  ✕
-                </button>
-              </form>
-            )}
 
-            <div className="mt-3 flex items-center gap-1.5 pt-2 border-t border-brand-light-gray/60">
-              <span className="text-[10px] text-brand-warm-gray font-bold">Raccourcis :</span>
-              {[3, 4, 5, 8].map((sec) => (
-                <button
-                  key={sec}
-                  type="button"
-                  onClick={() => handleQuickSetInterval(sec)}
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${Math.round(autoPlayInterval / 1000) === sec
+              {!isEditingInterval ? (
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-2xl font-black text-brand-charcoal">
+                    {Math.round(autoPlayInterval / 1000)} secondes
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingInterval(true)}
+                    className="inline-flex items-center gap-1 rounded-full border border-brand-light-gray bg-white px-3 py-1 text-xs font-bold text-brand-charcoal shadow-2xs hover:border-brand-red/40 hover:bg-brand-red/5 hover:text-brand-red transition-all cursor-pointer"
+                  >
+                    <Edit2 className="h-3 w-3" />
+                    <span>Modifier</span>
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleSaveInterval} className="mt-2 flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="60"
+                      value={tempSeconds}
+                      onChange={(e) => setTempSeconds(Number(e.target.value))}
+                      className="w-full h-9 rounded-xl border border-brand-red/50 bg-brand-soft-white/60 px-3 text-sm font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
+                      autoFocus
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-brand-warm-gray pointer-events-none">
+                      sec
+                    </span>
+                  </div>
+                  <button
+                    type="submit"
+                    className="h-9 px-3 rounded-xl bg-brand-red text-white text-xs font-bold hover:bg-brand-red-hover transition-colors flex items-center gap-1 shadow-sm cursor-pointer"
+                  >
+                    <Check className="h-3.5 w-3.5" />
+                    <span>OK</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTempSeconds(Math.round(autoPlayInterval / 1000));
+                      setIsEditingInterval(false);
+                    }}
+                    className="h-9 px-2.5 rounded-xl border border-brand-light-gray text-xs font-bold text-brand-warm-gray hover:bg-brand-soft-white transition-colors cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                </form>
+              )}
+
+              <div className="mt-3 flex items-center gap-1.5 pt-2 border-t border-brand-light-gray/60">
+                <span className="text-[10px] text-brand-warm-gray font-bold">Raccourcis :</span>
+                {[3, 4, 5, 8].map((sec) => (
+                  <button
+                    key={sec}
+                    type="button"
+                    onClick={() => handleQuickSetInterval(sec)}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold transition-all cursor-pointer ${Math.round(autoPlayInterval / 1000) === sec
                       ? "bg-brand-charcoal text-white shadow-2xs"
                       : "bg-brand-soft-white text-brand-warm-gray hover:bg-brand-light-gray/60 hover:text-brand-charcoal"
-                    }`}
-                >
-                  {sec}s
-                </button>
-              ))}
+                      }`}
+                  >
+                    {sec}s
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="rounded-3xl border border-brand-light-gray bg-brand-soft-white p-5 shadow-sm flex flex-col justify-center">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block mb-1">
+                Format Recommandé
+              </span>
+              <span className="text-sm font-bold text-brand-charcoal flex items-center gap-2">
+                <ImageIcon className="h-4 w-4" /> 80x80 px (Carré)
+              </span>
+              <span className="text-xs text-brand-warm-gray mt-1">
+                SVG ou PNG avec fond transparent pour un meilleur rendu.
+              </span>
+            </div>
+          )}
         </div>
 
-        {/* Announcement Cards Grid */}
+        {/* List Items */}
         {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[1, 2, 3].map((n) => (
-              <div
-                key={n}
-                className="h-64 rounded-3xl border border-brand-light-gray bg-white p-6 animate-pulse space-y-4"
-              >
+              <div key={n} className="h-64 rounded-3xl border border-brand-light-gray bg-white p-6 animate-pulse space-y-4">
                 <div className="h-4 bg-gray-200 rounded w-1/3" />
                 <div className="h-28 bg-gray-100 rounded-2xl" />
                 <div className="h-4 bg-gray-200 rounded w-2/3" />
               </div>
             ))}
           </div>
-        ) : announcements.length === 0 ? (
+        ) : (activeTab === "banners" ? announcements : clientLogos).length === 0 ? (
           <div className="rounded-3xl border border-dashed border-brand-light-gray bg-white p-12 text-center">
             <Megaphone className="mx-auto h-10 w-10 text-brand-warm-gray" />
-            <p className="mt-3 text-sm font-bold text-brand-charcoal">Aucune annonce configurée</p>
+            <p className="mt-3 text-sm font-bold text-brand-charcoal">
+              Aucun{activeTab === "banners" ? "e annonce configurée" : " logo configuré"}
+            </p>
             <p className="mt-1 text-xs text-brand-warm-gray">
-              Créez votre première annonce pour la diffuser en rotation sur la méga-navigation.
+              {activeTab === "banners"
+                ? "Créez votre première annonce pour la diffuser en rotation sur la méga-navigation."
+                : "Ajoutez un logo partenaire pour l'afficher sur le défilement de la page d'accueil."}
             </p>
             <button
               type="button"
@@ -368,24 +430,26 @@ export default function AdminAnnouncementsPage() {
               className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-red px-4 py-2 text-xs font-bold text-white hover:bg-brand-red-hover cursor-pointer"
             >
               <Plus className="h-3.5 w-3.5" />
-              <span>Créer une annonce</span>
+              <span>Créer {activeTab === "banners" ? "une annonce" : "un logo"}</span>
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {announcements.map((item) => (
+            {(activeTab === "banners" ? announcements : clientLogos).map((item: any) => (
               <div
                 key={item.id}
                 className={`relative flex flex-col justify-between rounded-3xl border bg-white p-6 shadow-sm transition-all hover:shadow-md ${item.isActive ? "border-brand-light-gray" : "border-gray-200 opacity-60 bg-gray-50/50"
                   }`}
               >
                 <div>
-                  {/* Top Bar: Badge, Order & Status */}
                   <div className="flex items-center justify-between gap-2 border-b border-brand-light-gray/60 pb-3 mb-3">
                     <div className="flex items-center gap-2">
                       <span className="rounded-full bg-brand-soft-white border border-brand-light-gray px-2 py-0.5 text-[10px] font-mono text-brand-warm-gray">
                         Ordre: #{item.order}
                       </span>
+                      {activeTab === "logos" && item.name && (
+                        <span className="text-xs font-bold text-brand-charcoal">{item.name}</span>
+                      )}
                       <button
                         type="button"
                         onClick={() => handleToggleActive(item)}
@@ -401,17 +465,15 @@ export default function AdminAnnouncementsPage() {
                     </div>
                   </div>
 
-                  {/* Visual Preview */}
-                  <div className="relative mt-4 w-full aspect-[1920/600] overflow-hidden rounded-2xl bg-neutral-900 border border-brand-light-gray/60 flex items-center justify-center">
+                  <div className={`relative mt-4 w-full overflow-hidden rounded-2xl border border-brand-light-gray/60 flex items-center justify-center ${activeTab === "banners" ? "aspect-[1920/600] bg-neutral-900" : "aspect-square max-w-[140px] mx-auto bg-gray-50"}`}>
                     <img
-                      src={item.image || "/lamsa2.png"}
-                      alt="Annonce Preview"
-                      className="w-full h-full object-contain"
+                      src={item.image || "/placeholder.png"}
+                      alt="Preview"
+                      className={`object-contain ${activeTab === "banners" ? "w-full h-full" : "w-16 h-16 sm:w-20 sm:h-20"}`}
                     />
                   </div>
                 </div>
 
-                {/* Card Actions */}
                 <div className="mt-5 flex items-center justify-end gap-2 border-t border-brand-light-gray/60 pt-4">
                   <button
                     type="button"
@@ -436,17 +498,17 @@ export default function AdminAnnouncementsPage() {
           </div>
         )}
 
-        {/* Modal: Create / Edit Announcement */}
+        {/* Modal: Create / Edit */}
         {isModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 overflow-y-auto">
             <div className="relative w-full max-w-lg rounded-3xl border border-brand-light-gray bg-white p-6 sm:p-8 shadow-2xl my-8">
               <div className="flex items-center justify-between border-b border-brand-light-gray pb-4 mb-6">
                 <div>
                   <h2 className="text-lg font-black text-brand-charcoal">
-                    {editingItem ? "Modifier l'Annonce" : "Nouvelle Annonce Promo"}
+                    {editingItem ? "Modifier" : "Créer"} {activeTab === "banners" ? "l'Annonce Promo" : "le Logo Partenaire"}
                   </h2>
                   <p className="text-xs text-brand-warm-gray mt-0.5">
-                    Configurez le visuel et les informations de la bannière.
+                    Configurez le visuel et les informations.
                   </p>
                 </div>
                 <button
@@ -466,25 +528,39 @@ export default function AdminAnnouncementsPage() {
               )}
 
               <form onSubmit={handleSave} className="space-y-4">
-                {/* Visual Image Uploader & Preview - Modern Design */}
+                {activeTab === "logos" && (
+                  <div className="flex flex-col mb-4">
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal mb-2">
+                      Nom du Partenaire / Marque
+                    </label>
+                    <input
+                      type="text"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      placeholder="Ex: Adhesive, Cosidar..."
+                      className="flex h-11 w-full items-center rounded-xl border border-brand-light-gray bg-brand-soft-white/60 px-3.5 text-xs font-bold text-brand-charcoal transition-all focus:border-brand-red focus:bg-white focus:outline-none"
+                    />
+                  </div>
+                )}
+
                 <div className="space-y-3">
                   <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal">
-                    Visuel de la Bannière Promo *
+                    Visuel {activeTab === "banners" ? "de la Bannière" : "du Logo"} *
                   </label>
 
                   <div className="relative w-full rounded-2xl border-2 border-dashed border-brand-light-gray bg-brand-soft-white/30 p-2 transition-colors hover:border-brand-red/30 hover:bg-brand-red/5">
                     {formImage ? (
                       <div>
-                        <div className="relative group w-full aspect-[1920/600] rounded-xl overflow-hidden bg-neutral-900 border border-brand-light-gray/50 flex items-center justify-center shadow-sm">
+                        <div className={`relative group w-full rounded-xl overflow-hidden flex items-center justify-center shadow-sm ${activeTab === "banners" ? "aspect-[1920/600] bg-neutral-900 border border-brand-light-gray/50" : "aspect-video bg-gray-50 border border-gray-200 py-4"}`}>
                           <img
                             src={formImage}
-                            alt="Banner Preview"
-                            className="w-full h-full object-contain"
+                            alt="Preview"
+                            className={`object-contain ${activeTab === "banners" ? "w-full h-full" : "w-20 h-20 sm:w-24 sm:h-24"}`}
                           />
                           <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
                             <label className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-brand-charcoal hover:text-brand-red cursor-pointer shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
                               <Upload className="h-4 w-4" />
-                              <span>Changer l&apos;image</span>
+                              <span>Changer</span>
                               <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                             </label>
                             <button
@@ -502,18 +578,30 @@ export default function AdminAnnouncementsPage() {
                             <span>
                               Résolution : <strong className="text-brand-charcoal font-mono">{imageDimensions.width} x {imageDimensions.height} px</strong>
                             </span>
-                            {imageDimensions.width === 1920 && imageDimensions.height === 600 ? (
-                              <span className="text-emerald-600 font-bold flex items-center gap-1">
-                                <Check className="h-3.5 w-3.5" /> 1920x600px Parfait
-                              </span>
-                            ) : Math.abs(imageDimensions.width / imageDimensions.height - 3.2) < 0.08 ? (
-                              <span className="text-blue-600 font-bold flex items-center gap-1">
-                                <Check className="h-3.5 w-3.5" /> Ratio 3.2:1 Conforme
-                              </span>
+                            {activeTab === "banners" ? (
+                              imageDimensions.width === 1920 && imageDimensions.height === 600 ? (
+                                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                  <Check className="h-3.5 w-3.5" /> 1920x600px Parfait
+                                </span>
+                              ) : Math.abs(imageDimensions.width / imageDimensions.height - 3.2) < 0.08 ? (
+                                <span className="text-blue-600 font-bold flex items-center gap-1">
+                                  <Check className="h-3.5 w-3.5" /> Ratio 3.2:1 Conforme
+                                </span>
+                              ) : (
+                                <span className="text-amber-600 font-medium">
+                                  Ratio recommandé : 1920x600 (3.2:1)
+                                </span>
+                              )
                             ) : (
-                              <span className="text-amber-600 font-medium">
-                                Ratio recommandé : 1920x600 (3.2:1)
-                              </span>
+                              Math.abs(imageDimensions.width / imageDimensions.height - 1) < 0.1 ? (
+                                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                  <Check className="h-3.5 w-3.5" /> Carré Parfait
+                                </span>
+                              ) : (
+                                <span className="text-amber-600 font-medium">
+                                  Taille exacte recommandée : 80x80 (Carré)
+                                </span>
+                              )
                             )}
                           </div>
                         )}
@@ -527,7 +615,7 @@ export default function AdminAnnouncementsPage() {
                           Cliquez pour téléverser
                         </span>
                         <span className="text-xs text-brand-warm-gray mt-1 text-center max-w-xs">
-                          Format recommandé : 1920x600px. PNG, JPG ou SVG (max 50MB).
+                          {activeTab === "banners" ? "Format recommandé : 1920x600px. PNG, JPG ou SVG (max 50MB)." : "Taille exacte recommandée : 80x80 pixels. Format SVG ou PNG avec fond transparent."}
                         </span>
                         <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                       </label>
@@ -535,7 +623,6 @@ export default function AdminAnnouncementsPage() {
                   </div>
                 </div>
 
-                {/* Settings Row */}
                 <div className="grid grid-cols-2 gap-4 mt-6">
                   <div className="flex flex-col">
                     <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal mb-2">
@@ -563,14 +650,14 @@ export default function AdminAnnouncementsPage() {
                       type="button"
                       onClick={() => setFormIsActive(!formIsActive)}
                       className={`group flex h-11 w-full items-center gap-3 rounded-xl border px-3.5 transition-all duration-200 cursor-pointer ${formIsActive
-                          ? "border-brand-red/40 bg-brand-red/5 shadow-2xs"
-                          : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white hover:border-brand-red/30 hover:shadow-2xs"
+                        ? "border-brand-red/40 bg-brand-red/5 shadow-2xs"
+                        : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white hover:border-brand-red/30 hover:shadow-2xs"
                         }`}
                     >
                       <div
                         className={`relative flex h-5 w-5 shrink-0 items-center justify-center rounded-[6px] border transition-all duration-200 ${formIsActive
-                            ? "border-brand-red bg-brand-red"
-                            : "border-brand-light-gray bg-white group-hover:border-brand-red/50"
+                          ? "border-brand-red bg-brand-red"
+                          : "border-brand-light-gray bg-white group-hover:border-brand-red/50"
                           }`}
                       >
                         <Check
@@ -583,13 +670,12 @@ export default function AdminAnnouncementsPage() {
                         className={`text-xs font-bold transition-colors line-clamp-1 text-left ${formIsActive ? "text-brand-red" : "text-brand-charcoal"
                           }`}
                       >
-                        Actif dans le carrousel
+                        {activeTab === "banners" ? "Actif dans le carrousel" : "Actif dans le marquee"}
                       </span>
                     </button>
                   </div>
                 </div>
 
-                {/* Submit Buttons */}
                 <div className="flex items-center justify-end gap-3 pt-4 border-t border-brand-light-gray">
                   <button
                     type="button"
@@ -604,7 +690,7 @@ export default function AdminAnnouncementsPage() {
                     disabled={isSubmitting}
                     className="inline-flex items-center gap-2 rounded-full bg-brand-red px-6 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.5)] cursor-pointer disabled:opacity-50"
                   >
-                    <span>{editingItem ? "Mettre à jour" : "Enregistrer l'Annonce"}</span>
+                    <span>{editingItem ? "Mettre à jour" : "Enregistrer"}</span>
                     <ArrowRight className="h-4 w-4" />
                   </button>
                 </div>
@@ -620,9 +706,9 @@ export default function AdminAnnouncementsPage() {
               <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-brand-red/10 text-brand-red mb-4">
                 <Trash2 className="h-6 w-6" />
               </div>
-              <h3 className="text-base font-black text-brand-charcoal">Supprimer cette annonce ?</h3>
+              <h3 className="text-base font-black text-brand-charcoal">Supprimer ?</h3>
               <p className="mt-1 text-xs text-brand-warm-gray">
-                Êtes-vous sûr de vouloir supprimer cette annonce ? Cette action est irréversible.
+                Êtes-vous sûr de vouloir supprimer cet élément ? Cette action est irréversible.
               </p>
 
               <div className="mt-6 flex items-center justify-center gap-3">

@@ -248,3 +248,47 @@ export const announcementsApi = {
   }
 };
 
+// ── Client Logos API ────────────────────────────────────────────────────────
+
+export interface ClientLogo {
+  id: string;
+  image: string;
+  name: string;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export const clientLogosApi = {
+  /** Public: Get all active client logos */
+  getActive: async (): Promise<ClientLogo[]> => {
+    const res = await apiClient.get("/api/v1/client-logos");
+    return res.data.data;
+  },
+
+  /** Admin: Get all client logos */
+  getAllAdmin: async (): Promise<ClientLogo[]> => {
+    const res = await apiClient.get("/api/v1/client-logos/admin");
+    return res.data.data;
+  },
+
+  /** Admin: Create client logo */
+  create: async (data: Partial<ClientLogo>): Promise<ClientLogo> => {
+    const res = await apiClient.post("/api/v1/client-logos", data);
+    return res.data.data;
+  },
+
+  /** Admin: Update client logo */
+  update: async (id: string, data: Partial<ClientLogo>): Promise<ClientLogo> => {
+    const res = await apiClient.patch(`/api/v1/client-logos/${id}`, data);
+    return res.data.data;
+  },
+
+  /** Admin: Delete client logo */
+  delete: async (id: string): Promise<{ message: string }> => {
+    const res = await apiClient.delete(`/api/v1/client-logos/${id}`);
+    return res.data;
+  }
+};
+

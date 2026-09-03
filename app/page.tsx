@@ -1,17 +1,9 @@
-import dynamic from "next/dynamic";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { HeroSection } from "@/components/sections/hero-section";
-
-const OfferingsSection = dynamic(() =>
-  import("@/components/sections/offerings-section").then((m) => m.OfferingsSection)
-);
-const EtapesSection = dynamic(() =>
-  import("@/components/sections/etape-section").then((m) => m.EtapesSection)
-);
-const ContactSection = dynamic(() =>
-  import("@/components/sections/contact-section").then((m) => m.ContactSection)
-);
+import { OfferingsSection } from "@/components/sections/offerings-section";
+import { EtapesSection } from "@/components/sections/etape-section";
+import { ContactSection } from "@/components/sections/contact-section";
 
 export default function Home() {
   return (
@@ -19,9 +11,9 @@ export default function Home() {
       <Navbar />
       <main className="flex-1">
         <HeroSection />
-        <OfferingsSection />
-        <EtapesSection />
-        <ContactSection />
+        <OfferingsSection key="offerings" />
+        <EtapesSection key="etapes" />
+        <ContactSection key="contact" />
       </main>
       <Footer />
     </>

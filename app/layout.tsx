@@ -174,10 +174,12 @@ export default function RootLayout({
         />
         <MotionProvider>
           <CatalogProvider>
-            <HashUrlCleaner />
-            {children}
+            <div className="flex min-h-full flex-1 flex-col">
+              <HashUrlCleaner />
+              {children}
+              <CartDrawer />
+            </div>
           </CatalogProvider>
-          <CartDrawer />
         </MotionProvider>
       </body>
     </html>

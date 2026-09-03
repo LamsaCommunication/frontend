@@ -24,11 +24,11 @@ export function Marquee({
     separator === null
       ? null
       : separator ?? (
-          <span
-            aria-hidden
-            className="mx-8 inline-block h-1.5 w-1.5 rounded-full bg-current opacity-40"
-          />
-        );
+        <span
+          aria-hidden
+          className="mx-8 inline-block h-1.5 w-1.5 rounded-full bg-current opacity-40"
+        />
+      );
 
   const renderRow = (key: string) => (
     <div

@@ -16,9 +16,7 @@ import {
   Layers,
   Plus,
   Minus,
-  Check,
-  Maximize2,
-  X
+  Check
 } from "lucide-react";
 import { Product } from "@/lib/store/useCatalogStore";
 import { useCartStore } from "@/lib/store/useCartStore";
@@ -38,7 +36,6 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
   const [artworkPreview, setArtworkPreview] = React.useState<string | null>(null);
   const [designNotes, setDesignNotes] = React.useState("");
   const [addedFeedback, setAddedFeedback] = React.useState(false);
-  const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
 
   const images = product.images && product.images.length > 0 ? product.images : ["/lamsa2.png"];
   const currentImage = images[activeImageIdx] || images[0];
@@ -104,16 +101,6 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
               className="object-contain"
             />
           </div>
-
-          {/* Fullscreen zoom trigger */}
-          <button
-            type="button"
-            onClick={() => setIsLightboxOpen(true)}
-            aria-label="Agrandir l'image"
-            className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-md backdrop-blur-xs text-brand-charcoal hover:bg-white hover:text-brand-red transition-all cursor-pointer"
-          >
-            <Maximize2 className="h-4 w-4" />
-          </button>
         </div>
 
         {/* Thumbnail Gallery (if more than 1 image) */}
@@ -149,23 +136,25 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
           </div>
 
           {/* Pricing & Dimensions */}
-          <div className="flex items-baseline justify-between border-y border-brand-light-gray/70 py-4">
-            <div>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-warm-gray block">
-                Prix unitaire
-              </span>
-              <span className="text-2xl font-black text-brand-charcoal">
-                {formatPrice(product.price)}{" "}
-                <span className="text-sm font-bold text-brand-red">DZD</span>
-              </span>
+          <div className="border-y border-brand-light-gray/70 py-4 space-y-3">
+            <div className="flex items-baseline justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-warm-gray block">
+                  Prix unitaire
+                </span>
+                <span className="text-2xl font-black text-brand-charcoal sm:text-3xl tracking-tight">
+                  {formatPrice(product.price)}{" "}
+                  <span className="text-sm font-bold text-brand-red">DZD</span>
+                </span>
+              </div>
             </div>
 
             {product.dimensions && (
-              <div className="text-right">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-warm-gray block">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 rounded-xl bg-brand-soft-white/80 border border-brand-light-gray/60 px-3.5 py-2.5">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-charcoal/60 shrink-0">
                   Format / Dimension
                 </span>
-                <span className="text-xs font-mono font-bold text-brand-charcoal">
+                <span className="text-xs font-bold text-brand-charcoal text-left sm:text-right">
                   {product.dimensions}
                 </span>
               </div>
@@ -337,30 +326,6 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
         </div>
       </div>
 
-      {/* ── Fullscreen Lightbox Modal ──────────────────────────────── */}
-      {isLightboxOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
-          <div className="relative max-h-[85vh] max-w-3xl overflow-hidden rounded-3xl bg-white p-4 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-brand-light-gray">
-              <span className="text-xs font-bold text-brand-charcoal">{product.name}</span>
-              <button
-                type="button"
-                onClick={() => setIsLightboxOpen(false)}
-                className="flex h-8 w-8 items-center justify-center rounded-full text-brand-charcoal hover:bg-brand-soft-white"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="relative aspect-[16/10] w-full max-h-[70vh] p-4 flex items-center justify-center">
-              <img
-                src={currentImage}
-                alt={product.name}
-                className="max-h-full max-w-full object-contain"
-              />
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
