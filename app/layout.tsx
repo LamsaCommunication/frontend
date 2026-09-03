@@ -155,6 +155,7 @@ export const viewport: Viewport = {
 
 import { CartDrawer } from "@/components/cart/cart-drawer";
 import { CatalogProvider } from "@/components/providers/catalog-provider";
+import { HashUrlCleaner } from "@/components/layout/HashUrlCleaner";
 
 export default function RootLayout({
   children,
@@ -173,6 +174,7 @@ export default function RootLayout({
         />
         <MotionProvider>
           <CatalogProvider>
+            <HashUrlCleaner />
             {children}
           </CatalogProvider>
           <CartDrawer />

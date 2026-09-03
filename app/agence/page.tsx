@@ -58,7 +58,8 @@ export default function AgencePage() {
                 className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row"
               >
                 <Link
-                  href="/#contact"
+                  href="/"
+                  onClick={() => sessionStorage.setItem("scrollToSection", "contact")}
                   className="inline-flex items-center justify-center gap-2 rounded-full bg-brand-red px-8 py-4 text-sm font-semibold text-white transition-all duration-200 hover:bg-brand-red-hover hover:shadow-[0_10px_30px_-12px_rgba(227,6,19,0.55)]"
                 >
                   Démarrer un projet

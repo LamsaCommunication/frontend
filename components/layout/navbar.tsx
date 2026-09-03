@@ -3,6 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight, ShoppingBag } from "lucide-react";
 import { site } from "@/lib/site";
@@ -10,9 +11,42 @@ import { Container } from "@/components/ui/container";
 import { useCartStore } from "@/lib/store/useCartStore";
 
 export function Navbar() {
+  const pathname = usePathname();
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const [mounted, setMounted] = React.useState(false);
   const { getItemCount, openDrawer } = useCartStore();
+
+  const handleNavClick = (
+    e: React.MouseEvent<HTMLAnchorElement>,
+    item: { label: string; href: string }
+  ) => {
+    setOpen(false);
+    if (item.label === "Accueil") {
+      if (pathname === "/") {
+        e.preventDefault();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        if (window.location.hash) {
+          window.history.replaceState(null, "", "/");
+        }
+      }
+    } else if (item.label === "Contact") {
+      if (pathname === "/") {
+        e.preventDefault();
+        const contactEl = document.getElementById("contact");
+        if (contactEl) {
+          contactEl.scrollIntoView({ behavior: "smooth" });
+        }
+        if (window.location.hash) {
+          window.history.replaceState(null, "", "/");
+        }
+      } else {
+        e.preventDefault();
+        sessionStorage.setItem("scrollToSection", "contact");
+        router.push("/");
+      }
+    }
+  };
 
   React.useEffect(() => {
     setMounted(true);
@@ -68,8 +102,9 @@ export function Navbar() {
         >
           {site.nav.map((item) => (
             <Link
-              key={item.href}
+              key={item.label}
               href={item.href}
+              onClick={(e) => handleNavClick(e, item)}
               className="rounded-full px-4 py-2 text-[13px] font-medium text-[#141414] transition-all duration-150 hover:bg-white hover:shadow-[0_1px_6px_rgba(0,0,0,0.07)]"
             >
               {item.label}
@@ -178,9 +213,9 @@ export function Navbar() {
             <nav aria-label="Navigation mobile" className="flex flex-col p-2">
               {site.nav.map((item) => (
                 <Link
-                  key={item.href}
+                  key={item.label}
                   href={item.href}
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => handleNavClick(e, item)}
                   className="rounded-xl px-4 py-2.5 text-sm font-medium text-[#141414] transition-colors hover:bg-[#f4f4f4]"
                 >
                   {item.label}

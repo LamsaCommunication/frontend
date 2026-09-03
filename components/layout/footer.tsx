@@ -1,3 +1,5 @@
+"use client";
+
 import * as React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -15,7 +17,7 @@ export function Footer() {
         <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 md:grid-cols-12 md:gap-12">
           <div className="sm:col-span-2 md:col-span-5">
             <Link
-              href="/#accueil"
+              href="/"
               className="inline-flex items-center gap-3"
               aria-label="Lamsa Communication — Accueil"
             >
@@ -53,9 +55,26 @@ export function Footer() {
             </h4>
             <ul className="mt-5 space-y-3">
               {site.nav.map((item) => (
-                <li key={item.href}>
+                <li key={item.label}>
                   <Link
                     href={item.href}
+                    onClick={(e) => {
+                      if (item.label === "Contact") {
+                        if (typeof window !== "undefined" && window.location.pathname === "/") {
+                          e.preventDefault();
+                          document.getElementById("contact")?.scrollIntoView({ behavior: "smooth" });
+                          if (window.location.hash) window.history.replaceState(null, "", "/");
+                        } else {
+                          sessionStorage.setItem("scrollToSection", "contact");
+                        }
+                      } else if (item.label === "Accueil") {
+                        if (typeof window !== "undefined" && window.location.pathname === "/") {
+                          e.preventDefault();
+                          window.scrollTo({ top: 0, behavior: "smooth" });
+                          if (window.location.hash) window.history.replaceState(null, "", "/");
+                        }
+                      }
+                    }}
                     className="text-sm text-brand-charcoal/85 transition-colors hover:text-brand-red"
                   >
                     {item.label}

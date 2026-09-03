@@ -6,7 +6,8 @@ import { Mail, Phone, MapPin, Send, Loader2, AlertCircle } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
 import { site } from "@/lib/site";
-import { useCatalogStore } from "@/lib/store/useCatalogStore";
+import { useCatalogStore, type Category } from "@/lib/store/useCatalogStore";
+import { catalogApi } from "@/lib/api/lamsa-api";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
 import { cn } from "@/lib/utils";
 
@@ -68,7 +69,7 @@ function validate(form: FormState, submitType: "email" | "whatsapp"): FormErrors
 function buildContactBlock(form: FormState): string {
   const lines: string[] = [];
   if (form.fullName.trim()) lines.push(`Nom & Entreprise : ${form.fullName.trim()}`);
-  if (form.email.trim())    lines.push(`Email : ${form.email.trim()}`);
+  if (form.email.trim()) lines.push(`Email : ${form.email.trim()}`);
   lines.push(`Téléphone : ${form.phone.trim() || "Non renseigné"}`);
   lines.push(`Service : ${form.service.trim() || "Non précisé"}`);
   return lines.join("\n");
@@ -424,8 +425,7 @@ function SuccessPanel({ onReset }: { onReset: () => void }) {
           Message envoyé&nbsp;!
         </h4>
         <p className="mx-auto max-w-[300px] text-sm leading-relaxed text-brand-dark/60">
-          Lamsa Communication vous contactera très bientôt avec une
-          proposition adaptée à votre projet.
+          Lamsa Communication a bien reçu votre demande. Nous vous contacterons sous peu avec une solution adaptée à votre projet. Pensez à vérifier votre boîte de réception.
         </p>
       </div>
 
@@ -599,30 +599,74 @@ function ServiceChips({
   selected: string;
   onSelect: (s: string) => void;
 }) {
-  const { categories } = useCatalogStore();
+  const { categories, fetchCatalog } = useCatalogStore();
+  const [dbCategories, setDbCategories] = React.useState<Category[]>(categories);
+  const [isLoading, setIsLoading] = React.useState(categories.length === 0);
+
+  React.useEffect(() => {
+    let isMounted = true;
+    fetchCatalog().catch(() => { });
+
+    catalogApi
+      .getCategories()
+      .then((data) => {
+        if (isMounted && Array.isArray(data) && data.length > 0) {
+          setDbCategories(data);
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn("Failed to load categories for contact form:", err);
+        if (isMounted) setIsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [fetchCatalog]);
+
+  React.useEffect(() => {
+    if (categories.length > 0) {
+      setDbCategories(categories);
+      setIsLoading(false);
+    }
+  }, [categories]);
+
+  const displayList = dbCategories.length > 0 ? dbCategories : categories;
 
   return (
     <div>
       <label className="label-eyebrow mb-2 block text-brand-charcoal/50">
         Type de projet
       </label>
-      <div className="flex flex-wrap gap-2">
-        {categories.map((cat) => (
-          <button
-            key={cat.slug || cat.id}
-            type="button"
-            onClick={() => onSelect(selected === cat.name ? "" : cat.name)}
-            className={cn(
-              "inline-flex cursor-pointer items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150",
-              selected === cat.name
-                ? "border-brand-red bg-brand-red text-white"
-                : "border-brand-light-gray bg-transparent text-brand-charcoal/50 hover:border-brand-red hover:text-brand-red",
-            )}
-          >
-            {cat.name}
-          </button>
-        ))}
-      </div>
+      {isLoading && displayList.length === 0 ? (
+        <div className="flex flex-wrap gap-2 animate-pulse">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <div
+              key={i}
+              className="h-8 w-28 rounded-full bg-brand-light-gray/60"
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="flex flex-wrap gap-2">
+          {displayList.map((cat, idx) => (
+            <button
+              key={cat.id || cat.slug || cat.name || idx}
+              type="button"
+              onClick={() => onSelect(selected === cat.name ? "" : cat.name)}
+              className={cn(
+                "inline-flex cursor-pointer items-center rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all duration-150",
+                selected === cat.name
+                  ? "border-brand-red bg-brand-red text-white"
+                  : "border-brand-light-gray bg-transparent text-brand-charcoal/50 hover:border-brand-red hover:text-brand-red",
+              )}
+            >
+              {cat.name}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

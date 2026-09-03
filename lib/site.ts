@@ -14,10 +14,10 @@ export const site = {
     tiktok: "https://www.tiktok.com/@lamsa_com",
   },
   nav: [
-    { label: "Accueil", href: "/#accueil" },
+    { label: "Accueil", href: "/" },
     { label: "Agence", href: "/agence" },
     { label: "Boutique", href: "/shop" },
-    { label: "Contact", href: "/#contact" },
+    { label: "Contact", href: "/" },
     { label: "FAQ", href: "/faq" },
   ],
 } as const;
