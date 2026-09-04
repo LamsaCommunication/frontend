@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { useState, useEffect, useCallback, Suspense } from "react";
+import { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -18,17 +18,13 @@ import {
   Box,
   ShoppingBag,
   CheckCircle2,
+  Images,
   ChevronLeft,
   ChevronRight,
-  Images,
-  Maximize2,
-  X,
-  ExternalLink,
-  Eye
 } from "lucide-react";
 import { Container } from "@/components/ui/container";
 import { SectionHeader } from "@/components/ui/section-header";
-import { useCatalogStore, Category } from "@/lib/store/useCatalogStore";
+import { useCatalogStore } from "@/lib/store/useCatalogStore";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -50,9 +46,9 @@ const ICON_MAP: Record<
   ShoppingBag,
 };
 
-// ── Professional Bento Gallery with Lightbox ──────────────────────────────
+// ── Horizontal Slideshow Carousel ─────────────────────────────────────────────
 
-function BentoImageGrid({
+function CategoryImageGallery({
   images,
   categoryId,
   categoryName,
@@ -61,191 +57,145 @@ function BentoImageGrid({
   categoryId: string;
   categoryName: string;
 }) {
-  const [activeIdx, setActiveIdx] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIdx, setLightboxIdx] = useState(0);
+  const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState<1 | -1>(1); // 1 = left, -1 = right
+  const [isPaused, setIsPaused] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // How many slides to show (controlled via CSS, logically we track one "page" at a time)
+  const VISIBLE = 3; // desktop
+  // Total pages = ceil(total / VISIBLE) but we scroll one image at a time for smoothness
+  const total = images.length;
+
+  // Reset on category change
   useEffect(() => {
-    setActiveIdx(0);
+    setCurrent(0);
+    setDirection(1);
   }, [categoryId]);
 
-  const prev = useCallback(
-    () => setActiveIdx((i) => (i - 1 + images.length) % images.length),
-    [images.length]
-  );
-  const next = useCallback(
-    () => setActiveIdx((i) => (i + 1) % images.length),
-    [images.length]
-  );
+  const goNext = useCallback(() => {
+    setDirection(1);
+    setCurrent((c) => (c + 1) % total);
+  }, [total]);
 
-  const prevLightbox = useCallback(
-    () => setLightboxIdx((i) => (i - 1 + images.length) % images.length),
-    [images.length]
-  );
-  const nextLightbox = useCallback(
-    () => setLightboxIdx((i) => (i + 1) % images.length),
-    [images.length]
-  );
+  const goPrev = useCallback(() => {
+    setDirection(-1);
+    setCurrent((c) => (c - 1 + total) % total);
+  }, [total]);
 
+  // Auto-advance every 4s
   useEffect(() => {
-    const handleKey = (e: KeyboardEvent) => {
-      if (lightboxOpen) {
-        if (e.key === "ArrowLeft") prevLightbox();
-        if (e.key === "ArrowRight") nextLightbox();
-        if (e.key === "Escape") setLightboxOpen(false);
-      } else {
-        if (e.key === "ArrowLeft") prev();
-        if (e.key === "ArrowRight") next();
-      }
-    };
-    window.addEventListener("keydown", handleKey);
-    return () => window.removeEventListener("keydown", handleKey);
-  }, [prev, next, prevLightbox, nextLightbox, lightboxOpen]);
+    if (isPaused || total <= 1) return;
+    timerRef.current = setTimeout(goNext, 4000);
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, [current, isPaused, goNext, total]);
 
-  if (images.length === 0) {
+  if (total === 0) {
     return (
-      <div className="flex h-56 items-center justify-center rounded-3xl border border-dashed border-[#e8e8e8] bg-[#fafafa]">
+      <div className="flex h-52 items-center justify-center rounded-3xl border border-dashed border-[#e8e8e8] bg-[#fafafa]">
         <div className="text-center">
-          <Images
-            className="mx-auto h-8 w-8 text-brand-dark/20"
-            strokeWidth={1.5}
-          />
+          <Images className="mx-auto h-8 w-8 text-brand-dark/20" strokeWidth={1.5} />
           <p className="mt-2 text-xs font-medium text-brand-dark/40">
-            Réalisations de cette catégorie en cours de numérisation
+            Réalisations en cours de numérisation
           </p>
         </div>
       </div>
     );
   }
 
-  const openModal = (idx: number) => {
-    setLightboxIdx(idx);
-    setLightboxOpen(true);
+  // Build a window of 3 consecutive images starting at `current`
+  const visibleImages = Array.from({ length: Math.min(VISIBLE, total) }, (_, i) => ({
+    src: images[(current + i) % total],
+    globalIdx: (current + i) % total,
+  }));
+
+  const variants = {
+    enter: (dir: number) => ({ x: dir * 80, opacity: 0 }),
+    center: { x: 0, opacity: 1 },
+    exit: (dir: number) => ({ x: dir * -80, opacity: 0 }),
   };
 
   return (
-    <>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {images.map((imgSrc, idx) => (
+    <div
+      className="space-y-4"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Carousel track */}
+      <div className="relative overflow-hidden">
+        <AnimatePresence custom={direction} mode="popLayout" initial={false}>
           <motion.div
-            key={`${categoryId}-${idx}`}
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: idx * 0.08 }}
-            onClick={() => openModal(idx)}
-            className="group relative aspect-[4/3] cursor-pointer overflow-hidden rounded-2xl border border-[#ebebeb] bg-[#fbfaf8] p-4 shadow-xs transition-all duration-300 hover:-translate-y-1 hover:border-brand-red/30 hover:shadow-lg"
+            key={current}
+            custom={direction}
+            variants={variants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+            className={`grid gap-3 ${total === 1
+              ? "grid-cols-1"
+              : total === 2
+                ? "grid-cols-2"
+                : "grid-cols-1 sm:grid-cols-2 lg:grid-cols-3"
+              }`}
           >
-            {/* Visual preview */}
-            <div className="relative h-full w-full overflow-hidden rounded-xl bg-white p-2">
-              <img
-                src={imgSrc}
-                alt={`${categoryName} réalisation ${idx + 1}`}
-                className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
-                draggable={false}
-              />
-            </div>
-
-            {/* Hover overlay with zoom icon */}
-            <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 backdrop-blur-xs transition-opacity duration-200 group-hover:opacity-100 rounded-2xl">
-              <div className="flex items-center gap-2 rounded-full bg-white px-4 py-2 text-xs font-bold text-brand-charcoal shadow-md">
-                <Maximize2 className="h-3.5 w-3.5 text-brand-red" />
-                <span>Agrandir</span>
-              </div>
-            </div>
-
-            {/* Bottom Caption Pill */}
-            <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between rounded-lg bg-white/90 px-2.5 py-1.5 backdrop-blur-md shadow-xs">
-              <span className="text-[11px] font-bold text-brand-charcoal truncate">
-                {categoryName} #{idx + 1}
-              </span>
-              <span className="text-[9px] font-extrabold uppercase text-brand-red tracking-wider">
-                Studio Lamsa
-              </span>
-            </div>
-          </motion.div>
-        ))}
-      </div>
-
-      {/* ── Fullscreen Lightbox Modal ──────────────────────────────── */}
-      <AnimatePresence>
-        {lightboxOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setLightboxOpen(false)}
-              className="fixed inset-0 bg-black/85 backdrop-blur-md"
-            />
-
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              transition={{ type: "spring", damping: 25, stiffness: 300 }}
-              className="relative z-10 max-h-[85vh] max-w-4xl overflow-hidden rounded-3xl bg-white p-4 shadow-2xl"
-            >
-              {/* Modal Top Bar */}
-              <div className="flex items-center justify-between border-b border-brand-light-gray pb-3 mb-3 px-2">
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-brand-red px-2.5 py-0.5 text-[10px] font-extrabold uppercase text-white">
-                    {categoryName}
-                  </span>
-                  <span className="text-xs font-bold text-brand-warm-gray">
-                    Vue haute définition ({lightboxIdx + 1}/{images.length})
-                  </span>
+            {visibleImages.map(({ src, globalIdx }) => (
+              <div
+                key={`${categoryId}-${globalIdx}`}
+                className="group relative overflow-hidden rounded-2xl bg-white border border-[#ebebeb]"
+              >
+                {/* Image — shown at natural proportions, no crop */}
+                <div className="flex aspect-[4/3] items-center justify-center p-4">
+                  <img
+                    src={src}
+                    alt={`${categoryName} — réalisation ${globalIdx + 1}`}
+                    className="max-h-full max-w-full object-contain"
+                    draggable={false}
+                  />
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setLightboxOpen(false)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full text-brand-charcoal hover:bg-brand-soft-white transition-colors"
-                >
-                  <X className="h-5 w-5" />
-                </button>
+                {/* Bottom label strip */}
+                <div className="flex items-center justify-center border-t border-[#f0f0f0] px-3 py-2">
+                  <span className="shrink-0 text-[9px] font-black uppercase tracking-widest text-brand-red">
+                    Lamsa Communication
+                  </span>
+                </div>
               </div>
+            ))}
+          </motion.div>
+        </AnimatePresence>
 
-              {/* Large Image Frame */}
-              <div className="relative aspect-[16/10] w-full max-h-[65vh] overflow-hidden rounded-2xl bg-[#fafafa] p-4 flex items-center justify-center">
-                <img
-                  src={images[lightboxIdx]}
-                  alt="Aperçu haute résolution"
-                  className="max-h-full max-w-full object-contain"
-                />
-
-                {images.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={prevLightbox}
-                      aria-label="Image précédente"
-                      className="absolute left-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-sm transition-all hover:bg-white hover:scale-105"
-                    >
-                      <ChevronLeft className="h-5 w-5 text-brand-charcoal" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={nextLightbox}
-                      aria-label="Image suivante"
-                      className="absolute right-3 top-1/2 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-lg backdrop-blur-sm transition-all hover:bg-white hover:scale-105"
-                    >
-                      <ChevronRight className="h-5 w-5 text-brand-charcoal" />
-                    </button>
-                  </>
-                )}
-              </div>
-            </motion.div>
-          </div>
+        {/* Prev / Next arrows — only if more than VISIBLE images */}
+        {total > VISIBLE && (
+          <>
+            <button
+              type="button"
+              onClick={goPrev}
+              aria-label="Précédent"
+              className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-[#e8e8e8] transition-all duration-200 hover:border-brand-red/30 hover:shadow-lg hover:scale-105"
+            >
+              <ChevronLeft className="h-4 w-4 text-brand-charcoal" />
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="Suivant"
+              className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white shadow-md border border-[#e8e8e8] transition-all duration-200 hover:border-brand-red/30 hover:shadow-lg hover:scale-105"
+            >
+              <ChevronRight className="h-4 w-4 text-brand-charcoal" />
+            </button>
+          </>
         )}
-      </AnimatePresence>
-    </>
+      </div>
+
+    </div>
   );
 }
 
 // ── Inner section (reads URL params) ──────────────────────────────────────
 
 function AgenceCategoriesSectionInner() {
-  const { categories: catalogCategories, isLoading, fetchCatalog } = useCatalogStore();
+  const { categories: catalogCategories, fetchCatalog } = useCatalogStore();
   const searchParams = useSearchParams();
   const param = searchParams.get("category") ?? "";
 
@@ -255,18 +205,20 @@ function AgenceCategoriesSectionInner() {
   }, [fetchCatalog]);
 
   const [activeId, setActiveId] = useState<string>("");
+  const initialized = useRef(false);
 
-  // Sync activeId whenever categories or URL param change
   useEffect(() => {
-    if (catalogCategories.length > 0) {
-      if (param && catalogCategories.some((c) => c.slug === param || c.id === param)) {
-        const found = catalogCategories.find((c) => c.slug === param || c.id === param);
-        setActiveId(found?.slug || catalogCategories[0].slug);
-      } else if (!activeId || !catalogCategories.some((c) => c.slug === activeId)) {
-        setActiveId(catalogCategories[0].slug);
-      }
+    if (catalogCategories.length === 0) return;
+    if (initialized.current) return;
+    initialized.current = true;
+
+    if (param && catalogCategories.some((c) => c.slug === param || c.id === param)) {
+      const found = catalogCategories.find((c) => c.slug === param || c.id === param);
+      setActiveId(found?.slug ?? catalogCategories[0].slug);
+    } else {
+      setActiveId(catalogCategories[0].slug);
     }
-  }, [catalogCategories, param, activeId]);
+  }, [catalogCategories, param]);
 
   // If loading and no categories loaded yet
   if (catalogCategories.length === 0) {
@@ -339,11 +291,10 @@ function AgenceCategoriesSectionInner() {
                 <button
                   key={category.slug || category.id}
                   onClick={() => setActiveId(category.slug)}
-                  className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${
-                    isActive
-                      ? "border-brand-red bg-brand-red text-white shadow-[0_6px_20px_-6px_rgba(227,6,19,0.45)]"
-                      : "border-brand-light-gray bg-white text-brand-dark/70 hover:border-brand-red/30 hover:text-brand-charcoal shadow-xs"
-                  }`}
+                  className={`inline-flex shrink-0 cursor-pointer items-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold transition-all duration-200 ${isActive
+                    ? "border-brand-red bg-brand-red text-white shadow-[0_6px_20px_-6px_rgba(227,6,19,0.45)]"
+                    : "border-brand-light-gray bg-white text-brand-dark/70 hover:border-brand-red/30 hover:text-brand-charcoal shadow-xs"
+                    }`}
                 >
                   <CatIcon className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
                   {category.name}
@@ -437,12 +388,9 @@ function AgenceCategoriesSectionInner() {
                       Aperçu de nos projets récents livrés à nos clients à travers l&apos;Algérie.
                     </p>
                   </div>
-                  <span className="hidden sm:inline-block rounded-full bg-brand-soft-white px-3 py-1 text-[11px] font-bold text-brand-warm-gray">
-                    {images.length} visuel{images.length > 1 ? "s" : ""} haute résolution
-                  </span>
                 </div>
 
-                <BentoImageGrid
+                <CategoryImageGallery
                   images={images}
                   categoryId={activeId}
                   categoryName={categoryName}

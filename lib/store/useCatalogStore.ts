@@ -284,10 +284,45 @@ export const useCatalogStore = create<CatalogState>()(
     }),
     {
       name: "lamsa_catalog_store",
+      // Only persist lightweight metadata — never persist image arrays (base64 blobs
+      // from admin uploads easily exceed the ~5 MB localStorage quota).
       partialize: (state) => ({
-        categories: state.categories,
-        products: state.products
-      })
+        categories: state.categories.map((c) => ({
+          ...c,
+          // Strip image arrays — they are always reloaded from the DB via fetchCatalog
+          image: undefined,
+          images: undefined,
+        })),
+        products: state.products.map((p) => ({
+          ...p,
+          images: [],
+        })),
+      }),
+      // Wrap storage access so a full quota never crashes the app
+      storage: {
+        getItem: (name: string) => {
+          try {
+            const val = localStorage.getItem(name);
+            return val ? JSON.parse(val) : null;
+          } catch {
+            return null;
+          }
+        },
+        setItem: (name: string, value: unknown) => {
+          try {
+            localStorage.setItem(name, JSON.stringify(value));
+          } catch {
+            // Quota exceeded — silently ignore, data will be re-fetched from server
+          }
+        },
+        removeItem: (name: string) => {
+          try {
+            localStorage.removeItem(name);
+          } catch {
+            // ignore
+          }
+        },
+      },
     }
   )
 );
