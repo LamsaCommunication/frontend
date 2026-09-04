@@ -9,16 +9,10 @@ import { Container } from "@/components/ui/container";
 import { Marquee } from "@/components/ui/marquee";
 import { site } from "@/lib/site";
 import { WhatsAppIcon } from "@/components/icons/social-icons";
-import { clientLogosApi, ClientLogo } from "@/lib/api/lamsa-api";
+import { clientLogosApi } from "@/lib/api/lamsa-api";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-
-
-/*
- * CTA buttons — rendered twice (desktop inline / mobile standalone)
- * to achieve: title → logo → buttons order on mobile.
- */
 function CTAButtons() {
   return (
     <>
@@ -71,12 +65,7 @@ export function HeroSection() {
         as="div"
         className="relative z-10 pb-8 pt-12 md:pb-16 md:pt-22"
       >
-        {/*
-         * Three-child grid: order-1 (text) → order-2 (logo) → order-3 (mobile buttons).
-         * Desktop collapses order-3 (lg:hidden) and shows buttons inside order-1.
-         */}
         <div className="grid grid-cols-1 items-center gap-y-5 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-0">
-          {/* ── 1. Heading column ───────────────────────────────────── */}
           <div className="order-1 lg:col-span-7">
             <motion.p
               initial={{ opacity: 0, y: 8 }}
@@ -98,8 +87,8 @@ export function HeroSection() {
               <motion.span
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                transition={{ duration: 0.55, delay: 0.6, ease: EASE }}
-                className="inline-flex items-center gap-2.5 align-middle lg:ml-4 lg:-translate-y-[0.1em] lg:gap-3"
+                transition={{ duration: 0.5, delay: 0.6 }}
+                className="inline-flex items-center gap-2 align-middle font-normal"
               >
                 <span className="inline-flex items-baseline gap-1 lg:gap-1.5">
                   <span className="text-sm font-semibold leading-none text-brand-red lg:text-base lg:font-bold">
@@ -126,7 +115,6 @@ export function HeroSection() {
               <span className="text-brand-red">concurrents.</span>
             </motion.h1>
 
-            {/* Desktop-only buttons */}
             <motion.div
               initial={{ opacity: 0, y: 14 }}
               animate={{ opacity: 1, y: 0 }}
@@ -137,7 +125,6 @@ export function HeroSection() {
             </motion.div>
           </div>
 
-          {/* ── 2. Logo ─────────────────────────────────────────────── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.93, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -161,22 +148,20 @@ export function HeroSection() {
             </div>
           </motion.div>
 
-          {/* ── 3. Mobile-only buttons (below logo) ─────────────────── */}
           <motion.div
             initial={{ opacity: 0, y: 14 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.65, delay: 0.46, ease: EASE }}
-            className="order-3 flex flex-col gap-2.5 sm:flex-row sm:items-center lg:hidden"
+            transition={{ duration: 0.65, delay: 0.45, ease: EASE }}
+            className="order-3 mt-4 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center lg:hidden"
           >
             <CTAButtons />
           </motion.div>
         </div>
 
-        {/* Social proof — full-width, centered */}
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
+          initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.55, delay: 0.8, ease: EASE }}
+          transition={{ duration: 0.6, delay: 0.8 }}
           className="mt-14 flex justify-center text-center"
         >
           <p className="text-sm font-medium text-brand-charcoal/60">
@@ -188,7 +173,6 @@ export function HeroSection() {
         </motion.div>
       </Container>
 
-      {/* ── Client logos marquee ─────────────────────────────────── */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -206,17 +190,13 @@ export function HeroSection() {
             items={logos.map(({ id, src, alt }, index) => (
               <div
                 key={id || `logo-${index}`}
-                className="relative h-14 w-14 shrink-0 md:h-20 md:w-20"
+                className="relative flex h-10 md:h-12 w-auto min-w-[70px] md:min-w-[90px] max-w-[150px] md:max-w-[180px] items-center justify-center shrink-0"
               >
-                <Image
+                <img
                   src={src}
                   alt={alt}
-                  width={80}
-                  height={80}
                   loading="lazy"
-                  unoptimized={src.startsWith("data:") || src.endsWith(".svg")}
-                  sizes="(max-width: 768px) 56px, 80px"
-                  className="h-full w-full object-contain"
+                  className="h-8 md:h-11 w-auto max-w-[130px] md:max-w-[170px] object-contain select-none pointer-events-none transition-all duration-300"
                 />
               </div>
             ))}

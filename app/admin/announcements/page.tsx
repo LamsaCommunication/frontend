@@ -15,7 +15,9 @@ import {
   ArrowRight,
   Clock,
   Check,
-  ImageIcon
+  ImageIcon,
+  Sparkles,
+  Info
 } from "lucide-react";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { Announcement, ClientLogo, announcementsApi, clientLogosApi } from "@/lib/api/lamsa-api";
@@ -388,16 +390,31 @@ export default function AdminAnnouncementsPage() {
               </div>
             </div>
           ) : (
-            <div className="rounded-3xl border border-brand-light-gray bg-brand-soft-white p-5 shadow-sm flex flex-col justify-center">
-              <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block mb-1">
-                Format Recommandé
-              </span>
-              <span className="text-sm font-bold text-brand-charcoal flex items-center gap-2">
-                <ImageIcon className="h-4 w-4" /> 80x80 px (Carré)
-              </span>
-              <span className="text-xs text-brand-warm-gray mt-1">
-                SVG ou PNG avec fond transparent pour un meilleur rendu.
-              </span>
+            <div className="rounded-3xl border border-brand-light-gray bg-white p-5 shadow-sm flex flex-col justify-between">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-warm-gray block">
+                  Format Marquee Recommandé
+                </span>
+                <Sparkles className="h-3.5 w-3.5 text-brand-red" />
+              </div>
+              <div className="mt-2">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-lg font-black text-brand-charcoal">
+                    200 × 80 px
+                  </span>
+                  <span className="text-[11px] font-bold text-brand-warm-gray">
+                    (Horizontal)
+                  </span>
+                </div>
+                <div className="text-[11px] font-medium text-brand-charcoal/70 mt-1 flex items-center gap-1.5">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                  <span>Hauteur défilement : <strong>44 px</strong> · PNG transparent ou SVG</span>
+                </div>
+              </div>
+              <div className="mt-2 pt-2 border-t border-brand-light-gray/60 flex items-center justify-between text-[10px] font-bold text-brand-warm-gray">
+                <span>Carré / Rond : 100×100 px</span>
+                <span className="text-emerald-600 font-semibold">Taille exacte (non zoomé)</span>
+              </div>
             </div>
           )}
         </div>
@@ -465,11 +482,11 @@ export default function AdminAnnouncementsPage() {
                     </div>
                   </div>
 
-                  <div className={`relative mt-4 w-full overflow-hidden rounded-2xl border border-brand-light-gray/60 flex items-center justify-center ${activeTab === "banners" ? "aspect-[1920/600] bg-neutral-900" : "aspect-square max-w-[140px] mx-auto bg-gray-50"}`}>
+                  <div className={`relative mt-4 w-full overflow-hidden rounded-2xl border border-brand-light-gray/60 flex items-center justify-center ${activeTab === "banners" ? "aspect-[1920/600] bg-neutral-900" : "h-24 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:10px_10px] bg-white p-3"}`}>
                     <img
                       src={item.image || "/placeholder.png"}
-                      alt="Preview"
-                      className={`object-contain ${activeTab === "banners" ? "w-full h-full" : "w-16 h-16 sm:w-20 sm:h-20"}`}
+                      alt={item.name || "Preview"}
+                      className={`object-contain transition-transform group-hover:scale-105 ${activeTab === "banners" ? "w-full h-full" : "h-11 w-auto max-w-[160px]"}`}
                     />
                   </div>
                 </div>
@@ -544,18 +561,56 @@ export default function AdminAnnouncementsPage() {
                 )}
 
                 <div className="space-y-3">
-                  <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal">
-                    Visuel {activeTab === "banners" ? "de la Bannière" : "du Logo"} *
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-[11px] font-black uppercase tracking-wider text-brand-charcoal">
+                      Visuel {activeTab === "banners" ? "de la Bannière" : "du Logo"} *
+                    </label>
+                    {activeTab === "logos" && (
+                      <span className="text-[10px] font-bold text-brand-red bg-brand-red/5 px-2 py-0.5 rounded-full border border-brand-red/20">
+                        Hauteur marquee : 44 px (fixe)
+                      </span>
+                    )}
+                  </div>
 
-                  <div className="relative w-full rounded-2xl border-2 border-dashed border-brand-light-gray bg-brand-soft-white/30 p-2 transition-colors hover:border-brand-red/30 hover:bg-brand-red/5">
+                  <div className="relative w-full rounded-2xl border-2 border-dashed border-brand-light-gray bg-brand-soft-white/30 p-3 transition-colors hover:border-brand-red/30 hover:bg-brand-red/5">
                     {formImage ? (
-                      <div>
-                        <div className={`relative group w-full rounded-xl overflow-hidden flex items-center justify-center shadow-sm ${activeTab === "banners" ? "aspect-[1920/600] bg-neutral-900 border border-brand-light-gray/50" : "aspect-video bg-gray-50 border border-gray-200 py-4"}`}>
+                      <div className="space-y-3">
+                        {/* Live Marquee Context Simulation for Logos */}
+                        {activeTab === "logos" && (
+                          <div className="rounded-xl border border-brand-light-gray bg-white p-3 shadow-2xs">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-[10px] font-black uppercase tracking-wider text-brand-warm-gray flex items-center gap-1.5">
+                                <Sparkles className="h-3 w-3 text-brand-red" />
+                                Aperçu réel dans le défilement (hauteur 44px)
+                              </span>
+                              <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
+                                <Check className="h-3 w-3" /> Non zoomé · Proportions 100%
+                              </span>
+                            </div>
+                            <div className="relative flex items-center justify-center h-16 rounded-xl bg-white border border-brand-light-gray/80 px-6 shadow-inner">
+                              <img
+                                src={formImage}
+                                alt="Aperçu Marquee"
+                                className="h-10 w-auto max-w-[160px] object-contain select-none"
+                              />
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Main Uploaded Image Preview & Controls */}
+                        <div
+                          className={`relative group w-full rounded-xl overflow-hidden flex items-center justify-center shadow-sm ${
+                            activeTab === "banners"
+                              ? "aspect-[1920/600] bg-neutral-900 border border-brand-light-gray/50"
+                              : "h-28 bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:12px_12px] bg-white border border-brand-light-gray/80 p-3"
+                          }`}
+                        >
                           <img
                             src={formImage}
                             alt="Preview"
-                            className={`object-contain ${activeTab === "banners" ? "w-full h-full" : "w-20 h-20 sm:w-24 sm:h-24"}`}
+                            className={`object-contain ${
+                              activeTab === "banners" ? "w-full h-full" : "max-h-20 w-auto max-w-[85%]"
+                            }`}
                           />
                           <div className="absolute inset-0 bg-brand-charcoal/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3 backdrop-blur-[2px]">
                             <label className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2.5 text-xs font-bold text-brand-charcoal hover:text-brand-red cursor-pointer shadow-lg transform translate-y-4 group-hover:translate-y-0 transition-all duration-300">
@@ -573,50 +628,90 @@ export default function AdminAnnouncementsPage() {
                           </div>
                         </div>
 
+                        {/* Pixel Resolution & Ratio Feedback */}
                         {imageDimensions && (
-                          <div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-brand-warm-gray px-1">
-                            <span>
-                              Résolution : <strong className="text-brand-charcoal font-mono">{imageDimensions.width} x {imageDimensions.height} px</strong>
-                            </span>
-                            {activeTab === "banners" ? (
-                              imageDimensions.width === 1920 && imageDimensions.height === 600 ? (
-                                <span className="text-emerald-600 font-bold flex items-center gap-1">
-                                  <Check className="h-3.5 w-3.5" /> 1920x600px Parfait
-                                </span>
-                              ) : Math.abs(imageDimensions.width / imageDimensions.height - 3.2) < 0.08 ? (
-                                <span className="text-blue-600 font-bold flex items-center gap-1">
-                                  <Check className="h-3.5 w-3.5" /> Ratio 3.2:1 Conforme
-                                </span>
+                          <div className="rounded-xl border border-brand-light-gray/70 bg-brand-soft-white/70 p-2.5 text-[11px]">
+                            <div className="flex items-center justify-between font-semibold text-brand-warm-gray">
+                              <span>
+                                Dimensions image :{" "}
+                                <strong className="text-brand-charcoal font-mono">
+                                  {imageDimensions.width} × {imageDimensions.height} px
+                                </strong>
+                              </span>
+                              <span className="font-mono text-brand-charcoal font-bold">
+                                Ratio : {(imageDimensions.width / imageDimensions.height).toFixed(2)}:1
+                              </span>
+                            </div>
+
+                            <div className="mt-2 pt-2 border-t border-brand-light-gray/60 flex items-center justify-between">
+                              {activeTab === "banners" ? (
+                                imageDimensions.width === 1920 && imageDimensions.height === 600 ? (
+                                  <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                    <Check className="h-3.5 w-3.5" /> 1920×600px Parfait
+                                  </span>
+                                ) : Math.abs(imageDimensions.width / imageDimensions.height - 3.2) < 0.08 ? (
+                                  <span className="text-blue-600 font-bold flex items-center gap-1">
+                                    <Check className="h-3.5 w-3.5" /> Ratio 3.2:1 Conforme
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-600 font-medium">
+                                    Ratio recommandé : 1920×600 (3.2:1)
+                                  </span>
+                                )
                               ) : (
-                                <span className="text-amber-600 font-medium">
-                                  Ratio recommandé : 1920x600 (3.2:1)
+                                imageDimensions.width / imageDimensions.height >= 1.6 ? (
+                                  <span className="text-emerald-700 font-bold flex items-center gap-1">
+                                    <Check className="h-3.5 w-3.5" /> Logo horizontal idéal (recommandé : 200×80 px)
+                                  </span>
+                                ) : Math.abs(imageDimensions.width / imageDimensions.height - 1) < 0.25 ? (
+                                  <span className="text-blue-700 font-bold flex items-center gap-1">
+                                    <Check className="h-3.5 w-3.5" /> Format carré / rond (s&apos;affiche à 44×44 px sans zoom)
+                                  </span>
+                                ) : (
+                                  <span className="text-amber-700 font-medium flex items-center gap-1">
+                                    <Info className="h-3.5 w-3.5" /> Hauteur ajustée automatiquement à 44 px dans le marquee
+                                  </span>
+                                )
+                              )}
+
+                              {activeTab === "logos" && (
+                                <span className="text-[10px] text-brand-warm-gray font-medium">
+                                  Fond transparent conseillé
                                 </span>
-                              )
-                            ) : (
-                              Math.abs(imageDimensions.width / imageDimensions.height - 1) < 0.1 ? (
-                                <span className="text-emerald-600 font-bold flex items-center gap-1">
-                                  <Check className="h-3.5 w-3.5" /> Carré Parfait
-                                </span>
-                              ) : (
-                                <span className="text-amber-600 font-medium">
-                                  Taille exacte recommandée : 80x80 (Carré)
-                                </span>
-                              )
-                            )}
+                              )}
+                            </div>
                           </div>
                         )}
                       </div>
                     ) : (
-                      <label className="flex flex-col items-center justify-center py-10 px-6 cursor-pointer">
+                      <label className="flex flex-col items-center justify-center py-8 px-6 cursor-pointer text-center">
                         <div className="h-12 w-12 rounded-full bg-brand-red/10 flex items-center justify-center mb-3 transition-transform hover:scale-110">
                           <Upload className="h-5 w-5 text-brand-red" />
                         </div>
                         <span className="text-sm font-bold text-brand-charcoal">
-                          Cliquez pour téléverser
+                          Cliquez pour téléverser {activeTab === "banners" ? "la bannière" : "le logo"}
                         </span>
-                        <span className="text-xs text-brand-warm-gray mt-1 text-center max-w-xs">
-                          {activeTab === "banners" ? "Format recommandé : 1920x600px. PNG, JPG ou SVG (max 50MB)." : "Taille exacte recommandée : 80x80 pixels. Format SVG ou PNG avec fond transparent."}
-                        </span>
+
+                        {activeTab === "banners" ? (
+                          <span className="text-xs text-brand-warm-gray mt-1 max-w-xs">
+                            Format recommandé : <strong>1920×600 px</strong> (ratio 3.2:1). PNG, JPG ou WebP (max 50MB).
+                          </span>
+                        ) : (
+                          <div className="mt-2.5 flex flex-col items-center gap-1.5 max-w-sm">
+                            <div className="flex flex-wrap justify-center gap-1.5">
+                              <span className="inline-flex items-center rounded-md bg-brand-red/10 px-2 py-0.5 text-[11px] font-bold text-brand-red">
+                                📐 Horizontal : 200 × 80 px (recommandé)
+                              </span>
+                              <span className="inline-flex items-center rounded-md bg-brand-soft-white border border-brand-light-gray px-2 py-0.5 text-[11px] font-bold text-brand-charcoal">
+                                🔲 Carré : 100 × 100 px
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-brand-warm-gray leading-relaxed mt-1">
+                              Hauteur affichée dans le marquee : <strong className="text-brand-charcoal">44 px</strong> (largeur max 160 px).<br />
+                              <span className="text-brand-red font-semibold">Format :</span> SVG ou PNG avec <strong>fond transparent</strong> pour éviter les blocs opaques ou l&apos;effet zoomé.
+                            </p>
+                          </div>
+                        )}
                         <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
                       </label>
                     )}
