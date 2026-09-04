@@ -4,7 +4,7 @@ import * as React from "react";
 import "./utils/three-timer-patch";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
-import { OrbitControls, ContactShadows, Environment } from "@react-three/drei";
+import { OrbitControls, ContactShadows, Environment, Lightformer } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { ProductModel } from "./ProductModel";
 import type { Product3DType, TextureTransform } from "./models/types";
@@ -50,15 +50,60 @@ function SceneContent({
 
   return (
     <>
-      {/* ── Studio Lighting Rig & Environment ──────────────────────── */}
-      <Environment preset="studio" environmentIntensity={0.8} />
-      <ambientLight intensity={0.5} />
+      {/* ── Studio HDRI Environment (Procedural Lightformers — 100% offline & fast) ── */}
+      <Environment resolution={256}>
+        <group rotation={[-Math.PI / 4, -0.2, 0]}>
+          <Lightformer
+            form="rect"
+            intensity={4}
+            position={[0, 8, -5]}
+            scale={[10, 5, 1]}
+            target={[0, 0, 0]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={2}
+            position={[-8, 3, 2]}
+            scale={[8, 8, 1]}
+            target={[0, 0, 0]}
+          />
+          <Lightformer
+            form="rect"
+            intensity={2.5}
+            position={[8, 3, 2]}
+            scale={[8, 8, 1]}
+            target={[0, 0, 0]}
+          />
+          <Lightformer
+            form="ring"
+            color="#ffffff"
+            intensity={1.5}
+            position={[0, 10, 0]}
+            scale={10}
+            target={[0, 0, 0]}
+          />
+        </group>
+      </Environment>
+
+      {/* ── Photorealistic Studio Lights ────────────────────────────── */}
+      <ambientLight intensity={0.55} />
+      <hemisphereLight
+        args={["#ffffff", "#cbd5e1", 0.45]}
+      />
       <directionalLight
         position={[5, 8, 5]}
-        intensity={1.0}
+        intensity={1.2}
         castShadow
         shadow-mapSize={1024}
         shadow-bias={-0.0001}
+      />
+      <directionalLight
+        position={[-5, 4, -3]}
+        intensity={0.5}
+      />
+      <directionalLight
+        position={[0, 6, -8]}
+        intensity={0.7}
       />
 
       {/* ── 3D Product Model with Logo Decal ──────────────────────── */}
