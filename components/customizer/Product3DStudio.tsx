@@ -1,4 +1,5 @@
 import * as React from "react";
+import "./utils/three-timer-patch";
 import * as THREE from "three";
 import { useRouter } from "next/navigation";
 import {
@@ -19,7 +20,8 @@ import { Scene3D } from "./Scene3D";
 import { ViewControls } from "./ViewControls";
 import { CustomizerToolbar } from "./CustomizerToolbar";
 import { SnapshotGenerator } from "./SnapshotGenerator";
-import { Product3DType, TextureTransform } from "./ProductModel";
+import type { Product3DType, TextureTransform } from "./models/types";
+import { DEFAULT_TRANSFORM } from "./models/types";
 import { Product } from "@/lib/store/useCatalogStore";
 import { useCartStore } from "@/lib/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
@@ -57,12 +59,9 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
   // 1. Customization State
   const [baseColor, setBaseColor] = React.useState("#ffffff");
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
-  const [logoTransform, setLogoTransform] = React.useState<TextureTransform>({
-    scale: 1,
-    offsetX: 0,
-    offsetY: 0,
-    rotation: 0
-  });
+  const [logoTransform, setLogoTransform] = React.useState<TextureTransform>(
+    DEFAULT_TRANSFORM
+  );
 
   const [clientVerified, setClientVerified] = React.useState(false);
   const [quantity, setQuantity] = React.useState(product.minQuantity || 1);
@@ -92,9 +91,9 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
     setLogoUrl(null);
   };
 
-  const handleTransformChange = (updates: Partial<TextureTransform>) => {
+  const handleTransformChange = React.useCallback((updates: Partial<TextureTransform>) => {
     setLogoTransform((prev) => ({ ...prev, ...updates }));
-  };
+  }, []);
 
   const handleAddToCart = (goToCheckout = false) => {
     if (!clientVerified) return;
@@ -144,7 +143,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
       {/* ── Left: Interactive 3D Viewport & Camera Director (7 Cols) ─── */}
       <div className="lg:col-span-7 sticky top-24 space-y-4">
-        <div className="relative h-[440px] sm:h-[520px] lg:h-[580px] w-full overflow-hidden rounded-3xl border border-brand-light-gray bg-transparent shadow-inner">
+        <div className="relative h-[360px] sm:h-[440px] md:h-[520px] lg:h-[580px] w-full overflow-hidden rounded-3xl border border-brand-light-gray bg-transparent shadow-inner">
           {/* Top Floating Badge & Warning */}
           <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2 pointer-events-none">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/80 px-3.5 py-1 text-xs font-bold text-brand-charcoal backdrop-blur-md shadow-sm">
@@ -176,9 +175,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
             </button>
             <button
               type="button"
-              onClick={() =>
-                setLogoTransform({ scale: 1, offsetX: 0, offsetY: 0, rotation: 0 })
-              }
+              onClick={() => setLogoTransform(DEFAULT_TRANSFORM)}
               disabled={isLocked || !logoUrl}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-brand-charcoal backdrop-blur-md shadow-sm transition-all hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:text-brand-red"
               title="Réinitialiser la position"
@@ -227,7 +224,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
               }
             }}
             onReset={() => {
-              handleTransformChange({ scale: 1, offsetX: 0, offsetY: 0, rotation: 0 });
+              handleTransformChange(DEFAULT_TRANSFORM);
               if (cameraRef.current && controlsRef.current) {
                 cameraRef.current.position.set(0, 0, 4.5);
                 controlsRef.current.target.set(0, 0, 0);

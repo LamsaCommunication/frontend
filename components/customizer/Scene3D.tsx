@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import "./utils/three-timer-patch";
 import * as THREE from "three";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls, ContactShadows, Environment } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
-import { ProductModel, Product3DType, TextureTransform } from "./ProductModel";
+import { ProductModel } from "./ProductModel";
+import type { Product3DType, TextureTransform } from "./models/types";
 
 interface Scene3DProps {
   modelType: string | Product3DType;
@@ -21,6 +23,10 @@ interface Scene3DProps {
   onLockedDragAttempt?: () => void;
 }
 
+/**
+ * SceneContent — Inner R3F component that sets up the 3D environment.
+ * Must be a child of <Canvas> to access the THREE.js context via useThree().
+ */
 function SceneContent({
   modelType,
   baseColor,
@@ -32,16 +38,14 @@ function SceneContent({
   orbitEnabled = true,
   setOrbitEnabled,
   isLocked,
-  onLockedDragAttempt
+  onLockedDragAttempt,
 }: Scene3DProps) {
   const { gl, scene, camera } = useThree();
   const localControlsRef = React.useRef<OrbitControlsImpl | null>(null);
   const activeControlsRef = controlsRef || localControlsRef;
 
   React.useEffect(() => {
-    if (onCanvasReady) {
-      onCanvasReady(gl, scene, camera);
-    }
+    onCanvasReady?.(gl, scene, camera);
   }, [gl, scene, camera, onCanvasReady]);
 
   return (
@@ -57,10 +61,10 @@ function SceneContent({
         shadow-bias={-0.0001}
       />
 
-      {/* ── Procedural & OBJ Product Mesh with Drei Decals ─────────── */}
-      <ProductModel 
-        modelType={modelType} 
-        baseColor={baseColor} 
+      {/* ── 3D Product Model with Logo Decal ──────────────────────── */}
+      <ProductModel
+        modelType={modelType}
+        baseColor={baseColor}
         logoUrl={logoUrl}
         logoTransform={logoTransform}
         onTransformChange={onTransformChange}
@@ -83,17 +87,21 @@ function SceneContent({
       <OrbitControls
         ref={activeControlsRef}
         enabled={orbitEnabled}
-        enableZoom={true}
+        enableZoom
         minDistance={2.0}
         maxDistance={8.0}
         maxPolarAngle={Math.PI / 2 + 0.12}
-        enableDamping={true}
+        enableDamping
         dampingFactor={0.05}
       />
     </>
   );
 }
 
+/**
+ * Scene3D — WebGL canvas wrapper with high-performance rendering settings.
+ * Uses ACES Filmic tone mapping for cinematic color grading.
+ */
 export function Scene3D(props: Scene3DProps) {
   return (
     <div className="relative h-full w-full select-none overflow-hidden touch-none">
@@ -104,7 +112,7 @@ export function Scene3D(props: Scene3DProps) {
           alpha: true,
           powerPreference: "high-performance",
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.0
+          toneMappingExposure: 1.0,
         }}
         camera={{ position: [0, 0, 4.5], fov: 45 }}
         style={{ width: "100%", height: "100%" }}
