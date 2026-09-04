@@ -130,7 +130,7 @@ export function CapModel({
   // At offsetX = 0, theta = 0 => Front center forehead.
   // Positive theta => Right side panels / ear.
   // Negative theta => Left side panels / ear.
-  // theta = ±PI => Back panels. No limits!
+  // theta = ±PI => Back panels. Complete 360° freedom!
   const theta = (logoTransform?.offsetX ?? 0) * 0.004;
   const offsetY = (logoTransform?.offsetY ?? 0) * -0.25;
 
@@ -138,7 +138,7 @@ export function CapModel({
   const decalScale = [
     baseSize * aspect * tScale,
     baseSize * tScale,
-    70, // 70 units depth projects cleanly into the fabric at any angle around the dome
+    80, // 80 units depth projects cleanly into the fabric at any angle around the dome
   ] as [number, number, number];
 
   // Forehead center height is ~42 in local cap coordinates
@@ -149,17 +149,17 @@ export function CapModel({
     0.35,
     Math.cos(Math.min(Math.PI * 0.45, Math.max(0, (posY - 35) * 0.015)))
   );
-  const rX = 145 * domeFactor;
-  const rZ = 125 * domeFactor;
+  const rX = 178 * domeFactor;
+  const rZ = 176 * domeFactor;
 
-  // Center of the cap head cylinder is at Z ≈ -25
+  // Center of the cap head cylinder is at Z ≈ -97
   const posX = Math.sin(theta) * rX;
-  const posZ = -25 + Math.cos(theta) * rZ;
+  const posZ = -97 + Math.cos(theta) * rZ;
 
   // Surface normal rotation:
   // Decal rotates around Y by theta so it always faces directly normal to the surface (no stretching or clipping).
   // Backward tilt (pitch) matches the dome slope on the front and becomes upright on the sides.
-  const pitch = (-0.52 - Math.max(0, (posY - 42) * 0.008)) * Math.cos(theta);
+  const pitch = (-0.48 - Math.max(0, (posY - 42) * 0.006)) * Math.cos(theta);
   const decalPosition = [posX, posY, posZ] as [number, number, number];
   const decalRotation = [pitch, theta, 0] as [number, number, number];
 

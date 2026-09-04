@@ -305,6 +305,94 @@ export function CustomizerToolbar({
             </button>
           </div>
 
+          {/* T-Shirt Face / Dos Placement Toggle */}
+          {isTShirt && (
+            <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+              <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
+                Côté d'impression :
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ side: "FRONT" })}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    logoTransform.side !== "BACK"
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                  }`}
+                >
+                  Face Avant (Torse)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ side: "BACK" })}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    logoTransform.side === "BACK"
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                  }`}
+                >
+                  Dos (Arrière)
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Cap Quick Placement Panels */}
+          {isCap && (
+            <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+              <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
+                Zone de placement :
+              </span>
+              <div className="grid grid-cols-4 gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ offsetX: 0 })}
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
+                    Math.abs((logoTransform.offsetX || 0) * 0.004) < 0.4
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                  }`}
+                >
+                  Front
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ offsetX: -390 })}
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
+                    Math.abs((logoTransform.offsetX || 0) * 0.004 - (-Math.PI / 2)) < 0.6
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                  }`}
+                >
+                  Côté G.
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ offsetX: 390 })}
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
+                    Math.abs((logoTransform.offsetX || 0) * 0.004 - (Math.PI / 2)) < 0.6
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                  }`}
+                >
+                  Côté D.
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ offsetX: 785 })}
+                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
+                    Math.abs(Math.abs((logoTransform.offsetX || 0) * 0.004) - Math.PI) < 0.6
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                  }`}
+                >
+                  Arrière
+                </button>
+              </div>
+            </div>
+          )}
+
           {/* Scale Slider */}
           <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
             <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">

@@ -92,7 +92,24 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
   };
 
   const handleTransformChange = React.useCallback((updates: Partial<TextureTransform>) => {
-    setLogoTransform((prev) => ({ ...prev, ...updates }));
+    setLogoTransform((prev) => {
+      const next = { ...prev, ...updates };
+      // If side was toggled on T-shirt, smoothly swing camera to face that side
+      if (updates.side && updates.side !== prev.side) {
+        if (cameraRef.current && controlsRef.current) {
+          const cam = cameraRef.current;
+          const dist = cam.position.length() || 4.5;
+          if (updates.side === "BACK") {
+            cam.position.set(0, 0, -dist);
+          } else {
+            cam.position.set(0, 0, dist);
+          }
+          controlsRef.current.target.set(0, 0, 0);
+          controlsRef.current.update();
+        }
+      }
+      return next;
+    });
   }, []);
 
   const handleAddToCart = (goToCheckout = false) => {
@@ -105,6 +122,8 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
       cameraRef.current
     );
 
+    const isBack = logoTransform.side === "BACK";
+
     addItem(
       {
         productId: product.id,
@@ -115,11 +134,13 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
         image: preview3D || product.images[0] || "/lamsa2.png",
         customization: {
           clientLogoPath: logoUrl || undefined,
-          designRectoPath: logoUrl || undefined,
-          designVersoPath: undefined,
+          designRectoPath: !isBack ? (logoUrl || undefined) : undefined,
+          designVersoPath: isBack ? (logoUrl || undefined) : undefined,
           preview3DPath: preview3D || product.images[0] || "/lamsa2.png",
           clientVerified: true,
-          designNotes: `Modèle: ${selectedProductType}, Couleur: ${baseColor}, Free Placement`,
+          designNotes: `Modèle: ${selectedProductType}, Couleur: ${baseColor}, Emplacement: ${
+            isBack ? "Dos (Arrière)" : "Face Avant"
+          }`,
           selectedColor: baseColor,
           modelType: selectedProductType as any
         }

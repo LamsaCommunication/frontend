@@ -96,6 +96,7 @@ export function TShirtModel({
 
   if (!geometry || !bounds) return null;
 
+  const isBack = logoTransform?.side === "BACK";
   const tScale = logoTransform?.scale ?? 1;
   const aspect = getTextureAspect(rawLogoTexture);
 
@@ -103,14 +104,23 @@ export function TShirtModel({
   const offsetY = (logoTransform?.offsetY ?? 0) * -0.00055;
 
   const baseSize = (bounds.max.x - bounds.min.x) * 0.4;
-  // Depth of 0.08 spans [0.010, 0.090] which envelops all curved front chest fabric (Z in [0.020, 0.060]),
-  // while remaining >0.065 units away from back fabric (Z <= -0.058).
-  // This completely eliminates decal projection on the back of the t-shirt.
+  // Depth of 0.08 strictly envelopes only the selected fabric side (front or back)
+  // without penetrating through to the opposite side.
   const decalScale = [
     baseSize * aspect * tScale,
     baseSize * tScale,
     0.08,
   ] as [number, number, number];
+
+  // If on the back: position at Z = -0.065, facing backward rotation = [0, Math.PI, 0]
+  // Negating offsetX on the back ensures dragging right moves to the right of the back from the viewer's point of view.
+  const decalPosition: [number, number, number] = isBack
+    ? [-offsetX, bounds.max.y * 0.2 + offsetY, -0.065]
+    : [offsetX, bounds.max.y * 0.2 + offsetY, 0.05];
+
+  const decalRotation: [number, number, number] = isBack
+    ? [0, Math.PI, 0]
+    : [0, 0, 0];
 
   return (
     <mesh
@@ -123,8 +133,8 @@ export function TShirtModel({
     >
       {!!logoUrl && (
         <Decal
-          position={[offsetX, bounds.max.y * 0.2 + offsetY, 0.05]}
-          rotation={[0, 0, 0]}
+          position={decalPosition}
+          rotation={decalRotation}
           scale={decalScale}
           {...handlers}
         >

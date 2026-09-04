@@ -9,6 +9,7 @@ export interface TextureTransform {
   offsetX: number;
   offsetY: number;
   rotation: number;
+  side?: "FRONT" | "BACK";
 }
 
 /** Default transform values */
@@ -17,6 +18,7 @@ export const DEFAULT_TRANSFORM: TextureTransform = {
   offsetX: 0,
   offsetY: 0,
   rotation: 0,
+  side: "FRONT",
 };
 
 /** Shared props interface for all 3D model components */
