@@ -137,8 +137,21 @@ apiClient.interceptors.response.use(
         if (typeof window !== "undefined") {
           localStorage.removeItem("lamsa_admin_access_token");
           localStorage.removeItem("lamsa_admin_refresh_token");
-          localStorage.removeItem("lamsa_admin_store");
-          
+
+          // Also invalidate the zustand admin store so AdminLayout immediately
+          // redirects — without this, isAuthenticated stays true in persisted state
+          try {
+            const raw = localStorage.getItem("lamsa_admin_store");
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed?.state) {
+                parsed.state.isAuthenticated = false;
+                parsed.state.adminUser = null;
+                localStorage.setItem("lamsa_admin_store", JSON.stringify(parsed));
+              }
+            }
+          } catch { /* ignore JSON errors */ }
+
           // Redirect gracefully to login if on an admin page
           if (window.location.pathname.startsWith("/admin") && !window.location.pathname.includes("/admin/login")) {
             window.location.href = "/admin/login?sessionExpired=true";

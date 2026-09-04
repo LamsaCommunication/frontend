@@ -161,7 +161,8 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
             )}
           </div>
 
-          {/* Optional Design File Upload */}
+          {/* Optional Design File Upload — shown only if admin enabled it */}
+          {product.allowLogoUpload !== false && (
           <div className="rounded-2xl border border-brand-light-gray/80 bg-brand-soft-white/40 p-4 space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block">
@@ -201,6 +202,7 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
               className="w-full rounded-xl border border-brand-light-gray bg-white py-2 px-3.5 text-xs text-brand-charcoal placeholder-brand-warm-gray focus:border-brand-red focus:outline-none"
             />
           </div>
+          )} {/* end allowLogoUpload */}
 
           {/* Color Selection (if colors available) */}
           {colors.length > 0 && (

@@ -90,6 +90,7 @@ function AdminProductsContent() {
   const [customHexInput, setCustomHexInput] = React.useState("#2563eb");
   const [formImages, setFormImages] = React.useState<string[]>(["/lamsa2.png"]);
   const [formFeatured, setFormFeatured] = React.useState(false);
+  const [formAllowLogoUpload, setFormAllowLogoUpload] = React.useState(true);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [formSuccess, setFormSuccess] = React.useState<string | null>(null);
 
@@ -127,6 +128,7 @@ function AdminProductsContent() {
     setFormAvailableColors(["#ffffff", "#141414", "#e30613"]);
     setFormImages(["/lamsa2.png"]);
     setFormFeatured(false);
+    setFormAllowLogoUpload(true);
     setFormError(null);
     setFormSuccess(null);
     setIsDrawerOpen(true);
@@ -155,6 +157,7 @@ function AdminProductsContent() {
       product.images && product.images.length > 0 ? product.images : ["/lamsa2.png"]
     );
     setFormFeatured(Boolean(product.featured));
+    setFormAllowLogoUpload(product.allowLogoUpload !== false); // default true
     setFormError(null);
     setFormSuccess(null);
     setIsDrawerOpen(true);
@@ -259,6 +262,7 @@ function AdminProductsContent() {
           availableColors: finalAvailableColors,
           images: finalImages,
           featured: formFeatured,
+          allowLogoUpload: formAllowLogoUpload,
         });
         setFormSuccess("Produit mis à jour avec succès !");
       } else {
@@ -277,6 +281,7 @@ function AdminProductsContent() {
           images: finalImages,
           isActive: true,
           featured: formFeatured,
+          allowLogoUpload: formAllowLogoUpload,
         });
         setFormSuccess("Produit ajouté avec succès au catalogue !");
       }
@@ -773,6 +778,27 @@ function AdminProductsContent() {
                           <span
                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formHas3D ? "translate-x-5" : "translate-x-0"
                               }`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Logo Upload Toggle */}
+                      <div className="flex items-center justify-between rounded-xl border border-brand-light-gray bg-white p-3.5 shadow-xs">
+                        <div>
+                          <span className="text-xs font-bold text-brand-charcoal block">
+                            Autoriser le dépôt de fichier (Logo / BAT)
+                          </span>
+                          <span className="text-[11px] text-brand-warm-gray">
+                            Affiche la section «&nbsp;Joindre votre logo&nbsp;» sur la page produit
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormAllowLogoUpload((v) => !v)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formAllowLogoUpload ? "bg-brand-red" : "bg-gray-300"}`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formAllowLogoUpload ? "translate-x-5" : "translate-x-0"}`}
                           />
                         </button>
                       </div>

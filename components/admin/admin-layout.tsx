@@ -21,9 +21,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   React.useEffect(() => {
-    // If not authenticated and not on login page, route to login
+    // Redirect to login if:
+    // 1. Not authenticated in zustand state, OR
+    // 2. Authenticated but the actual access token is gone (expired session, cleared by interceptor)
     const isLoginPage = pathname === "/admin/login" || pathname === "/admin/login/";
-    if (isMounted && !isAuthenticated && !isLoginPage) {
+    if (!isMounted || isLoginPage) return;
+
+    const hasToken = typeof window !== "undefined"
+      ? Boolean(localStorage.getItem("lamsa_admin_access_token"))
+      : false;
+
+    if (!isAuthenticated || !hasToken) {
       router.push("/admin/login");
     }
   }, [isMounted, isAuthenticated, pathname, router]);
@@ -35,8 +43,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
-  // Prevent rendering admin content if not authenticated
-  if (!isAuthenticated) {
+  // Prevent rendering admin content if not authenticated or token is missing
+  const hasToken = typeof window !== "undefined"
+    ? Boolean(localStorage.getItem("lamsa_admin_access_token"))
+    : false;
+
+  if (!isAuthenticated || !hasToken) {
     return null;
   }
 

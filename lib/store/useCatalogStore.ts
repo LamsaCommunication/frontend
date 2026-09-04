@@ -47,6 +47,7 @@ export interface Product {
   dimensions?: string;
   minQuantity?: number;
   featured?: boolean;
+  allowLogoUpload?: boolean; // When false, hides the file upload section on the product page
   createdAt: string;
 }
 
