@@ -10,16 +10,8 @@ import { ProductCustomizerClient } from "./client-view";
 
 import { catalogApi } from "@/lib/api/lamsa-api";
 
-export const dynamicParams = true;
-
-export async function generateStaticParams() {
-  try {
-    const res = await catalogApi.getProducts({ limit: 100 });
-    return (res.products || []).map((p) => ({ slug: p.slug }));
-  } catch {
-    return [];
-  }
-}
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 export default async function ProductDetailPage({
   params
@@ -27,13 +19,14 @@ export default async function ProductDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const product = await catalogApi.getProduct(slug).catch(() => null);
 
   return (
     <>
       <Navbar />
       <main className="flex-1 py-10 md:py-14">
         <Container as="div">
-          <ProductCustomizerClient slug={slug} />
+          <ProductCustomizerClient slug={slug} initialProduct={product} />
         </Container>
       </main>
       <Footer />

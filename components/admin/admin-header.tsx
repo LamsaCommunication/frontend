@@ -44,7 +44,9 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
       if (res && res.orders) {
         setLiveNotifications(res.orders);
       }
-    }).catch(console.error);
+    }).catch(err => {
+      console.warn("Could not load initial admin notifications:", err?.message || err);
+    });
   }, []);
 
   const notificationsOpenRef = React.useRef(notificationsOpen);

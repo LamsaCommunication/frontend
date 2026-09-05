@@ -149,9 +149,9 @@ function AdminProductsContent() {
     setFormHas3D(Boolean(is3D));
     setFormModelType(is3D ? (product.modelType as Product3DModelType) : "mug");
     setFormAvailableColors(
-      product.availableColors && product.availableColors.length > 0
+      Array.isArray(product.availableColors)
         ? product.availableColors
-        : ["#ffffff", "#141414", "#e30613"]
+        : []
     );
     setFormImages(
       product.images && product.images.length > 0 ? product.images : ["/lamsa2.png"]
@@ -163,15 +163,47 @@ function AdminProductsContent() {
     setIsDrawerOpen(true);
   };
 
-  const toggleAvailableColor = (hex: string) => {
+function normalizeHexColor(input: string): string | null {
+  let cleaned = input.trim();
+  if (!cleaned) return null;
+  if (!cleaned.startsWith("#")) {
+    cleaned = "#" + cleaned;
+  }
+  if (/^#[0-9a-fA-F]{3}$/.test(cleaned)) {
+    const r = cleaned[1];
+    const g = cleaned[2];
+    const b = cleaned[3];
+    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+  }
+  if (/^#[0-9a-fA-F]{6}$/.test(cleaned)) {
+    return cleaned.toLowerCase();
+  }
+  return null;
+}
+
+  const removeAvailableColor = (hex: string) => {
     setFormAvailableColors((prev) =>
-      prev.includes(hex) ? prev.filter((c) => c !== hex) : [...prev, hex]
+      prev.filter((c) => c.toLowerCase() !== hex.toLowerCase())
     );
   };
 
+  const removeAllAvailableColors = () => {
+    setFormAvailableColors([]);
+  };
+
+  const addAvailableColor = (hex: string) => {
+    const normalized = normalizeHexColor(hex);
+    if (!normalized) return;
+    if (!formAvailableColors.some((c) => c.toLowerCase() === normalized)) {
+      setFormAvailableColors((prev) => [...prev, normalized]);
+    }
+  };
+
   const handleAddCustomColor = () => {
-    if (customHexInput && !formAvailableColors.includes(customHexInput)) {
-      setFormAvailableColors((prev) => [...prev, customHexInput]);
+    const normalized = normalizeHexColor(customHexInput);
+    if (normalized) {
+      addAvailableColor(normalized);
+      setCustomHexInput(normalized);
     }
   };
 
@@ -241,7 +273,7 @@ function AdminProductsContent() {
     }
 
     const finalModelType: Product3DModelType = formHas3D ? formModelType : "none";
-    const finalAvailableColors = formHas3D ? undefined : formAvailableColors;
+    const finalAvailableColors = formAvailableColors;
     const finalImages = formHas3D
       ? [formImages[0] || "/lamsa2.png"]
       : (formImages.length > 0 ? formImages : ["/lamsa2.png"]);
@@ -286,11 +318,16 @@ function AdminProductsContent() {
         setFormSuccess("Produit ajouté avec succès au catalogue !");
       }
 
+      // Synchronize client-facing catalog store immediately
+      try {
+        useCatalogStore.getState().fetchCatalog();
+      } catch {}
+
       setTimeout(() => {
         setIsDrawerOpen(false);
         setFormSuccess(null);
         refetch(); // Refresh list from DB after save
-      }, 800);
+      }, 600);
     } catch (err: any) {
       console.error("Save product error:", err);
       setFormError(err.response?.data?.message || "Erreur lors de la sauvegarde.");
@@ -446,8 +483,8 @@ function AdminProductsContent() {
                         <td className="py-3.5 px-4">
                           <span
                             className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${prod.stock > 50
-                                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
-                                : "bg-amber-50 text-amber-700 border border-amber-200"
+                              ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                              : "bg-amber-50 text-amber-700 border border-amber-200"
                               }`}
                           >
                             {prod.stock} unités
@@ -821,14 +858,14 @@ function AdminProductsContent() {
                               type="button"
                               onClick={() => setFormModelType("mug")}
                               className={`group relative flex flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all cursor-pointer ${formModelType === "mug"
-                                  ? "border-brand-red bg-brand-red/5 ring-2 ring-brand-red/20 shadow-xs"
-                                  : "border-brand-light-gray bg-white hover:border-brand-charcoal/30 hover:bg-brand-soft-white"
+                                ? "border-brand-red bg-brand-red/5 ring-2 ring-brand-red/20 shadow-xs"
+                                : "border-brand-light-gray bg-white hover:border-brand-charcoal/30 hover:bg-brand-soft-white"
                                 }`}
                             >
                               <div
                                 className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${formModelType === "mug"
-                                    ? "bg-brand-red text-white"
-                                    : "bg-brand-soft-white text-brand-charcoal group-hover:bg-white"
+                                  ? "bg-brand-red text-white"
+                                  : "bg-brand-soft-white text-brand-charcoal group-hover:bg-white"
                                   }`}
                               >
                                 <Coffee className="h-6 w-6" />
@@ -852,14 +889,14 @@ function AdminProductsContent() {
                               type="button"
                               onClick={() => setFormModelType("tshirt")}
                               className={`group relative flex flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all cursor-pointer ${formModelType === "tshirt"
-                                  ? "border-brand-red bg-brand-red/5 ring-2 ring-brand-red/20 shadow-xs"
-                                  : "border-brand-light-gray bg-white hover:border-brand-charcoal/30 hover:bg-brand-soft-white"
+                                ? "border-brand-red bg-brand-red/5 ring-2 ring-brand-red/20 shadow-xs"
+                                : "border-brand-light-gray bg-white hover:border-brand-charcoal/30 hover:bg-brand-soft-white"
                                 }`}
                             >
                               <div
                                 className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${formModelType === "tshirt"
-                                    ? "bg-brand-red text-white"
-                                    : "bg-brand-soft-white text-brand-charcoal group-hover:bg-white"
+                                  ? "bg-brand-red text-white"
+                                  : "bg-brand-soft-white text-brand-charcoal group-hover:bg-white"
                                   }`}
                               >
                                 <Shirt className="h-6 w-6" />
@@ -883,14 +920,14 @@ function AdminProductsContent() {
                               type="button"
                               onClick={() => setFormModelType("cap")}
                               className={`group relative flex flex-col items-center justify-center rounded-2xl border p-4 text-center transition-all cursor-pointer ${formModelType === "cap"
-                                  ? "border-brand-red bg-brand-red/5 ring-2 ring-brand-red/20 shadow-xs"
-                                  : "border-brand-light-gray bg-white hover:border-brand-charcoal/30 hover:bg-brand-soft-white"
+                                ? "border-brand-red bg-brand-red/5 ring-2 ring-brand-red/20 shadow-xs"
+                                : "border-brand-light-gray bg-white hover:border-brand-charcoal/30 hover:bg-brand-soft-white"
                                 }`}
                             >
                               <div
                                 className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors ${formModelType === "cap"
-                                    ? "bg-brand-red text-white"
-                                    : "bg-brand-soft-white text-brand-charcoal group-hover:bg-white"
+                                  ? "bg-brand-red text-white"
+                                  : "bg-brand-soft-white text-brand-charcoal group-hover:bg-white"
                                   }`}
                               >
                                 <Disc className="h-6 w-6" />
@@ -921,80 +958,111 @@ function AdminProductsContent() {
                           className="space-y-3 pt-2"
                         >
                           <div className="flex items-center justify-between">
-                            <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block">
-                              Couleurs Disponibles pour la Page Produit :
-                            </label>
-                            <span className="text-[10px] font-bold text-brand-warm-gray">
-                              {formAvailableColors.length} sélectionnée{formAvailableColors.length > 1 ? "s" : ""}
-                            </span>
-                          </div>
-                          <p className="text-[11px] text-brand-warm-gray leading-relaxed">
-                            Sélectionnez les déclinaisons de couleurs proposées aux clients sur la page produit standard.
-                          </p>
-
-                          {/* Preset Palette Swatches */}
-                          <div className="flex flex-wrap items-center gap-2">
-                            {[
-                              { name: "Blanc", hex: "#ffffff" },
-                              { name: "Noir", hex: "#141414" },
-                              { name: "Rouge Lamsa", hex: "#e30613" },
-                              { name: "Bleu Marine", hex: "#1e3a8a" },
-                              { name: "Bleu Royal", hex: "#2563eb" },
-                              { name: "Vert Émeraude", hex: "#10b981" },
-                              { name: "Or / Jaune", hex: "#f59e0b" },
-                              { name: "Gris", hex: "#9ca3af" },
-                              { name: "Kraft", hex: "#d97706" },
-                              { name: "Rose", hex: "#ec4899" },
-                            ].map((swatch) => {
-                              const isSelected = formAvailableColors.some(
-                                (c) => c.toLowerCase() === swatch.hex.toLowerCase()
-                              );
-                              return (
-                                <button
-                                  key={swatch.hex}
-                                  type="button"
-                                  onClick={() => toggleAvailableColor(swatch.hex)}
-                                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-bold transition-all cursor-pointer ${isSelected
-                                      ? "border-brand-charcoal bg-brand-charcoal text-white shadow-xs"
-                                      : "border-brand-light-gray bg-white text-brand-charcoal hover:border-brand-red/40"
-                                    }`}
-                                >
-                                  <span
-                                    className="h-3 w-3 rounded-full border border-black/20"
-                                    style={{ backgroundColor: swatch.hex }}
-                                  />
-                                  <span>{swatch.name}</span>
-                                  {isSelected && <Check className="h-3 w-3 stroke-[3]" />}
-                                </button>
-                              );
-                            })}
-                          </div>
-
-                          {/* Custom Color Input */}
-                          <div className="flex items-center gap-2 pt-1">
-                            <div className="flex items-center gap-2 rounded-xl border border-brand-light-gray bg-white px-3 py-1.5 shadow-2xs">
-                              <input
-                                type="color"
-                                value={customHexInput}
-                                onChange={(e) => setCustomHexInput(e.target.value)}
-                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
-                              />
-                              <input
-                                type="text"
-                                value={customHexInput}
-                                onChange={(e) => setCustomHexInput(e.target.value)}
-                                placeholder="#HEX"
-                                className="w-20 text-xs font-mono font-bold uppercase text-brand-charcoal focus:outline-none"
-                              />
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block">
+                                Couleurs du Produit :
+                              </label>
+                              <span className="rounded-full bg-brand-soft-white px-2 py-0.5 text-[10px] font-bold text-brand-charcoal border border-brand-light-gray">
+                                {formAvailableColors.length} couleur{formAvailableColors.length > 1 ? "s" : ""}
+                              </span>
                             </div>
 
-                            <button
-                              type="button"
-                              onClick={handleAddCustomColor}
-                              className="rounded-xl bg-brand-charcoal px-3.5 py-2 text-xs font-bold text-white hover:bg-brand-red transition-colors cursor-pointer"
-                            >
-                              + Ajouter cette couleur
-                            </button>
+                            {formAvailableColors.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={removeAllAvailableColors}
+                                className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                                title="Supprimer toutes les couleurs"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                <span>Tout supprimer</span>
+                              </button>
+                            )}
+                          </div>
+
+                          <p className="text-[11px] text-brand-warm-gray leading-relaxed">
+                            Définissez les déclinaisons de couleurs proposées aux clients sur la boutique.
+                          </p>
+
+                          {/* Active Colors List (Only what is currently added) */}
+                          {formAvailableColors.length > 0 ? (
+                            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-light-gray/80 bg-white p-3 shadow-2xs">
+                              {formAvailableColors.map((hex) => {
+                                const PRESET_MAP: Record<string, string> = {
+                                  "#ffffff": "Blanc",
+                                  "#141414": "Noir",
+                                  "#e30613": "Rouge Lamsa",
+                                  "#1e3a8a": "Bleu Marine",
+                                  "#2563eb": "Bleu Royal",
+                                  "#10b981": "Vert Émeraude",
+                                  "#f59e0b": "Or / Jaune",
+                                  "#9ca3af": "Gris",
+                                  "#d97706": "Kraft",
+                                  "#ec4899": "Rose"
+                                };
+                                const label = PRESET_MAP[hex.toLowerCase()] || hex.toUpperCase();
+                                return (
+                                  <div
+                                    key={hex}
+                                    className="group flex items-center gap-2 rounded-full border border-brand-light-gray bg-brand-soft-white px-3 py-1.5 text-xs font-bold text-brand-charcoal shadow-2xs transition-all hover:border-red-300 hover:bg-red-50/50"
+                                  >
+                                    <span
+                                      className="h-3.5 w-3.5 rounded-full border border-black/20 shadow-2xs shrink-0"
+                                      style={{ backgroundColor: hex }}
+                                    />
+                                    <span className="text-[11px]">{label}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeAvailableColor(hex)}
+                                      title={`Supprimer ${label}`}
+                                      className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/5 text-brand-charcoal/70 hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
+                                    >
+                                      <X className="h-2.5 w-2.5 stroke-[3]" />
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          ) : (
+                            <div className="rounded-2xl border border-dashed border-brand-light-gray bg-brand-soft-white/60 p-4 text-center">
+                              <p className="text-xs font-semibold text-brand-warm-gray">
+                                Aucune couleur configurée — le sélecteur de déclinaisons sera masqué sur la boutique.
+                              </p>
+                            </div>
+                          )}
+
+                          {/* Add Color Section */}
+                          <div className="space-y-2 pt-1 border-t border-brand-light-gray/60">
+                            <span className="text-[11px] font-bold text-brand-warm-gray uppercase tracking-wider block">
+                              Ajouter une couleur :
+                            </span>
+
+                            {/* Custom Color Picker & Hex Input */}
+                            <div className="flex items-center gap-2 pt-1">
+                              <div className="flex items-center gap-2 rounded-xl border border-brand-light-gray bg-white px-3 py-1.5 shadow-2xs">
+                                <input
+                                  type="color"
+                                  value={normalizeHexColor(customHexInput) || "#2563eb"}
+                                  onChange={(e) => setCustomHexInput(e.target.value)}
+                                  className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
+                                />
+                                <input
+                                  type="text"
+                                  value={customHexInput}
+                                  onChange={(e) => setCustomHexInput(e.target.value)}
+                                  placeholder="#HEX"
+                                  className="w-20 text-xs font-mono font-bold uppercase text-brand-charcoal focus:outline-none"
+                                />
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={handleAddCustomColor}
+                                className="rounded-xl bg-brand-charcoal px-3.5 py-2 text-xs font-bold text-white hover:bg-brand-red transition-colors cursor-pointer shadow-xs"
+                              >
+                                + Ajouter cette couleur
+                              </button>
+                            </div>
                           </div>
                         </motion.div>
                       )}

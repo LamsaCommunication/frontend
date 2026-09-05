@@ -107,6 +107,10 @@ export const useAdminStore = create<AdminState>()(
               if (data.refreshToken) {
                 localStorage.setItem("lamsa_admin_refresh_token", data.refreshToken);
               }
+              // Set a marker cookie readable by Next.js middleware
+              // (HttpOnly cookies from Render may be blocked by browser privacy settings)
+              const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+              document.cookie = `lamsa_auth=1; path=/; expires=${expires}; SameSite=Lax`;
             }
 
             set({
@@ -149,6 +153,8 @@ export const useAdminStore = create<AdminState>()(
           if (typeof window !== "undefined") {
             localStorage.removeItem("lamsa_admin_access_token");
             localStorage.removeItem("lamsa_admin_refresh_token");
+            // Clear the auth marker cookie
+            document.cookie = "lamsa_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
           }
           set({ isAuthenticated: false, adminUser: null });
         }

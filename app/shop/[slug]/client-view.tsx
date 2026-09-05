@@ -29,34 +29,44 @@ const Product3DStudio = dynamic(
   }
 );
 
-export function ProductCustomizerClient({ slug }: { slug: string }) {
-  const { products, categories, fetchCatalog } = useCatalogStore();
+export function ProductCustomizerClient({
+  slug,
+  initialProduct
+}: {
+  slug: string;
+  initialProduct?: Product | null;
+}) {
+  const { products, categories, fetchCatalog, updateProduct } = useCatalogStore();
   const [liveProduct, setLiveProduct] = React.useState<Product | null>(() => {
-    return products.find((p) => p.slug === slug || p.id === slug) || null;
+    return initialProduct || products.find((p) => p.slug === slug || p.id === slug) || null;
   });
   const [isLoadingProduct, setIsLoadingProduct] = React.useState(!liveProduct);
 
   React.useEffect(() => {
-    // 1. Refresh global store
-    fetchCatalog();
+    if (initialProduct) {
+      setLiveProduct(initialProduct);
+      setIsLoadingProduct(false);
+    }
+  }, [initialProduct]);
 
-    // 2. Fetch specific product by slug from NestJS backend API
+  React.useEffect(() => {
+    // Fetch latest fresh product by slug directly from backend API
     catalogApi
       .getProduct(slug)
       .then((data) => {
         if (data) {
           setLiveProduct(data);
+          updateProduct(data.id, data);
         }
       })
       .catch(() => {
-        // Fallback to store products
         const fromStore = products.find((p) => p.slug === slug || p.id === slug);
         if (fromStore) setLiveProduct(fromStore);
       })
       .finally(() => {
         setIsLoadingProduct(false);
       });
-  }, [slug, fetchCatalog]);
+  }, [slug, updateProduct]);
 
   // Keep synced if products store updates and liveProduct not yet set
   React.useEffect(() => {

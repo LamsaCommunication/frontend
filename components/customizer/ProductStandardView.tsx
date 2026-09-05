@@ -40,11 +40,24 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
   const images = product.images && product.images.length > 0 ? product.images : ["/lamsa2.png"];
   const currentImage = images[activeImageIdx] || images[0];
 
-  const colors =
-    product.availableColors && product.availableColors.length > 0
-      ? product.availableColors
-      : ["#ffffff", "#141414", "#e30613"];
-  const [selectedColor, setSelectedColor] = React.useState<string>(colors[0] || "#ffffff");
+  const colors = React.useMemo(() => {
+    if (!Array.isArray(product.availableColors)) return [];
+    return product.availableColors
+      .map((c) => (c.startsWith("#") ? c : `#${c}`).trim())
+      .filter(Boolean);
+  }, [product.availableColors]);
+
+  const [selectedColor, setSelectedColor] = React.useState<string>(colors[0] || "");
+
+  React.useEffect(() => {
+    if (colors.length > 0) {
+      if (!selectedColor || !colors.some((c) => c.toLowerCase() === selectedColor.toLowerCase())) {
+        setSelectedColor(colors[0]);
+      }
+    } else {
+      setSelectedColor("");
+    }
+  }, [colors, selectedColor]);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -67,7 +80,7 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
           clientVerified: true,
           clientLogoPath: artworkPreview || undefined,
           designNotes: designNotes.trim() || undefined,
-          selectedColor,
+          selectedColor: colors.length > 0 ? selectedColor : undefined,
           modelType: "none",
           preview3DPath: currentImage
         }
@@ -212,7 +225,7 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
                   Couleur / Déclinaison
                 </span>
                 <span className="text-xs font-mono font-bold text-brand-warm-gray">
-                  {selectedColor.toUpperCase()}
+                  {selectedColor ? selectedColor.toUpperCase() : ""}
                 </span>
               </div>
 

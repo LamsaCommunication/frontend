@@ -81,7 +81,14 @@ export const ordersApi = {
     page?: number;
     limit?: number;
   }) => {
-    const res = await apiClient.get("/api/v1/orders", { params });
+    const cleanParams: Record<string, any> = {};
+    if (params) {
+      if (params.status && params.status !== "ALL") cleanParams.status = params.status;
+      if (params.search && params.search.trim() !== "") cleanParams.search = params.search.trim();
+      if (params.page) cleanParams.page = params.page;
+      if (params.limit) cleanParams.limit = params.limit;
+    }
+    const res = await apiClient.get("/api/v1/orders", { params: cleanParams });
     return res.data.data;
   },
 
