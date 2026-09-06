@@ -604,33 +604,20 @@ function ServiceChips({
   const [isLoading, setIsLoading] = React.useState(categories.length === 0);
 
   React.useEffect(() => {
-    let isMounted = true;
-    fetchCatalog().catch(() => { });
-
-    catalogApi
-      .getCategories()
-      .then((data) => {
-        if (isMounted && Array.isArray(data) && data.length > 0) {
-          setDbCategories(data);
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.warn("Failed to load categories for contact form:", err);
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchCatalog]);
-
-  React.useEffect(() => {
-    if (categories.length > 0) {
+    if (categories && categories.length > 0) {
       setDbCategories(categories);
       setIsLoading(false);
+    } else {
+      fetchCatalog()
+        .then(() => {
+          setDbCategories(useCatalogStore.getState().categories);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
     }
-  }, [categories]);
+  }, [categories, fetchCatalog]);
 
   const displayList = dbCategories.length > 0 ? dbCategories : categories;
 

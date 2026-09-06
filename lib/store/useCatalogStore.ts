@@ -91,6 +91,8 @@ const INITIAL_CATEGORIES: Category[] = [];
 
 const INITIAL_PRODUCTS: Product[] = [];
 
+let catalogFetchPromise: Promise<void> | null = null;
+
 export const useCatalogStore = create<CatalogState>()(
   persist(
     (set, get) => ({
@@ -103,18 +105,33 @@ export const useCatalogStore = create<CatalogState>()(
       sortBy: "popular",
 
       fetchCatalog: async () => {
-        if (get().isLoading) return;
-        set({ isLoading: true });
-        try {
-          const [categories, catalogResult] = await Promise.all([
-            catalogApi.getCategories(),
-            catalogApi.getProducts({ limit: 200 })
-          ]);
-          set({ categories, products: catalogResult.products, isLoading: false });
-        } catch {
-          // Silently fail — components will show empty states
-          set({ isLoading: false });
+        // Return existing in-flight promise to eliminate duplicate parallel requests across components
+        if (catalogFetchPromise) {
+          return catalogFetchPromise;
         }
+
+        set({ isLoading: true });
+
+        catalogFetchPromise = (async () => {
+          try {
+            const [categories, catalogResult] = await Promise.all([
+              catalogApi.getCategories(),
+              catalogApi.getProducts({ limit: 200 })
+            ]);
+            set({
+              categories: Array.isArray(categories) ? categories : [],
+              products: Array.isArray(catalogResult?.products) ? catalogResult.products : [],
+              isLoading: false
+            });
+          } catch (err) {
+            console.error("Erreur lors de la synchronisation du catalogue:", err);
+            set({ isLoading: false });
+          } finally {
+            catalogFetchPromise = null;
+          }
+        })();
+
+        return catalogFetchPromise;
       },
 
       setActiveCategory: (categoryId) => set({ activeCategoryId: categoryId, activeSubCategoryId: null }),
