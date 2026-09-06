@@ -28,6 +28,7 @@ interface CustomizerToolbarProps {
   logoTransform: TextureTransform;
   onTransformChange: (transform: Partial<TextureTransform>) => void;
   isLocked?: boolean;
+  availableColors?: string[];
 }
 
 const COLOR_SWATCHES = [
@@ -114,7 +115,8 @@ export function CustomizerToolbar({
   onRemoveLogo,
   logoTransform,
   onTransformChange,
-  isLocked
+  isLocked,
+  availableColors
 }: CustomizerToolbarProps) {
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -222,15 +224,18 @@ export function CustomizerToolbar({
           </span>
         </div>
 
-        <div className="flex items-center gap-2.5">
-          {COLOR_SWATCHES.map((swatch) => (
+        <div className="flex flex-wrap items-center gap-2.5">
+          {(availableColors && availableColors.length > 0
+            ? availableColors.map(hex => ({ name: hex, hex, border: "border-transparent" }))
+            : COLOR_SWATCHES
+          ).map((swatch) => (
             <button
               key={swatch.hex}
               type="button"
               onClick={() => onBaseColorChange(swatch.hex)}
               title={swatch.name}
               className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all cursor-pointer ${
-                swatch.border
+                swatch.border || "border-transparent"
               } ${
                 baseColor.toLowerCase() === swatch.hex.toLowerCase()
                   ? "ring-2 ring-brand-red ring-offset-2 scale-110"
@@ -241,7 +246,7 @@ export function CustomizerToolbar({
               {baseColor.toLowerCase() === swatch.hex.toLowerCase() && (
                 <span
                   className={`h-2 w-2 rounded-full ${
-                    swatch.hex === "#ffffff" ? "bg-black" : "bg-white"
+                    swatch.hex.toLowerCase() === "#ffffff" ? "bg-black" : "bg-white"
                   }`}
                 />
               )}

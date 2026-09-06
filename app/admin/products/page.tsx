@@ -949,9 +949,8 @@ function normalizeHexColor(input: string): string | null {
                         </motion.div>
                       )}
 
-                      {/* Mode 2D: Available Colors Manager */}
-                      {!formHas3D && (
-                        <motion.div
+                      {/* Available Colors Manager (both 2D & 3D) */}
+                      <motion.div
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
@@ -1065,7 +1064,6 @@ function normalizeHexColor(input: string): string | null {
                             </div>
                           </div>
                         </motion.div>
-                      )}
 
                       {/* ── Image Upload: Single if 3D is ON, Multiple if 3D is OFF ── */}
                       <div className="pt-2 space-y-2.5">

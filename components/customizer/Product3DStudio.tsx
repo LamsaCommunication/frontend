@@ -57,7 +57,12 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
   }, [product.modelType, getProductModelType]);
 
   // 1. Customization State
-  const [baseColor, setBaseColor] = React.useState("#ffffff");
+  const [baseColor, setBaseColor] = React.useState(() => {
+    if (product.availableColors && product.availableColors.length > 0) {
+      return product.availableColors[0];
+    }
+    return "#ffffff";
+  });
   const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
   const [logoTransform, setLogoTransform] = React.useState<TextureTransform>(
     DEFAULT_TRANSFORM
@@ -296,6 +301,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
             onProductTypeChange={setSelectedProductType}
             baseColor={baseColor}
             onBaseColorChange={setBaseColor}
+            availableColors={product.availableColors}
             logoUrl={logoUrl}
             onUploadLogo={handleUploadLogo}
             onRemoveLogo={handleRemoveLogo}

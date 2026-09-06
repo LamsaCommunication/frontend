@@ -163,6 +163,16 @@
     animation: marquee 20s linear infinite;
     will-change: transform;
   }
+  
+  /* Responsive Tables for Admin and Public Views */
+  .table-responsive {
+    @apply w-full overflow-x-auto overflow-y-hidden border border-brand-light-gray rounded-xl;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  .table-responsive table {
+    @apply w-full min-w-[600px];
+  }
 }
 
 @keyframes marquee {
