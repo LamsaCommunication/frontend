@@ -171,3 +171,50 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
+// ── 3. Frontend Request Hardening (Deduplication & Caching) ───────────────
+const pendingRequests = new Map<string, Promise<any>>();
+const frontendCache = new Map<string, { data: any; timestamp: number }>();
+const CACHE_TTL = 60000; // 60 seconds TTL for frontend cache
+
+const originalGet = apiClient.get;
+apiClient.get = async (url: string, config?: any) => {
+  // Only cache public catalog endpoints, ignore admin or user-specific endpoints
+  const isPublicCatalog =
+    (url.includes("/api/v1/categories") ||
+      url.includes("/api/v1/products") ||
+      url.includes("/announcements") ||
+      url.includes("/client-logos")) &&
+    !url.includes("/admin");
+
+  const requestKey = `${url}?${JSON.stringify(config?.params || {})}`;
+
+  // 1. Check frontend cache for staleness (Public Catalog only)
+  if (isPublicCatalog) {
+    const cached = frontendCache.get(requestKey);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+      return Promise.resolve(cached.data);
+    }
+  }
+
+  // 2. Request Deduplication (prevent concurrent identical requests)
+  if (pendingRequests.has(requestKey)) {
+    return pendingRequests.get(requestKey);
+  }
+
+  const promise = originalGet(url, config)
+    .then((response) => {
+      pendingRequests.delete(requestKey);
+      if (isPublicCatalog) {
+        frontendCache.set(requestKey, { data: response, timestamp: Date.now() });
+      }
+      return response;
+    })
+    .catch((error) => {
+      pendingRequests.delete(requestKey);
+      throw error;
+    });
+
+  pendingRequests.set(requestKey, promise);
+  return promise;
+};
