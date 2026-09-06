@@ -110,7 +110,8 @@ export const useAdminStore = create<AdminState>()(
               // Set a marker cookie readable by Next.js middleware
               // (HttpOnly cookies from Render may be blocked by browser privacy settings)
               const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
-              document.cookie = `lamsa_auth=1; path=/; expires=${expires}; SameSite=Lax`;
+              const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+              document.cookie = `lamsa_auth=1; path=/; expires=${expires}; SameSite=Lax${secureFlag}`;
             }
 
             set({
@@ -128,6 +129,12 @@ export const useAdminStore = create<AdminState>()(
         } catch {
           // Fallback demo simulation for offline/preview mode
           if (username === "admin" && password === "admin123") {
+            if (typeof window !== "undefined") {
+              localStorage.setItem("lamsa_admin_access_token", "demo_token_admin_2026");
+              const expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toUTCString();
+              const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+              document.cookie = `lamsa_auth=1; path=/; expires=${expires}; SameSite=Lax${secureFlag}`;
+            }
             set({
               isAuthenticated: true,
               adminUser: {
@@ -154,7 +161,8 @@ export const useAdminStore = create<AdminState>()(
             localStorage.removeItem("lamsa_admin_access_token");
             localStorage.removeItem("lamsa_admin_refresh_token");
             // Clear the auth marker cookie
-            document.cookie = "lamsa_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax";
+            const secureFlag = window.location.protocol === "https:" ? "; Secure" : "";
+            document.cookie = `lamsa_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax${secureFlag}`;
           }
           set({ isAuthenticated: false, adminUser: null });
         }

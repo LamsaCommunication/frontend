@@ -18,16 +18,23 @@ function AdminLoginContent() {
   const [error, setError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(false);
 
+  const hasHandledMount = React.useRef(false);
+
   React.useEffect(() => {
-    // If the URL tells us to clear the state (e.g. from middleware or API interceptor)
+    if (hasHandledMount.current) return;
+    hasHandledMount.current = true;
+
     const shouldClear = searchParams.get("clearState") === "true" || searchParams.get("sessionExpired") === "true";
     
-    if (shouldClear && isAuthenticated) {
+    if (shouldClear) {
+      // Clear any stale local auth state
       logout();
-      // Remove query params to clean up URL
+      // Remove query params immediately to clean up the URL
       router.replace("/admin/login");
-    } else if (isAuthenticated && !shouldClear) {
-      router.push("/admin");
+    } else if (isAuthenticated) {
+      // Already authenticated with clean state, navigate directly to dashboard
+      const targetRedirect = searchParams.get("redirect") || "/admin";
+      router.push(targetRedirect);
     }
   }, [isAuthenticated, router, searchParams, logout]);
 
@@ -45,7 +52,8 @@ function AdminLoginContent() {
     try {
       const success = await login(username.trim(), password.trim());
       if (success) {
-        router.push("/admin");
+        const targetRedirect = searchParams.get("redirect") || "/admin";
+        router.push(targetRedirect);
       } else {
         setError("Identifiants incorrects. Veuillez réessayer.");
         setIsLoading(false);

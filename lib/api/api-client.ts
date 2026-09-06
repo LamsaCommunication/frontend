@@ -35,7 +35,11 @@ apiClient.interceptors.request.use(
     if (typeof window !== "undefined") {
       const token = localStorage.getItem("lamsa_admin_access_token");
       if (token && config.headers) {
-        config.headers.Authorization = `Bearer ${token}`;
+        if (typeof config.headers.set === "function") {
+          config.headers.set("Authorization", `Bearer ${token}`);
+        } else {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
     }
     return config;
@@ -91,10 +95,10 @@ apiClient.interceptors.response.use(
             ? localStorage.getItem("lamsa_admin_refresh_token")
             : null;
 
-        // Perform token refresh call
+        // Perform token refresh call with fallback in both body and custom header
         const response = await axios.post(
           `${API_BASE_URL}/api/v1/auth/refresh`,
-          {},
+          { refreshToken: storedRefreshToken },
           {
             withCredentials: true,
             headers: storedRefreshToken
