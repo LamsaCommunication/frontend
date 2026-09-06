@@ -75,6 +75,8 @@ export default function AdminCategoriesPage() {
   const [subDescription, setSubDescription] = React.useState("");
   const [subError, setSubError] = React.useState<string | null>(null);
 
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+
   // Notification Toast
   const [notification, setNotification] = React.useState<{ text: string; type: "success" | "error" } | null>(null);
 
@@ -232,6 +234,9 @@ export default function AdminCategoriesPage() {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     const sanitizedServices = catServices
       .filter((s) => s.name.trim().length > 0)
       .map((s) => ({
@@ -282,6 +287,8 @@ export default function AdminCategoriesPage() {
         ? apiMsg.join(" • ")
         : (apiMsg || err.message || "Erreur serveur lors de l'enregistrement de la catégorie.");
       setCatError(formattedErr);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -340,6 +347,9 @@ export default function AdminCategoriesPage() {
       return;
     }
 
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+
     try {
       if (editingSubCategory) {
         await categoriesApi.update(editingSubCategory.id, {
@@ -364,6 +374,8 @@ export default function AdminCategoriesPage() {
     } catch (err: any) {
       console.error("Save sub-category error:", err);
       setSubError(err.response?.data?.message || "Erreur lors de la sauvegarde.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
