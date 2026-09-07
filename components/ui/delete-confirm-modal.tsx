@@ -6,7 +6,7 @@ import { AlertTriangle, Trash2, X, ShieldAlert, AlertCircle } from "lucide-react
 export interface DeleteConfirmModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm?: () => void;
+  onConfirm?: () => void | Promise<void>;
   title: string;
   itemName?: string;
   description?: string;
@@ -31,6 +31,19 @@ export function DeleteConfirmModal({
   if (!isOpen) return null;
 
   const isBlocked = Boolean(blockedReason);
+  const [isInternalDeleting, setIsInternalDeleting] = React.useState(false);
+
+  const handleConfirm = async () => {
+    if (!onConfirm) return;
+    setIsInternalDeleting(true);
+    try {
+      await onConfirm();
+    } finally {
+      setIsInternalDeleting(false);
+    }
+  };
+
+  const loading = isDeleting || isInternalDeleting;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
@@ -54,7 +67,8 @@ export function DeleteConfirmModal({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-brand-warm-gray hover:bg-brand-soft-white hover:text-brand-charcoal transition-colors cursor-pointer"
+            disabled={loading}
+            className="flex h-8 w-8 items-center justify-center rounded-full text-brand-warm-gray hover:bg-brand-soft-white hover:text-brand-charcoal transition-colors cursor-pointer disabled:opacity-50"
           >
             <X className="h-4 w-4" />
           </button>
@@ -103,19 +117,23 @@ export function DeleteConfirmModal({
               <button
                 type="button"
                 onClick={onClose}
-                disabled={isDeleting}
-                className="rounded-full border border-brand-light-gray px-5 py-2.5 text-xs font-bold text-brand-charcoal hover:bg-brand-soft-white transition-colors cursor-pointer"
+                disabled={loading}
+                className="rounded-full border border-brand-light-gray px-5 py-2.5 text-xs font-bold text-brand-charcoal hover:bg-brand-soft-white transition-colors cursor-pointer disabled:opacity-50"
               >
                 {cancelLabel}
               </button>
               <button
                 type="button"
-                onClick={onConfirm}
-                disabled={isDeleting}
+                onClick={handleConfirm}
+                disabled={loading}
                 className="inline-flex items-center gap-2 rounded-full bg-brand-red px-5 py-2.5 text-xs font-extrabold text-white shadow-sm hover:bg-brand-red-hover hover:shadow-[0_6px_20px_-6px_rgba(227,6,19,0.6)] transition-all cursor-pointer disabled:opacity-50"
               >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>{confirmLabel}</span>
+                {loading ? (
+                  <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white/20 border-t-white" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+                <span>{loading ? "Suppression..." : confirmLabel}</span>
               </button>
             </>
           )}

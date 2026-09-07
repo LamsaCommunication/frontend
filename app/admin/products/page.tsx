@@ -96,6 +96,20 @@ function AdminProductsContent() {
 
   const [addedProductId, setAddedProductId] = React.useState<string | null>(null);
 
+  // Delete Modal State
+  const [deleteModalState, setDeleteModalState] = React.useState<{
+    isOpen: boolean;
+    title: string;
+    itemName?: string;
+    description?: string;
+    blockedReason: string | null;
+    onConfirm?: () => Promise<void>;
+  }>({
+    isOpen: false,
+    title: "",
+    blockedReason: null
+  });
+
   // Sync default category when categories load from database
   React.useEffect(() => {
     if (!formCategoryId && categories.length > 0) {
@@ -555,16 +569,25 @@ function normalizeHexColor(input: string): string | null {
                             {/* Delete Button — Hard Delete from DB */}
                             <button
                               type="button"
-                              onClick={async () => {
-                                if (confirm(`Supprimer "${prod.name}" définitivement ?`)) {
-                                  try {
-                                    await productsApi.delete(prod.id);
-                                    refetch();
-                                  } catch (err: any) {
-                                    console.error("Erreur de suppression:", err);
-                                    alert(err.response?.data?.message || "Impossible de supprimer ce produit. Il est peut-être lié à des commandes.");
+                              onClick={() => {
+                                setDeleteModalState({
+                                  isOpen: true,
+                                  title: "Supprimer le produit ?",
+                                  itemName: prod.name,
+                                  description: `Êtes-vous sûr de vouloir supprimer définitivement le produit « ${prod.name} » ?`,
+                                  blockedReason: null,
+                                  onConfirm: async () => {
+                                    try {
+                                      await productsApi.delete(prod.id);
+                                      refetch();
+                                    } catch (err: any) {
+                                      console.error("Erreur de suppression:", err);
+                                      alert(err.response?.data?.message || "Impossible de supprimer ce produit. Il est peut-être lié à des commandes.");
+                                    } finally {
+                                      setDeleteModalState((prev) => ({ ...prev, isOpen: false }));
+                                    }
                                   }
-                                }
+                                });
                               }}
                               title="Supprimer le produit"
                               className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand-light-gray bg-white text-brand-warm-gray hover:border-brand-red hover:text-brand-red transition-colors cursor-pointer"
@@ -1187,8 +1210,18 @@ function normalizeHexColor(input: string): string | null {
             </div>
           )}
         </AnimatePresence>
-
       </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmModal
+        isOpen={deleteModalState.isOpen}
+        onClose={() => setDeleteModalState((prev) => ({ ...prev, isOpen: false }))}
+        onConfirm={deleteModalState.onConfirm}
+        title={deleteModalState.title}
+        itemName={deleteModalState.itemName}
+        description={deleteModalState.description}
+        blockedReason={deleteModalState.blockedReason}
+      />
     </AdminLayout>
   );
 }
