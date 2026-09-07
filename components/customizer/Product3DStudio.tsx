@@ -275,7 +275,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
       {/* ── Right: Customizer Toolbar & Order Gate (5 Cols) ─────────── */}
       <div className="lg:col-span-5 space-y-6 pb-24 lg:pb-0">
         {/* Product Details Header */}
-        <div className="rounded-3xl border border-brand-light-gray bg-white p-6 sm:p-8 shadow-sm hidden lg:block">
+        <div className="rounded-3xl border border-brand-light-gray bg-white p-6 sm:p-8 shadow-sm">
           <h1 className="heading-section text-2xl font-bold text-brand-charcoal sm:text-3xl">
             {product.name}
           </h1>
@@ -311,7 +311,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
           />
         </div>
 
-        <div className="hidden lg:block">
+        <div>
           {/* Quantity Selector */}
           <div className="mt-6 border-t border-brand-light-gray/70 pt-5">
             <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block mb-2">

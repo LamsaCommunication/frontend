@@ -177,6 +177,15 @@ const pendingRequests = new Map<string, Promise<any>>();
 const frontendCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL = 60000; // 60 seconds TTL for frontend cache
 
+// Invalidate cache on mutations (POST, PUT, PATCH, DELETE)
+apiClient.interceptors.request.use((config) => {
+  if (config.method && config.method.toLowerCase() !== 'get') {
+    frontendCache.clear();
+  }
+  return config;
+});
+
+
 const originalGet = apiClient.get;
 apiClient.get = async (url: string, config?: any) => {
   // Only cache public catalog endpoints, ignore admin or user-specific endpoints
