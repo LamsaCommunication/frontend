@@ -41,34 +41,60 @@ export function CustomSelect({
   const [isOpen, setIsOpen] = React.useState(false);
   const containerRef = React.useRef<HTMLDivElement>(null);
 
-  // Extract options from either options prop or React <option> children
+  /**
+   * Extract options from either the `options` prop or React <option> children.
+   * - Filters out disabled / placeholder options (value === "").
+   * - Deduplicates by value to prevent React key collisions.
+   */
   const parsedOptions = React.useMemo<OptionItem[]>(() => {
-    if (options && options.length > 0) return options;
+    let items: OptionItem[] = [];
 
-    const items: OptionItem[] = [];
-    React.Children.forEach(children, (child) => {
-      if (React.isValidElement(child) && (child.type === "option" || typeof child.type === "string")) {
-        const props = child.props as { value?: string | number; children?: React.ReactNode };
-        const val = props.value !== undefined ? String(props.value) : "";
-        const lbl = props.children?.toString() ?? val;
-        items.push({ value: val, label: lbl });
-      }
+    if (options && options.length > 0) {
+      items = options;
+    } else {
+      React.Children.forEach(children, (child) => {
+        if (
+          React.isValidElement(child) &&
+          (child.type === "option" || typeof child.type === "string")
+        ) {
+          const props = child.props as {
+            value?: string | number;
+            children?: React.ReactNode;
+            disabled?: boolean;
+          };
+          // Skip disabled placeholder options (value === "" or explicitly disabled)
+          if (props.disabled || props.value === "" || props.value === undefined) return;
+
+          const val = String(props.value);
+          const lbl =
+            typeof props.children === "string"
+              ? props.children
+              : Array.isArray(props.children)
+              ? props.children.join("")
+              : val;
+          items.push({ value: val, label: lbl });
+        }
+      });
+    }
+
+    // Deduplicate by value — keeps first occurrence
+    const seen = new Set<string>();
+    return items.filter((opt) => {
+      if (seen.has(opt.value)) return false;
+      seen.add(opt.value);
+      return true;
     });
-    return items;
   }, [options, children]);
 
   // Find currently selected label
-  const selectedOption = parsedOptions.find((opt) => opt.value === value);
+  const selectedOption = parsedOptions.find((opt) => opt.value === String(value ?? ""));
   const displayLabel = selectedOption ? selectedOption.label : placeholder;
 
   // Handle click outside to close dropdown
   React.useEffect(() => {
     if (!isOpen) return;
     const handleClickOutside = (e: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setIsOpen(false);
       }
     };
@@ -106,6 +132,7 @@ export function CustomSelect({
         disabled={disabled}
         aria-label={ariaLabel || label}
         aria-expanded={isOpen}
+        aria-haspopup="listbox"
         onClick={() => !disabled && setIsOpen((prev) => !prev)}
         className={`group flex w-full items-center justify-between rounded-xl border bg-white py-2.5 pl-4 pr-3 text-xs font-bold text-brand-charcoal transition-all duration-200 cursor-pointer shadow-xs ${
           isOpen
@@ -115,7 +142,11 @@ export function CustomSelect({
           disabled ? "opacity-50 cursor-not-allowed" : ""
         } ${className}`}
       >
-        <span className="truncate pr-2">{displayLabel}</span>
+        <span
+          className={`truncate pr-2 ${!selectedOption ? "text-brand-warm-gray font-medium" : ""}`}
+        >
+          {displayLabel}
+        </span>
         <div
           className={`flex h-5 w-5 items-center justify-center rounded-md transition-transform duration-200 ${
             isOpen ? "rotate-180 text-brand-red" : "text-brand-warm-gray"
@@ -129,6 +160,7 @@ export function CustomSelect({
       <AnimatePresence>
         {isOpen && (
           <motion.div
+            role="listbox"
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 4, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -141,11 +173,13 @@ export function CustomSelect({
               </div>
             ) : (
               parsedOptions.map((opt) => {
-                const isSelected = opt.value === value;
+                const isSelected = opt.value === String(value ?? "");
                 return (
                   <button
                     key={opt.value}
                     type="button"
+                    role="option"
+                    aria-selected={isSelected}
                     onClick={() => handleSelect(opt.value)}
                     className={`group flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-xs font-semibold transition-colors cursor-pointer ${
                       isSelected

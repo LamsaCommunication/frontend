@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ALGERIA_WILAYAS, Wilaya } from "@/lib/data/algeria-wilayas";
 import { Product3DModelType } from "./useCatalogStore";
 import { TextureTransform } from "@/components/customizer/models/types";
 
@@ -26,6 +25,7 @@ export interface CartItem {
   price: number; // in DZD
   quantity: number;
   image: string;
+  hasFreeShipping?: boolean;
   customization?: CartCustomization;
 }
 
@@ -35,8 +35,10 @@ interface CartState {
   
   // Checkout selections
   selectedWilayaCode: string;
+  selectedWilayaName: string;
   selectedCommune: string;
   isStopDesk: boolean;
+  shippingFee: number;
   
   // Actions
   addItem: (item: Omit<CartItem, "id">, autoOpenDrawer?: boolean) => void;
@@ -47,16 +49,15 @@ interface CartState {
   closeDrawer: () => void;
   toggleDrawer: () => void;
   
-  setSelectedWilaya: (wilayaCode: string) => void;
+  setSelectedWilaya: (wilayaCode: string, wilayaName: string) => void;
   setSelectedCommune: (commune: string) => void;
   setIsStopDesk: (isStopDesk: boolean) => void;
+  setShippingFee: (fee: number) => void;
   
-  // Computed getters
   getItemCount: () => number;
   getSubtotal: () => number;
   getShippingFee: () => number;
   getTotalAmount: () => number;
-  getSelectedWilaya: () => Wilaya | undefined;
 }
 
 export const useCartStore = create<CartState>()(
@@ -65,8 +66,10 @@ export const useCartStore = create<CartState>()(
       items: [],
       isDrawerOpen: false,
       selectedWilayaCode: "16", // Default: Alger
+      selectedWilayaName: "Alger",
       selectedCommune: "Alger Centre",
       isStopDesk: false,
+      shippingFee: 500,
 
       addItem: (itemData, autoOpen = true) => {
         const newItem: CartItem = {
@@ -102,16 +105,17 @@ export const useCartStore = create<CartState>()(
       closeDrawer: () => set({ isDrawerOpen: false }),
       toggleDrawer: () => set((state) => ({ isDrawerOpen: !state.isDrawerOpen })),
 
-      setSelectedWilaya: (wilayaCode) => {
-        const wilaya = ALGERIA_WILAYAS.find((w) => w.code === wilayaCode);
+      setSelectedWilaya: (wilayaCode, wilayaName) => {
         set({
           selectedWilayaCode: wilayaCode,
-          selectedCommune: wilaya ? wilaya.communes[0] : ""
+          selectedWilayaName: wilayaName,
+          selectedCommune: "" // Reset commune when wilaya changes
         });
       },
 
       setSelectedCommune: (commune) => set({ selectedCommune: commune }),
       setIsStopDesk: (isStopDesk) => set({ isStopDesk }),
+      setShippingFee: (fee) => set({ shippingFee: fee }),
 
       getItemCount: () => {
         return get().items.reduce((sum, item) => sum + item.quantity, 0);
@@ -124,17 +128,11 @@ export const useCartStore = create<CartState>()(
         );
       },
 
-      getSelectedWilaya: () => {
-        const { selectedWilayaCode } = get();
-        return ALGERIA_WILAYAS.find((w) => w.code === selectedWilayaCode);
-      },
-
       getShippingFee: () => {
-        const { items, isStopDesk } = get();
+        const { items, shippingFee } = get();
         if (items.length === 0) return 0;
-        const wilaya = get().getSelectedWilaya();
-        if (!wilaya) return 500;
-        return isStopDesk ? wilaya.stopDeskFee : wilaya.homeDeliveryFee;
+        const hasFree = items.some((item) => item.hasFreeShipping);
+        return hasFree ? 0 : shippingFee;
       },
 
       getTotalAmount: () => {
@@ -146,8 +144,10 @@ export const useCartStore = create<CartState>()(
       partialize: (state) => ({
         items: state.items,
         selectedWilayaCode: state.selectedWilayaCode,
+        selectedWilayaName: state.selectedWilayaName,
         selectedCommune: state.selectedCommune,
-        isStopDesk: state.isStopDesk
+        isStopDesk: state.isStopDesk,
+        shippingFee: state.shippingFee
       })
     }
   )

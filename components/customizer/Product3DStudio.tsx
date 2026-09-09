@@ -156,6 +156,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
         price: product.price,
         quantity,
         image: preview3D || product.images[0] || "/lamsa2.png",
+        hasFreeShipping: product.hasFreeShipping,
         customization: {
           clientLogoPath: printSides !== "BACK_ONLY" ? (frontLogoUrl || undefined) : undefined,
           designRectoPath: printSides !== "BACK_ONLY" ? (frontLogoUrl || undefined) : undefined,

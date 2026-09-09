@@ -30,14 +30,19 @@ import {
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { usePaginatedApi } from "@/lib/hooks/usePaginatedApi";
-import { ordersApi } from "@/lib/api/lamsa-api";
+import { ordersApi, yalidineApi } from "@/lib/api/lamsa-api";
 import { useAdminStore, OrderRecord } from "@/lib/store/useAdminStore";
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 
 export default function AdminDeliveryPage() {
-  const { generateYalidineWaybill, updateOrderStatus, yalidineSettings, setYalidineSettings } = useAdminStore();
+  const { generateYalidineWaybill, updateOrderStatus, yalidineSettings, setYalidineSettings, fetchYalidineSettings } = useAdminStore();
   const [selectedOrderForLabel, setSelectedOrderForLabel] = React.useState<OrderRecord | null>(null);
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
+
+  React.useEffect(() => {
+    fetchYalidineSettings();
+  }, [fetchYalidineSettings]);
 
   // Debounce search
   React.useEffect(() => {
@@ -65,38 +70,83 @@ export default function AdminDeliveryPage() {
   const [apiIdInput, setApiIdInput] = React.useState("");
   const [apiTokenInput, setApiTokenInput] = React.useState("");
   const [isLiveInput, setIsLiveInput] = React.useState(true);
+  const [defaultLengthInput, setDefaultLengthInput] = React.useState(10);
+  const [defaultWidthInput, setDefaultWidthInput] = React.useState(10);
+  const [defaultHeightInput, setDefaultHeightInput] = React.useState(10);
+  const [defaultWeightInput, setDefaultWeightInput] = React.useState(1);
+
   const [showToken, setShowToken] = React.useState(false);
   const [saveToast, setSaveToast] = React.useState<string | null>(null);
   const [testingConnection, setTestingConnection] = React.useState(false);
   const [testResult, setTestResult] = React.useState<"success" | "error" | null>(null);
 
-  const isConfigured = Boolean(yalidineSettings?.apiId?.trim() && yalidineSettings?.apiToken?.trim());
+  // Delete Modal State
+  const [deleteModalState, setDeleteModalState] = React.useState<{
+    isOpen: boolean;
+    orderId: string;
+    orderNumber: string;
+  }>({
+    isOpen: false,
+    orderId: "",
+    orderNumber: ""
+  });
 
-  const handleSaveSettings = (e: React.FormEvent) => {
+  const isConfigured = Boolean(yalidineSettings?.configured);
+  const fromEnv = Boolean((yalidineSettings as any)?.fromEnv);
+
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    setYalidineSettings({
-      apiId: apiIdInput.trim(),
-      apiToken: apiTokenInput.trim(),
-      isLive: isLiveInput
-    });
-    setSaveToast("Identifiants API Yalidine enregistrés avec succès !");
-    setTimeout(() => {
-      setSaveToast(null);
-      setIsSettingsModalOpen(false);
-    }, 1200);
+    try {
+      await yalidineApi.updateConfig({
+        apiId: apiIdInput.trim(),
+        // Only send token if it was changed (non-empty input)
+        ...(apiTokenInput.trim() ? { apiToken: apiTokenInput.trim() } : {}),
+        isLive: isLiveInput,
+        defaultLength: defaultLengthInput,
+        defaultWidth: defaultWidthInput,
+        defaultHeight: defaultHeightInput,
+        defaultWeight: defaultWeightInput
+      });
+      await fetchYalidineSettings();
+      setSaveToast("Configuration Yalidine enregistrée avec succès !");
+      setTimeout(() => {
+        setSaveToast(null);
+        setIsSettingsModalOpen(false);
+      }, 1500);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la sauvegarde.");
+    }
   };
 
-  const handleTestConnection = () => {
-    if (!apiIdInput.trim() || !apiTokenInput.trim()) {
+  const handleTestConnection = async () => {
+    if (!apiIdInput.trim()) {
       setTestResult("error");
       return;
     }
     setTestingConnection(true);
     setTestResult(null);
-    setTimeout(() => {
+    try {
+      // Save first so the backend can use the entered credentials to test
+      await yalidineApi.updateConfig({
+        apiId: apiIdInput.trim(),
+        ...(apiTokenInput.trim() ? { apiToken: apiTokenInput.trim() } : {}),
+        isLive: isLiveInput,
+        defaultLength: defaultLengthInput,
+        defaultWidth: defaultWidthInput,
+        defaultHeight: defaultHeightInput,
+        defaultWeight: defaultWeightInput
+      });
+      const result = await yalidineApi.testConnection();
+      setTestResult(result.success ? "success" : "error");
+      if (!result.success) {
+        console.warn("Yalidine test failed:", result.message);
+      }
+    } catch {
+      setTestResult("error");
+    } finally {
       setTestingConnection(false);
-      setTestResult("success");
-    }, 1000);
+    }
   };
 
   const handleGenerateWaybill = async (orderId: string) => {
@@ -113,6 +163,7 @@ export default function AdminDeliveryPage() {
   };
 
   return (
+    <>
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
@@ -143,7 +194,17 @@ export default function AdminDeliveryPage() {
             {/* Settings Button */}
             <button
               type="button"
-              onClick={() => setIsSettingsModalOpen(true)}
+              onClick={() => {
+                setApiIdInput(yalidineSettings.apiId || "");
+                setApiTokenInput(""); // Never pre-fill token for security
+                setIsLiveInput(yalidineSettings.isLive ?? true);
+                setDefaultLengthInput(yalidineSettings.defaultLength ?? 10);
+                setDefaultWidthInput(yalidineSettings.defaultWidth ?? 10);
+                setDefaultHeightInput(yalidineSettings.defaultHeight ?? 10);
+                setDefaultWeightInput(yalidineSettings.defaultWeight ?? 1);
+                setTestResult(null);
+                setIsSettingsModalOpen(true);
+              }}
               className="inline-flex items-center gap-2 rounded-full border border-brand-light-gray bg-white px-4 py-2 text-xs font-bold text-brand-charcoal shadow-xs hover:border-brand-red hover:text-brand-red hover:shadow-sm transition-all cursor-pointer"
             >
               <Settings className="h-4 w-4 text-brand-charcoal" />
@@ -262,12 +323,13 @@ export default function AdminDeliveryPage() {
                         {/* Hard Delete */}
                         <button
                           type="button"
-                          onClick={async () => {
-                            if (confirm(`Supprimer ${ord.orderNumber} définitivement ?`)) {
-                              await ordersApi.deleteOrder(ord.id);
-                              refetch();
-                            }
-                          }}
+                          onClick={() =>
+                            setDeleteModalState({
+                              isOpen: true,
+                              orderId: ord.id,
+                              orderNumber: ord.orderNumber
+                            })
+                          }
                           className="flex h-8 w-8 items-center justify-center rounded-lg border border-brand-light-gray bg-white text-brand-warm-gray hover:border-brand-red hover:text-brand-red transition-colors cursor-pointer"
                         >
                           <Trash2 className="h-3.5 w-3.5" />
@@ -322,6 +384,17 @@ export default function AdminDeliveryPage() {
               )}
 
               <form onSubmit={handleSaveSettings} className="space-y-4">
+                {/* fromEnv info banner */}
+                {fromEnv && (
+                  <div className="flex items-start gap-2 rounded-xl border border-blue-200 bg-blue-50 p-3 text-[11px] text-blue-800">
+                    <span className="mt-0.5 text-blue-500">ℹ️</span>
+                    <span>
+                      Les credentials Yalidine sont chargés depuis le fichier <code className="font-mono bg-blue-100 px-1 rounded">.env</code>.
+                      Vous pouvez les remplacer ci-dessous pour les stocker en base de données.
+                    </span>
+                  </div>
+                )}
+
                 {/* API ID Input */}
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block mb-1">
@@ -354,8 +427,7 @@ export default function AdminDeliveryPage() {
                       type={showToken ? "text" : "password"}
                       value={apiTokenInput}
                       onChange={(e) => setApiTokenInput(e.target.value)}
-                      placeholder="Ex: e4f98ab23c1d90ef..."
-                      required
+                      placeholder={isConfigured ? "Laisser vide pour conserver le token existant" : "Ex: e4f98ab23c1d90ef..."}
                       className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/50 py-2.5 pl-10 pr-10 text-xs font-mono font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
                     />
                     <button
@@ -393,6 +465,55 @@ export default function AdminDeliveryPage() {
                         }`}
                     />
                   </button>
+                </div>
+
+                {/* Default Dimensions Settings */}
+                <div className="pt-3 border-t border-brand-light-gray/70">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-brand-charcoal mb-3">
+                    Dimensions par défaut (Colis)
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-brand-warm-gray block mb-1">Poids (KG)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={defaultWeightInput}
+                        onChange={(e) => setDefaultWeightInput(Number(e.target.value))}
+                        className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/50 py-2 px-3 text-xs font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-brand-warm-gray block mb-1">Long. (cm)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={defaultLengthInput}
+                        onChange={(e) => setDefaultLengthInput(Number(e.target.value))}
+                        className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/50 py-2 px-3 text-xs font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-brand-warm-gray block mb-1">Larg. (cm)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={defaultWidthInput}
+                        onChange={(e) => setDefaultWidthInput(Number(e.target.value))}
+                        className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/50 py-2 px-3 text-xs font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-brand-warm-gray block mb-1">Haut. (cm)</label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={defaultHeightInput}
+                        onChange={(e) => setDefaultHeightInput(Number(e.target.value))}
+                        className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white/50 py-2 px-3 text-xs font-bold text-brand-charcoal focus:border-brand-red focus:bg-white focus:outline-none"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Test Connection Feedback */}
@@ -556,5 +677,20 @@ export default function AdminDeliveryPage() {
         )}
       </div>
     </AdminLayout>
+
+    {/* ── Delete Confirmation Modal ───────────────────────── */}
+    <DeleteConfirmModal
+      isOpen={deleteModalState.isOpen}
+      onClose={() => setDeleteModalState((prev) => ({ ...prev, isOpen: false }))}
+      onConfirm={async () => {
+        await ordersApi.deleteOrder(deleteModalState.orderId);
+        setDeleteModalState((prev) => ({ ...prev, isOpen: false }));
+        refetch();
+      }}
+      title="Supprimer la commande ?"
+      itemName={deleteModalState.orderNumber}
+      description="Cette action est irréversible. La commande et toutes ses données associées seront définitivement supprimées de la base de données."
+    />
+    </>
   );
 }

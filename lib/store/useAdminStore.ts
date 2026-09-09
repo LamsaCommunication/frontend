@@ -54,6 +54,12 @@ export interface YalidineSettings {
   apiId: string;
   apiToken: string;
   isLive: boolean;
+  configured: boolean;
+  fromEnv?: boolean;
+  defaultLength: number;
+  defaultWidth: number;
+  defaultHeight: number;
+  defaultWeight: number;
 }
 
 interface AdminState {
@@ -67,6 +73,7 @@ interface AdminState {
   logout: () => Promise<void> | void;
   
   // Settings Actions
+  fetchYalidineSettings: () => Promise<void>;
   setYalidineSettings: (settings: Partial<YalidineSettings>) => void;
   
   // Orders & Invoicing Actions
@@ -239,7 +246,25 @@ export const useAdminStore = create<AdminState>()(
       yalidineSettings: {
         apiId: "",
         apiToken: "",
-        isLive: true
+        isLive: true,
+        configured: false,
+        fromEnv: false,
+        defaultLength: 10,
+        defaultWidth: 10,
+        defaultHeight: 10,
+        defaultWeight: 1
+      },
+
+      fetchYalidineSettings: async () => {
+        try {
+          const { yalidineApi } = await import("../api/lamsa-api");
+          const settings = await yalidineApi.getConfig();
+          if (settings) {
+            set({ yalidineSettings: settings });
+          }
+        } catch (e) {
+          console.error("Failed to load yalidine config", e);
+        }
       },
 
       setYalidineSettings: (settings) => {

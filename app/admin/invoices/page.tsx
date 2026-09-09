@@ -19,6 +19,7 @@ import { usePaginatedApi } from "@/lib/hooks/usePaginatedApi";
 import { ordersApi } from "@/lib/api/lamsa-api";
 import type { OrderRecord, OrderStatus } from "@/lib/store/useAdminStore";
 import { getSocket } from "@/lib/socket/socket-client";
+import { DeleteConfirmModal } from "@/components/ui/delete-confirm-modal";
 
 const STATUS_LABELS: Record<string, string> = {
   ALL: "Toutes",
@@ -70,6 +71,17 @@ export default function AdminInvoicesPage() {
   const [statusFilter, setStatusFilter] = React.useState("ALL");
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
 
+  // Delete Modal State
+  const [deleteModalState, setDeleteModalState] = React.useState<{
+    isOpen: boolean;
+    orderId: string;
+    orderNumber: string;
+  }>({
+    isOpen: false,
+    orderId: "",
+    orderNumber: ""
+  });
+
   React.useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 350);
     return () => clearTimeout(id);
@@ -86,10 +98,8 @@ export default function AdminInvoicesPage() {
       deps: [statusFilter, debouncedSearch]
     });
 
-  const handleDeleteOrder = async (id: string, orderNumber: string) => {
-    if (!confirm(`Supprimer la commande ${orderNumber} définitivement ?`)) return;
-    await ordersApi.deleteOrder(id);
-    refetch();
+  const handleDeleteOrder = (id: string, orderNumber: string) => {
+    setDeleteModalState({ isOpen: true, orderId: id, orderNumber });
   };
 
   const refetchRef = React.useRef(refetch);
@@ -118,6 +128,7 @@ export default function AdminInvoicesPage() {
   }, []);
 
   return (
+    <>
     <AdminLayout>
       <div className="space-y-6">
         {/* Header */}
@@ -318,5 +329,20 @@ export default function AdminInvoicesPage() {
         </div>
       )}
     </AdminLayout>
+
+    {/* ── Delete Confirmation Modal ───────────────────────── */}
+    <DeleteConfirmModal
+      isOpen={deleteModalState.isOpen}
+      onClose={() => setDeleteModalState((prev) => ({ ...prev, isOpen: false }))}
+      onConfirm={async () => {
+        await ordersApi.deleteOrder(deleteModalState.orderId);
+        setDeleteModalState((prev) => ({ ...prev, isOpen: false }));
+        refetch();
+      }}
+      title="Supprimer la commande ?"
+      itemName={deleteModalState.orderNumber}
+      description="Cette action est irréversible. La commande et toutes ses données associées seront définitivement supprimées de la base de données."
+    />
+    </>
   );
 }

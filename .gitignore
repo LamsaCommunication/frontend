@@ -112,3 +112,4 @@ public/MUGS.obj
 public/obj+BASE+BALL+CAP.obj
 public/Low_T-shirt.obj
 .env.production
+.env.example

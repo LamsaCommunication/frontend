@@ -91,6 +91,7 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
         price: product.price,
         quantity,
         image: currentImage,
+        hasFreeShipping: product.hasFreeShipping,
         customization: {
           clientVerified: true,
           clientLogoPath: artworkPreview || undefined,

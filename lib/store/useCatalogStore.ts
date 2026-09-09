@@ -48,6 +48,7 @@ export interface Product {
   minQuantity?: number;
   featured?: boolean;
   allowLogoUpload?: boolean; // When false, hides the file upload section on the product page
+  hasFreeShipping?: boolean; // When true, no shipping fee is applied
   createdAt: string;
 }
 

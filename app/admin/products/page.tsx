@@ -91,6 +91,7 @@ function AdminProductsContent() {
   const [formImages, setFormImages] = React.useState<string[]>(["/lamsa2.png"]);
   const [formFeatured, setFormFeatured] = React.useState(false);
   const [formAllowLogoUpload, setFormAllowLogoUpload] = React.useState(true);
+  const [formHasFreeShipping, setFormHasFreeShipping] = React.useState(false);
   const [formError, setFormError] = React.useState<string | null>(null);
   const [formSuccess, setFormSuccess] = React.useState<string | null>(null);
 
@@ -143,6 +144,7 @@ function AdminProductsContent() {
     setFormImages(["/lamsa2.png"]);
     setFormFeatured(false);
     setFormAllowLogoUpload(true);
+    setFormHasFreeShipping(false);
     setFormError(null);
     setFormSuccess(null);
     setIsDrawerOpen(true);
@@ -172,6 +174,7 @@ function AdminProductsContent() {
     );
     setFormFeatured(Boolean(product.featured));
     setFormAllowLogoUpload(product.allowLogoUpload !== false); // default true
+    setFormHasFreeShipping(Boolean(product.hasFreeShipping));
     setFormError(null);
     setFormSuccess(null);
     setIsDrawerOpen(true);
@@ -309,6 +312,7 @@ function normalizeHexColor(input: string): string | null {
           images: finalImages,
           featured: formFeatured,
           allowLogoUpload: formAllowLogoUpload,
+          hasFreeShipping: formHasFreeShipping,
         });
         setFormSuccess("Produit mis à jour avec succès !");
       } else {
@@ -328,6 +332,7 @@ function normalizeHexColor(input: string): string | null {
           isActive: true,
           featured: formFeatured,
           allowLogoUpload: formAllowLogoUpload,
+          hasFreeShipping: formHasFreeShipping,
         });
         setFormSuccess("Produit ajouté avec succès au catalogue !");
       }
@@ -859,6 +864,27 @@ function normalizeHexColor(input: string): string | null {
                         >
                           <span
                             className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formAllowLogoUpload ? "translate-x-5" : "translate-x-0"}`}
+                          />
+                        </button>
+                      </div>
+
+                      {/* Free Shipping Toggle */}
+                      <div className="flex items-center justify-between rounded-xl border border-brand-light-gray bg-white p-3.5 shadow-xs">
+                        <div>
+                          <span className="text-xs font-bold text-brand-charcoal block">
+                            Livraison Gratuite
+                          </span>
+                          <span className="text-[11px] text-brand-warm-gray">
+                            Si activé, la livraison de toute la commande sera gratuite
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormHasFreeShipping((v) => !v)}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${formHasFreeShipping ? "bg-brand-red" : "bg-gray-300"}`}
+                        >
+                          <span
+                            className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formHasFreeShipping ? "translate-x-5" : "translate-x-0"}`}
                           />
                         </button>
                       </div>

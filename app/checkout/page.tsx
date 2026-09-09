@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
   ShieldCheck,
@@ -16,7 +16,6 @@ import {
   Phone,
   User,
   MapPin,
-  FileCheck,
   ArrowRight,
   Printer,
   ChevronRight,
@@ -31,7 +30,6 @@ import { useCartStore } from "@/lib/store/useCartStore";
 import { ordersApi, paymentsApi } from "@/lib/api/lamsa-api";
 import { OrderRecord } from "@/lib/store/useAdminStore";
 import { formatPrice } from "@/lib/utils";
-import { ALGERIA_WILAYAS } from "@/lib/data/algeria-wilayas";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -47,17 +45,18 @@ function CheckoutContent() {
     setSelectedWilaya,
     setSelectedCommune,
     setIsStopDesk,
+    setShippingFee,
     getSubtotal,
     getShippingFee,
     getTotalAmount,
     clearCart
   } = useCartStore();
 
-  // Form State
   const [firstName, setFirstName] = React.useState("");
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [address, setAddress] = React.useState("");
+  const [selectedCenter, setSelectedCenter] = React.useState("");
   const [paymentMethod, setPaymentMethod] = React.useState<"ONLINE_PAYMENT">("ONLINE_PAYMENT");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -65,13 +64,63 @@ function CheckoutContent() {
   const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   const [isMounted, setIsMounted] = React.useState(false);
+  const [wilayas, setWilayas] = React.useState<any[]>([]);
+  const [communes, setCommunes] = React.useState<any[]>([]);
+  const [centers, setCenters] = React.useState<any[]>([]);
+  const [fees, setFees] = React.useState<any>(null);
+  const [isLoadingDelivery, setIsLoadingDelivery] = React.useState(true);
+  const [isLoadingDetails, setIsLoadingDetails] = React.useState(false);
+
   React.useEffect(() => {
     setIsMounted(true);
+    async function loadWilayas() {
+      try {
+        const { yalidineApi } = await import("@/lib/api/lamsa-api");
+        const data = await yalidineApi.getWilayas();
+        setWilayas(data);
+      } catch (e) {
+        console.error("Failed to load wilayas", e);
+      } finally {
+        setIsLoadingDelivery(false);
+      }
+    }
+    loadWilayas();
   }, []);
 
-  const currentWilaya = React.useMemo(() => {
-    return ALGERIA_WILAYAS.find((w) => w.code === selectedWilayaCode) || ALGERIA_WILAYAS[15];
+  React.useEffect(() => {
+    async function loadWilayaData() {
+      if (!selectedWilayaCode) return;
+      setIsLoadingDetails(true);
+      try {
+        const { yalidineApi } = await import("@/lib/api/lamsa-api");
+        const [comData, cenData, feeData] = await Promise.all([
+          yalidineApi.getCommunes(selectedWilayaCode),
+          yalidineApi.getCenters(selectedWilayaCode),
+          yalidineApi.getFees(selectedWilayaCode)
+        ]);
+        setCommunes(comData);
+        setCenters(cenData);
+        if (feeData && feeData.length > 0) {
+          setFees(feeData[0]);
+        }
+      } catch (e) {
+        console.error("Failed to load wilaya details", e);
+      } finally {
+        setIsLoadingDetails(false);
+      }
+    }
+    loadWilayaData();
   }, [selectedWilayaCode]);
+
+  React.useEffect(() => {
+    if (fees) {
+      if (isStopDesk) {
+        setShippingFee(fees.desk_fee || 500);
+      } else {
+        setShippingFee(fees.home_fee || 500);
+      }
+    }
+  }, [fees, isStopDesk, setShippingFee]);
 
   const subtotal = getSubtotal();
   const shippingFee = getShippingFee();
@@ -93,6 +142,9 @@ function CheckoutContent() {
     if (!isStopDesk && !address.trim()) {
       newErrors.address = "Veuillez renseigner votre adresse de livraison complète.";
     }
+    if (isStopDesk && !selectedCenter) {
+      newErrors.center = "Veuillez sélectionner un point de retrait StopDesk.";
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -106,14 +158,18 @@ function CheckoutContent() {
     setIsSubmitting(true);
 
     try {
+      const centerObj = centers.find(c => c.center_id.toString() === selectedCenter);
+      const centerName = centerObj ? centerObj.name : selectedCenter;
+
       const response = await ordersApi.checkout({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         phone: phone.trim(),
-        wilaya: currentWilaya.name,
-        commune: selectedCommune || currentWilaya.communes[0],
-        address: isStopDesk ? `Bureau Yalidine StopDesk — ${selectedCommune}` : address.trim(),
+        wilaya: useCartStore.getState().selectedWilayaName,
+        commune: selectedCommune,
+        address: isStopDesk ? `Bureau Yalidine StopDesk — ${centerName}` : address.trim(),
         isStopDesk,
+        stopdeskId: isStopDesk ? selectedCenter : undefined,
         subtotal,
         shippingFee,
         totalAmount: grandTotal,
@@ -409,15 +465,22 @@ function CheckoutContent() {
                       </div>
 
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        {/* Wilaya select */}
                         <CustomSelect
                           label="Wilaya *"
-                          value={selectedWilayaCode}
-                          onChange={(e) => setSelectedWilaya(e.target.value)}
+                          value={selectedWilayaCode ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (!val) return;
+                            const wilaya = wilayas.find(w => String(w.wilaya_id) === val);
+                            if (wilaya) {
+                              setSelectedWilaya(String(wilaya.wilaya_id), wilaya.name);
+                            }
+                          }}
                         >
-                          {ALGERIA_WILAYAS.map((w) => (
-                            <option key={w.code} value={w.code}>
-                              {w.code} - {w.name} ({w.nameAr})
+                          <option value="" disabled>Sélectionnez une wilaya</option>
+                          {wilayas.map((w) => (
+                            <option key={String(w.wilaya_id)} value={String(w.wilaya_id)}>
+                              {w.wilaya_id} - {w.name}
                             </option>
                           ))}
                         </CustomSelect>
@@ -425,12 +488,16 @@ function CheckoutContent() {
                         {/* Commune select */}
                         <CustomSelect
                           label="Commune *"
-                          value={selectedCommune}
-                          onChange={(e) => setSelectedCommune(e.target.value)}
+                          value={selectedCommune ?? ""}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val) setSelectedCommune(val);
+                          }}
                         >
-                          {currentWilaya.communes.map((commune) => (
-                            <option key={commune} value={commune}>
-                              {commune}
+                          <option value="" disabled>Sélectionnez une commune</option>
+                          {communes.map((c) => (
+                            <option key={String(c.commune_id)} value={c.name}>
+                              {c.name}
                             </option>
                           ))}
                         </CustomSelect>
@@ -456,7 +523,7 @@ function CheckoutContent() {
                                 Livraison à Domicile
                               </span>
                               <span className="text-[11px] text-brand-dark/70 block mt-0.5">
-                                Directement à votre adresse ({currentWilaya.homeDeliveryFee} DZD)
+                                Directement à votre adresse ({fees ? fees.home_fee : "..."} DZD)
                               </span>
                             </div>
                           </button>
@@ -464,7 +531,8 @@ function CheckoutContent() {
                           <button
                             type="button"
                             onClick={() => setIsStopDesk(true)}
-                            className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all cursor-pointer ${isStopDesk
+                            disabled={centers.length === 0}
+                            className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all ${centers.length === 0 ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${isStopDesk
                               ? "border-brand-red bg-brand-red/5 shadow-sm"
                               : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white"
                               }`}
@@ -475,14 +543,42 @@ function CheckoutContent() {
                                 Bureau Yalidine (StopDesk)
                               </span>
                               <span className="text-[11px] text-brand-dark/70 block mt-0.5">
-                                Récupération en agence ({currentWilaya.stopDeskFee} DZD)
+                                {centers.length === 0 ? "Non disponible dans cette wilaya" : `Récupération en agence (${fees ? fees.desk_fee : "..."} DZD)`}
                               </span>
                             </div>
                           </button>
                         </div>
                       </div>
 
-                      {!isStopDesk && (
+                      {isLoadingDetails && (
+                        <div className="flex items-center gap-2 text-xs font-bold text-brand-warm-gray py-2">
+                          <Loader2 className="h-4 w-4 animate-spin text-brand-red" />
+                          Chargement des informations Yalidine...
+                        </div>
+                      )}
+
+                      {isStopDesk ? (
+                        <div>
+                          <CustomSelect
+                            label="Point de retrait StopDesk *"
+                            value={selectedCenter ?? ""}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              if (val) setSelectedCenter(val);
+                            }}
+                          >
+                            <option value="" disabled>Sélectionnez un point de retrait</option>
+                            {centers.map((c) => (
+                              <option key={String(c.center_id)} value={String(c.center_id)}>
+                                {c.name} - {c.address}
+                              </option>
+                            ))}
+                          </CustomSelect>
+                          {errors.center && (
+                            <p className="mt-1 text-[11px] font-medium text-brand-red">{errors.center}</p>
+                          )}
+                        </div>
+                      ) : (
                         <div>
                           <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block mb-1.5">
                             Adresse exacte de livraison *
@@ -606,7 +702,7 @@ function CheckoutContent() {
                     <div className="flex justify-between text-xs text-brand-dark/70">
                       <span className="flex items-center gap-1.5">
                         <Truck className="h-3.5 w-3.5 text-brand-red" />
-                        Livraison Yalidine ({currentWilaya.name})
+                        Livraison Yalidine ({useCartStore.getState().selectedWilayaName})
                       </span>
                       <span className="font-semibold text-brand-charcoal">
                         {formatPrice(shippingFee)} DZD

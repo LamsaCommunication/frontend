@@ -327,6 +327,12 @@ function AdminSingleInvoiceContent() {
                 {order.items.map((item) => {
                   const frontLogo = item.designRectoPath || item.clientLogoPath;
                   const backLogo = item.designVersoPath;
+                  const rawImg = item.preview3DPath || frontLogo;
+                  const itemImgSrc = rawImg
+                    ? (rawImg.startsWith("/api/")
+                        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${rawImg}`
+                        : rawImg)
+                    : "/lamsa2.png";
 
                   return (
                     <tr key={item.id}>
@@ -335,13 +341,7 @@ function AdminSingleInvoiceContent() {
                           <div className="flex items-center gap-3">
                             <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-brand-light-gray bg-brand-soft-white p-1">
                               <Image
-                                src={
-                                  (item.preview3DPath || frontLogo)
-                                    ? ((item.preview3DPath || frontLogo).startsWith("/api/")
-                                        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${item.preview3DPath || frontLogo}`
-                                        : (item.preview3DPath || frontLogo))
-                                    : "/lamsa2.png"
-                                }
+                                src={itemImgSrc}
                                 alt={item.productName}
                                 fill
                                 className="object-contain"

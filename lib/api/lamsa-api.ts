@@ -53,6 +53,7 @@ export const ordersApi = {
     commune: string;
     address: string;
     isStopDesk?: boolean;
+    stopdeskId?: string;
     subtotal: number;
     shippingFee?: number;
     totalAmount: number;
@@ -70,6 +71,8 @@ export const ordersApi = {
       designNotes?: string;
       frontTransform?: any;
       backTransform?: any;
+      modelType?: string;
+      selectedColor?: string;
     }[];
   }) => {
     const res = await apiClient.post("/api/v1/orders/checkout", payload);
@@ -121,6 +124,49 @@ export const ordersApi = {
   /** Admin: Get dashboard stats */
   getAdminStats: async () => {
     const res = await apiClient.get("/api/v1/orders/admin/stats");
+    return res.data.data;
+  }
+};
+
+// ── Yalidine API ───────────────────────────────────────────────────────────
+
+export const yalidineApi = {
+  getConfig: async () => {
+    const res = await apiClient.get("/api/v1/delivery/yalidine/config");
+    return res.data.data;
+  },
+  updateConfig: async (data: {
+    apiId: string;
+    apiToken?: string; // optional — keep existing if empty
+    isLive?: boolean;
+    defaultLength?: number;
+    defaultWidth?: number;
+    defaultHeight?: number;
+    defaultWeight?: number;
+  }) => {
+    const res = await apiClient.post("/api/v1/delivery/yalidine/config", data);
+    return res.data;
+  },
+  testConnection: async () => {
+    const res = await apiClient.post("/api/v1/delivery/yalidine/test-connection");
+    return res.data.data as { success: boolean; message: string };
+  },
+  getWilayas: async () => {
+    const res = await apiClient.get("/api/v1/delivery/yalidine/wilayas");
+    return res.data.data;
+  },
+  getCommunes: async (wilayaId?: string) => {
+    const params = wilayaId ? { wilaya_id: wilayaId } : undefined;
+    const res = await apiClient.get("/api/v1/delivery/yalidine/communes", { params });
+    return res.data.data;
+  },
+  getCenters: async (wilayaId?: string) => {
+    const params = wilayaId ? { wilaya_id: wilayaId } : undefined;
+    const res = await apiClient.get("/api/v1/delivery/yalidine/centers", { params });
+    return res.data.data;
+  },
+  getFees: async (toWilayaId: string) => {
+    const res = await apiClient.get("/api/v1/delivery/yalidine/fees", { params: { to_wilaya_id: toWilayaId } });
     return res.data.data;
   }
 };
