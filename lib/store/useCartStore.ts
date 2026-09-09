@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ALGERIA_WILAYAS, Wilaya } from "@/lib/data/algeria-wilayas";
 import { Product3DModelType } from "./useCatalogStore";
+import { TextureTransform } from "@/components/customizer/models/types";
 
 export interface CartCustomization {
   clientLogoPath?: string;
@@ -13,6 +14,8 @@ export interface CartCustomization {
   designNotes?: string;
   selectedColor?: string;
   modelType: Product3DModelType;
+  frontTransform?: TextureTransform;
+  backTransform?: TextureTransform;
 }
 
 export interface CartItem {

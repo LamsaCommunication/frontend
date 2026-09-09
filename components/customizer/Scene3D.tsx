@@ -16,7 +16,13 @@ interface Scene3DProps {
   controlsRef?: React.RefObject<OrbitControlsImpl | null>;
   logoUrl?: string | null;
   logoTransform?: TextureTransform;
-  onTransformChange?: (updates: Partial<TextureTransform>) => void;
+
+  frontLogoUrl?: string | null;
+  frontTransform?: TextureTransform;
+  backLogoUrl?: string | null;
+  backTransform?: TextureTransform;
+
+  onTransformChange?: (updates: Partial<TextureTransform>, side?: "FRONT" | "BACK") => void;
   orbitEnabled?: boolean;
   setOrbitEnabled?: (enabled: boolean) => void;
   isLocked?: boolean;
@@ -34,6 +40,10 @@ function SceneContent({
   controlsRef,
   logoUrl,
   logoTransform,
+  frontLogoUrl,
+  frontTransform,
+  backLogoUrl,
+  backTransform,
   onTransformChange,
   orbitEnabled = true,
   setOrbitEnabled,
@@ -112,6 +122,10 @@ function SceneContent({
         baseColor={baseColor}
         logoUrl={logoUrl}
         logoTransform={logoTransform}
+        frontLogoUrl={frontLogoUrl}
+        frontTransform={frontTransform}
+        backLogoUrl={backLogoUrl}
+        backTransform={backTransform}
         onTransformChange={onTransformChange}
         setOrbitEnabled={setOrbitEnabled}
         isLocked={isLocked}

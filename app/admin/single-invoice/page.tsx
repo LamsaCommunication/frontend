@@ -10,18 +10,18 @@ import {
   Truck,
   CheckCircle2,
   Clock,
-  MapPin,
   Phone,
-  User,
-  ShieldCheck,
-  Package,
-  Layers
+  Box,
+  X
 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { AdminLayout } from "@/components/admin/admin-layout";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { OrderRecord, OrderStatus } from "@/lib/store/useAdminStore";
-import { ordersApi } from "@/lib/api/lamsa-api";
+import { ordersApi, uploadsApi } from "@/lib/api/lamsa-api";
+import { apiClient } from "@/lib/api/api-client";
+import { Scene3D } from "@/components/customizer/Scene3D";
+import { DEFAULT_TRANSFORM } from "@/components/customizer/models/types";
 
 function AdminSingleInvoiceContent() {
   const searchParams = useSearchParams();
@@ -29,6 +29,9 @@ function AdminSingleInvoiceContent() {
 
   const [order, setOrder] = React.useState<OrderRecord | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  // 3D Viewer Modal State
+  const [viewing3DItem, setViewing3DItem] = React.useState<any>(null);
 
   const loadOrder = React.useCallback(async () => {
     if (!id) {
@@ -81,18 +84,127 @@ function AdminSingleInvoiceContent() {
 
   const handleYalidineDispatch = async () => {
     try {
-      await ordersApi.dispatchYalidine(order.id);
+      const res = await ordersApi.dispatchYalidine(order.id);
       await loadOrder();
       alert(`Bordereau Yalidine généré avec succès !`);
+      if (res?.yalidineLabelUrl) {
+        window.open(res.yalidineLabelUrl, "_blank");
+      }
     } catch (err) {
       console.error(err);
       alert("Erreur lors de la génération du bordereau.");
     }
   };
 
+  const fixEncoding = (str: string) => {
+    if (!str) return str;
+    try {
+      return decodeURIComponent(escape(str));
+    } catch (e) {
+      return str;
+    }
+  };
+
+  const handleDownload = async (url: string, prefix: string, itemName: string, targetFormat: string = "original") => {
+    if (url.startsWith("blob:")) {
+      alert("Ce fichier est un ancien logo local non sauvegardé sur le serveur et ne peut pas être téléchargé.");
+      return;
+    }
+
+    try {
+      const extensionMatch = url.match(/\.([a-zA-Z0-9]+)$/);
+      const originalExtension = extensionMatch ? extensionMatch[1].toLowerCase() : "";
+      
+      const cleanItemName = fixEncoding(itemName).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_À-ÿ]/g, "");
+      const pathUrl = url.replace('/view/', '/download/');
+      
+      if (targetFormat === "original" || targetFormat === originalExtension || originalExtension === "pdf") {
+        const extension = extensionMatch ? `.${extensionMatch[1]}` : "";
+        const filename = `${prefix}-${cleanItemName}${extension}`;
+        await uploadsApi.downloadSecureFile(pathUrl, filename);
+        return;
+      }
+
+      // Convert image format via frontend Canvas
+      const res = await apiClient.get(pathUrl, { responseType: "blob" });
+      const blob = new Blob([res.data]);
+      
+      const isImageExt = ["webp", "png", "jpg", "jpeg", "svg"].includes(originalExtension);
+      if (!isImageExt) {
+        const filename = `${prefix}-${cleanItemName}.${originalExtension}`;
+        await uploadsApi.downloadSecureFile(pathUrl, filename);
+        return;
+      }
+
+      const objectUrl = window.URL.createObjectURL(blob);
+      const img = new window.Image();
+      
+      await new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = reject;
+        img.src = objectUrl;
+      });
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width;
+      canvas.height = img.height;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        // If converting SVG or transparent images to JPEG, add white background
+        if (targetFormat === "jpeg") {
+            ctx.fillStyle = "#ffffff";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        ctx.drawImage(img, 0, 0);
+        const convertedDataUrl = canvas.toDataURL(`image/${targetFormat}`, 1.0);
+        
+        const link = document.createElement("a");
+        link.href = convertedDataUrl;
+        link.setAttribute("download", `${prefix}-${cleanItemName}.${targetFormat}`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+      }
+      window.URL.revokeObjectURL(objectUrl);
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors du téléchargement ou de la conversion du fichier.");
+    }
+  };
+
+  const DownloadLogoButton = ({ url, prefix, itemName }: { url: string, prefix: string, itemName: string }) => {
+    const [format, setFormat] = React.useState("original");
+    const isImage = url.endsWith('.webp') || url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.jpeg') || url.endsWith('.svg');
+
+    return (
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => handleDownload(url, prefix, itemName, format)}
+          className="inline-flex items-center gap-1 text-[10px] font-bold text-blue-600 hover:text-blue-800 transition-colors bg-blue-50 px-2 py-1 rounded cursor-pointer"
+        >
+          <Download className="h-3 w-3" />
+          Télécharger {prefix === "FaceAvant" ? "Face Avant" : "Dos"}
+        </button>
+        {isImage && (
+          <select
+            value={format}
+            onChange={(e) => setFormat(e.target.value)}
+            className="text-[10px] border border-blue-200 rounded px-1 py-1 text-blue-800 bg-white outline-none cursor-pointer"
+          >
+            <option value="original">Format Original</option>
+            <option value="png">Format PNG</option>
+            <option value="jpeg">Format JPG</option>
+            <option value="webp">Format WEBP</option>
+          </select>
+        )}
+      </div>
+    );
+  };
+
   return (
     <AdminLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="space-y-6 max-w-4xl mx-auto pb-12">
         {/* Top Control Bar */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
@@ -204,65 +316,93 @@ function AdminSingleInvoiceContent() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-brand-light-gray text-brand-warm-gray uppercase tracking-wider font-bold">
-                  <th className="py-3 px-2">Visuel & Produit</th>
-                  <th className="py-3 px-2">Personnalisation</th>
+                  <th className="py-3 px-2 min-w-[200px]">Visuel & Produit</th>
+                  <th className="py-3 px-2">Fichiers (Admin)</th>
                   <th className="py-3 px-2 text-center">Quantité</th>
                   <th className="py-3 px-2 text-right">Prix Unitaire</th>
                   <th className="py-3 px-2 text-right">Total</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-brand-light-gray/60">
-                {order.items.map((item) => (
-                  <tr key={item.id}>
-                    <td className="py-4 px-2">
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-brand-light-gray bg-brand-soft-white p-1">
-                          <Image
-                            src={item.preview3DPath || item.clientLogoPath || "/lamsa2.png"}
-                            alt={item.productName}
-                            fill
-                            className="object-contain"
-                          />
-                        </div>
-                        <div>
-                          <span className="font-bold text-brand-charcoal block">
-                            {item.productName}
-                          </span>
-                          {item.clientVerified && (
-                            <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
-                              <CheckCircle2 className="h-3 w-3" /> Graphisme validé par client
-                            </span>
+                {order.items.map((item) => {
+                  const frontLogo = item.designRectoPath || item.clientLogoPath;
+                  const backLogo = item.designVersoPath;
+
+                  return (
+                    <tr key={item.id}>
+                      <td className="py-4 px-2">
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-3">
+                            <div className="relative h-12 w-12 flex-shrink-0 overflow-hidden rounded-xl border border-brand-light-gray bg-brand-soft-white p-1">
+                              <Image
+                                src={
+                                  (item.preview3DPath || frontLogo)
+                                    ? ((item.preview3DPath || frontLogo).startsWith("/api/")
+                                        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${item.preview3DPath || frontLogo}`
+                                        : (item.preview3DPath || frontLogo))
+                                    : "/lamsa2.png"
+                                }
+                                alt={item.productName}
+                                fill
+                                className="object-contain"
+                              />
+                            </div>
+                            <div>
+                              <span className="font-bold text-brand-charcoal block">
+                                {fixEncoding(item.productName)}
+                              </span>
+                              {item.clientVerified && (
+                                <span className="text-[10px] text-emerald-600 font-semibold flex items-center gap-1">
+                                  <CheckCircle2 className="h-3 w-3" /> Graphisme validé par client
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          {item.modelType && (
+                            <button
+                              onClick={() => setViewing3DItem(item)}
+                              className="self-start inline-flex items-center gap-1.5 text-[10px] font-bold text-white bg-brand-charcoal hover:bg-brand-red px-2 py-1 rounded-md transition-colors"
+                            >
+                              <Box className="h-3 w-3" />
+                              Visualiser en 3D
+                            </button>
                           )}
                         </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="py-4 px-2">
-                      {item.customText && (
-                        <p className="text-xs font-semibold text-brand-charcoal">
-                          Texte : &quot;{item.customText}&quot;
-                        </p>
-                      )}
-                      {item.designNotes && (
-                        <p className="text-[11px] text-brand-warm-gray italic">
-                          Notes : {item.designNotes}
-                        </p>
-                      )}
-                    </td>
+                      <td className="py-4 px-2">
+                        <div className="flex flex-col gap-1.5">
+                          {frontLogo && (
+                            <DownloadLogoButton url={frontLogo} prefix="FaceAvant" itemName={item.productName} />
+                          )}
+                          {backLogo && (
+                            <DownloadLogoButton url={backLogo} prefix="Dos" itemName={item.productName} />
+                          )}
+                          {!frontLogo && !backLogo && (
+                            <span className="text-[10px] text-gray-400 italic">Aucun fichier</span>
+                          )}
+                        </div>
+                        {item.designNotes && (
+                          <p className="text-[10px] text-brand-warm-gray mt-2 italic border-l-2 pl-2">
+                            {item.designNotes}
+                          </p>
+                        )}
+                      </td>
 
-                    <td className="py-4 px-2 text-center font-bold text-brand-charcoal">
-                      {item.quantity}
-                    </td>
+                      <td className="py-4 px-2 text-center font-bold text-brand-charcoal">
+                        {item.quantity}
+                      </td>
 
-                    <td className="py-4 px-2 text-right font-medium text-brand-dark">
-                      {item.unitPrice.toLocaleString()} DZD
-                    </td>
+                      <td className="py-4 px-2 text-right font-medium text-brand-dark">
+                        {item.unitPrice.toLocaleString()} DZD
+                      </td>
 
-                    <td className="py-4 px-2 text-right font-black text-brand-charcoal">
-                      {(item.unitPrice * item.quantity).toLocaleString()} DZD
-                    </td>
-                  </tr>
-                ))}
+                      <td className="py-4 px-2 text-right font-black text-brand-charcoal">
+                        {(item.unitPrice * item.quantity).toLocaleString()} DZD
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -335,7 +475,8 @@ function AdminSingleInvoiceContent() {
                   aria-label="Changer le statut de la commande"
                   className="py-2 text-xs font-bold"
                 >
-                  <option value="PENDING">Statut: En attente</option>
+                  <option value="PENDING">Statut: En attente de paiement</option>
+                  <option value="PAID">Statut: Payée</option>
                   <option value="CONFIRMED">Statut: Confirmée</option>
                   <option value="SHIPPED">Statut: Expédiée</option>
                   <option value="DELIVERED">Statut: Livrée</option>
@@ -346,6 +487,55 @@ function AdminSingleInvoiceContent() {
           </div>
         </div>
       </div>
+
+      {/* ── 3D Viewer Modal ────────────────────────────────────────── */}
+      {viewing3DItem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="relative w-full max-w-7xl bg-white rounded-3xl shadow-2xl overflow-hidden h-[90vh] flex flex-col animate-in fade-in zoom-in duration-200">
+            <div className="flex items-center justify-between p-4 border-b border-brand-light-gray">
+              <h2 className="text-lg font-black text-brand-charcoal flex items-center gap-2">
+                <Box className="h-5 w-5 text-brand-red" />
+                Visualiseur 3D : {fixEncoding(viewing3DItem.productName)}
+              </h2>
+              <button
+                onClick={() => setViewing3DItem(null)}
+                className="h-8 w-8 flex items-center justify-center rounded-full bg-brand-soft-white text-brand-charcoal hover:bg-brand-red hover:text-white transition-colors"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0 bg-brand-soft-white relative flex flex-col">
+              <div className="flex-1 relative w-full h-full">
+                {(() => {
+                  const safeUrl = (url?: string | null) => url?.startsWith("blob:") ? null : url;
+                  const safeFrontUrl = safeUrl(viewing3DItem.designRectoPath || viewing3DItem.clientLogoPath);
+                  const safeBackUrl = safeUrl(viewing3DItem.designVersoPath);
+
+                  return (
+                    <Scene3D
+                      modelType={viewing3DItem.modelType}
+                      baseColor={viewing3DItem.selectedColor || "#ffffff"}
+                      logoUrl={safeFrontUrl}
+                      logoTransform={viewing3DItem.frontTransform || DEFAULT_TRANSFORM}
+                      frontLogoUrl={safeFrontUrl}
+                      frontTransform={viewing3DItem.frontTransform || DEFAULT_TRANSFORM}
+                      backLogoUrl={safeBackUrl}
+                      backTransform={viewing3DItem.backTransform || DEFAULT_TRANSFORM}
+                      isLocked={true}
+                      orbitEnabled={true}
+                    />
+                  );
+                })()}
+              </div>
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
+                <span className="bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-bold text-brand-charcoal shadow-sm">
+                  Utilisez la souris pour tourner le modèle. Les positions de logo sont centrées par défaut.
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </AdminLayout>
   );
 }

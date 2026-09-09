@@ -9,7 +9,7 @@ export interface TextureTransform {
   offsetX: number;
   offsetY: number;
   rotation: number;
-  side?: "FRONT" | "BACK";
+  side?: "FRONT" | "BACK"; // Kept for backwards compatibility but we use separate transforms now
 }
 
 /** Default transform values */
@@ -26,7 +26,14 @@ export interface ModelComponentProps {
   baseColor: string;
   logoUrl?: string | null;
   logoTransform?: TextureTransform;
-  onTransformChange?: (updates: Partial<TextureTransform>) => void;
+  
+  // Dual-sided support
+  frontLogoUrl?: string | null;
+  frontTransform?: TextureTransform;
+  backLogoUrl?: string | null;
+  backTransform?: TextureTransform;
+  
+  onTransformChange?: (updates: Partial<TextureTransform>, side?: "FRONT" | "BACK") => void;
   setOrbitEnabled?: (enabled: boolean) => void;
   isLocked?: boolean;
   onLockedDragAttempt?: () => void;

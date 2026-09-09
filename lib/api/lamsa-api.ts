@@ -68,10 +68,12 @@ export const ordersApi = {
       clientVerified?: boolean;
       customText?: string;
       designNotes?: string;
+      frontTransform?: any;
+      backTransform?: any;
     }[];
   }) => {
     const res = await apiClient.post("/api/v1/orders/checkout", payload);
-    return res.data.data;
+    return res.data;
   },
 
   /** Admin: Get paginated orders */
@@ -123,6 +125,16 @@ export const ordersApi = {
   }
 };
 
+// ── Payments API ───────────────────────────────────────────────────────────
+
+export const paymentsApi = {
+  /** Initialize a Chargily checkout session for an order */
+  createChargilySession: async (orderId: string): Promise<{ checkoutUrl: string }> => {
+    const res = await apiClient.post(`/api/v1/payments/chargily/create/${orderId}`);
+    return res.data.data;
+  }
+};
+
 // ── Uploads API ────────────────────────────────────────────────────────────
 
 export const uploadsApi = {
@@ -159,6 +171,20 @@ export const uploadsApi = {
       headers: { "Content-Type": "multipart/form-data" }
     });
     return res.data.data;
+  },
+
+  /** Admin: Download a file securely via API (authenticated) */
+  downloadSecureFile: async (pathUrl: string, filename: string) => {
+    // pathUrl should be the relative path like "/api/v1/uploads/download/customizer/123.webp"
+    const res = await apiClient.get(pathUrl, { responseType: "blob" });
+    const url = window.URL.createObjectURL(new Blob([res.data]));
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    link.parentNode?.removeChild(link);
+    window.URL.revokeObjectURL(url);
   }
 };
 

@@ -20,8 +20,24 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const [notificationsOpen, setNotificationsOpen] = React.useState(false);
   const [unreadCount, setUnreadCount] = React.useState(0);
   const [liveNotifications, setLiveNotifications] = React.useState<any[]>([]);
+  const [readOrderIds, setReadOrderIds] = React.useState<Set<string>>(new Set());
   
   const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  // Load read orders from local storage
+  React.useEffect(() => {
+    try {
+      const stored = localStorage.getItem("lamsa_admin_read_orders");
+      if (stored) {
+        const ids = JSON.parse(stored);
+        if (Array.isArray(ids)) {
+          setReadOrderIds(new Set(ids));
+        }
+      }
+    } catch (e) {
+      console.warn("Failed to load read orders from local storage", e);
+    }
+  }, []);
 
   // Close dropdown on click outside
   React.useEffect(() => {
@@ -76,11 +92,25 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     };
   }, []);
 
-  // Reset unread count when opening notifications
+  // Reset unread count when opening notifications and mark visible as read
   const handleToggleNotifications = () => {
     setNotificationsOpen((v) => {
-      if (!v) setUnreadCount(0);
-      return !v;
+      const opening = !v;
+      if (opening) {
+        setUnreadCount(0);
+        // Mark all currently loaded notifications as read
+        setReadOrderIds((prev) => {
+          const next = new Set(prev);
+          liveNotifications.forEach((ord) => next.add(ord.id));
+          try {
+            localStorage.setItem("lamsa_admin_read_orders", JSON.stringify(Array.from(next)));
+          } catch (e) {
+            console.warn("Failed to save read orders", e);
+          }
+          return next;
+        });
+      }
+      return opening;
     });
   };
 
@@ -140,32 +170,44 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                 {liveNotifications.map((ord) => {
                   const statusColors: Record<string, string> = {
                     PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+                    PAID: "bg-emerald-50 text-emerald-700 border-emerald-200",
                     CONFIRMED: "bg-blue-50 text-blue-700 border-blue-200",
                     SHIPPED: "bg-emerald-50 text-emerald-700 border-emerald-200",
                     DELIVERED: "bg-green-50 text-green-700 border-green-200",
                     CANCELLED: "bg-red-50 text-red-700 border-red-200"
                   };
                   const statusLabels: Record<string, string> = {
-                    PENDING: "En attente",
+                    PENDING: "En attente de paiement",
+                    PAID: "Payée",
                     CONFIRMED: "Confirmée",
                     SHIPPED: "Expédiée",
                     DELIVERED: "Livrée",
                     CANCELLED: "Annulée"
                   };
 
+                  const isRead = readOrderIds.has(ord.id);
+
                   return (
                     <Link
                       key={ord.id}
                       href="/admin/invoices"
                       onClick={() => setNotificationsOpen(false)}
-                      className="flex items-start gap-3 rounded-2xl p-3 border border-transparent hover:border-brand-light-gray hover:bg-brand-soft-white/60 transition-all block cursor-pointer group"
+                      className={`flex items-start gap-3 rounded-2xl p-3 border transition-all block cursor-pointer group ${
+                        isRead
+                          ? "bg-white border-transparent hover:border-brand-light-gray hover:bg-brand-soft-white/60"
+                          : "bg-gray-800 border-gray-700 shadow-md hover:bg-gray-700"
+                      }`}
                     >
-                      <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-brand-soft-white text-brand-charcoal group-hover:bg-brand-red group-hover:text-white transition-colors">
+                      <div className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl transition-colors ${
+                        isRead
+                          ? "bg-brand-soft-white text-brand-charcoal group-hover:bg-brand-red group-hover:text-white"
+                          : "bg-gray-700 text-white"
+                      }`}>
                         <Package className="h-4 w-4" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between gap-1 mb-1">
-                          <span className="text-xs font-bold text-brand-charcoal truncate">
+                          <span className={`text-xs font-bold truncate ${isRead ? "text-brand-charcoal" : "text-white"}`}>
                             {ord.orderNumber}
                           </span>
                           <span
@@ -175,10 +217,10 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
                             {statusLabels[ord.status] || ord.status}
                           </span>
                         </div>
-                        <span className="text-xs text-brand-dark/80 block truncate">
+                        <span className={`text-xs block truncate ${isRead ? "text-brand-dark/80" : "text-gray-300 font-medium"}`}>
                           {ord.firstName} {ord.lastName} • {ord.wilaya}
                         </span>
-                        <span className="text-[11px] font-bold text-brand-red block mt-0.5">
+                        <span className={`text-[11px] font-bold block mt-0.5 ${isRead ? "text-brand-red" : "text-brand-red"}`}>
                           {formatPrice(ord.totalAmount)} DZD
                         </span>
                       </div>

@@ -17,6 +17,9 @@ export interface OrderItemRecord {
   clientVerified: boolean;
   customText?: string;
   designNotes?: string;
+  modelType?: string;
+  frontTransform?: any;
+  backTransform?: any;
 }
 
 export interface OrderRecord {

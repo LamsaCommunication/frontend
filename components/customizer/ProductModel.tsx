@@ -27,6 +27,27 @@ function normalizeModelType(modelType: string): string {
 }
 
 /**
+ * Resolves a relative API URL to an absolute URL using the backend base URL.
+ * Also handles invalid or expired blob URLs.
+ */
+function resolveUrl(url?: string | null): string | null | undefined {
+  if (!url) return url;
+  
+  // If it's a blob url but we know it might be from a past session, it will crash useTexture.
+  // We allow it to try, but if it's the admin panel, we could block it. 
+  // For now, let's just resolve the relative API URLs.
+  if (url.startsWith("/api/")) {
+    const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+    
+    // Convert protected /download/ paths to public /view/ paths so the 3D Canvas
+    // can load them without triggering a 401 Unauthorized error or downloading them as attachments.
+    const mappedPath = url.replace('/download/', '/view/');
+    return `${API_BASE_URL}${mappedPath}`;
+  }
+  return url;
+}
+
+/**
  * ProductModel — Main dispatcher component.
  *
  * Delegates rendering to the appropriate model component based on modelType.
@@ -38,6 +59,10 @@ export function ProductModel({
   isHovered = false,
   logoUrl,
   logoTransform,
+  frontLogoUrl,
+  frontTransform,
+  backLogoUrl,
+  backTransform,
   onTransformChange,
   setOrbitEnabled,
   isLocked,
@@ -61,8 +86,12 @@ export function ProductModel({
   // Shared props passed to all model components
   const modelProps = {
     baseColor,
-    logoUrl,
+    logoUrl: resolveUrl(logoUrl),
     logoTransform,
+    frontLogoUrl: resolveUrl(frontLogoUrl),
+    frontTransform,
+    backLogoUrl: resolveUrl(backLogoUrl),
+    backTransform,
     onTransformChange,
     setOrbitEnabled,
     isLocked,

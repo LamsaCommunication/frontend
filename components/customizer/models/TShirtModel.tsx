@@ -14,24 +14,36 @@ const TSHIRT_GLB_PATH = "/models/tshirt/tshirt.glb";
  * TShirtModel — Loads the CLO-exported t-shirt as Draco-compressed GLB.
  *
  * All fabric surfaces are tinted with the user's baseColor.
- * Logo decal is applied on the front chest area.
+ * Supports dual logos (front and back) independently.
  */
 export function TShirtModel({
   baseColor,
-  logoUrl,
-  logoTransform,
+  logoUrl, // fallback
+  logoTransform, // fallback
+  frontLogoUrl,
+  frontTransform,
+  backLogoUrl,
+  backTransform,
   onTransformChange,
   setOrbitEnabled,
   isLocked,
   onLockedDragAttempt,
 }: ModelComponentProps) {
   const { scene } = useGLTF(TSHIRT_GLB_PATH);
-  const rawLogoTexture = useTexture(logoUrl || TRANSPARENT_PIXEL);
+  
+  // Resolve which URLs to use (fallback to single logoUrl if dual-sided not provided)
+  const actualFrontUrl = frontLogoUrl !== undefined ? frontLogoUrl : (logoTransform?.side !== "BACK" ? logoUrl : null);
+  const actualBackUrl = backLogoUrl !== undefined ? backLogoUrl : (logoTransform?.side === "BACK" ? logoUrl : null);
+  
+  const rawFrontTexture = useTexture(actualFrontUrl || TRANSPARENT_PIXEL);
+  const rawBackTexture = useTexture(actualBackUrl || TRANSPARENT_PIXEL);
 
   React.useEffect(() => {
-    rawLogoTexture.flipY = true;
-    rawLogoTexture.needsUpdate = true;
-  }, [rawLogoTexture]);
+    rawFrontTexture.flipY = true;
+    rawFrontTexture.needsUpdate = true;
+    rawBackTexture.flipY = true;
+    rawBackTexture.needsUpdate = true;
+  }, [rawFrontTexture, rawBackTexture]);
 
   // Process GLTF scene: extract primary geometry and compute bounds
   const { geometry, scale, bounds } = React.useMemo(() => {
@@ -86,9 +98,19 @@ export function TShirtModel({
     };
   }, [fabricMaterial]);
 
-  const handlers = useDragHandler(
-    logoTransform,
-    onTransformChange,
+  // Drag handlers for Front
+  const frontHandlers = useDragHandler(
+    frontTransform || (logoTransform?.side !== "BACK" ? logoTransform : undefined),
+    (updates) => onTransformChange?.(updates, "FRONT"),
+    setOrbitEnabled,
+    isLocked,
+    onLockedDragAttempt
+  );
+
+  // Drag handlers for Back
+  const backHandlers = useDragHandler(
+    backTransform || (logoTransform?.side === "BACK" ? logoTransform : undefined),
+    (updates) => onTransformChange?.(updates, "BACK"),
     setOrbitEnabled,
     isLocked,
     onLockedDragAttempt
@@ -96,31 +118,45 @@ export function TShirtModel({
 
   if (!geometry || !bounds) return null;
 
-  const isBack = logoTransform?.side === "BACK";
-  const tScale = logoTransform?.scale ?? 1;
-  const aspect = getTextureAspect(rawLogoTexture);
-
-  const offsetX = (logoTransform?.offsetX ?? 0) * 0.00055;
-  const offsetY = (logoTransform?.offsetY ?? 0) * -0.00055;
-
   const baseSize = (bounds.max.x - bounds.min.x) * 0.4;
-  // Depth of 0.08 strictly envelopes only the selected fabric side (front or back)
-  // without penetrating through to the opposite side.
-  const decalScale = [
-    baseSize * aspect * tScale,
-    baseSize * tScale,
+  
+  // Calculate Front Decal Transform
+  const fTransform = frontTransform || (logoTransform?.side !== "BACK" ? logoTransform : undefined);
+  const fScale = fTransform?.scale ?? 1;
+  const fAspect = getTextureAspect(rawFrontTexture);
+  const fOffsetX = (fTransform?.offsetX ?? 0) * 0.00055;
+  const fOffsetY = (fTransform?.offsetY ?? 0) * -0.00055;
+  
+  const frontDecalScale = [
+    baseSize * fAspect * fScale,
+    baseSize * fScale,
     0.08,
   ] as [number, number, number];
+  
+  const frontDecalPosition: [number, number, number] = [
+    fOffsetX,
+    bounds.max.y * 0.2 + fOffsetY,
+    0.05
+  ];
 
-  // If on the back: position at Z = -0.065, facing backward rotation = [0, Math.PI, 0]
-  // Negating offsetX on the back ensures dragging right moves to the right of the back from the viewer's point of view.
-  const decalPosition: [number, number, number] = isBack
-    ? [-offsetX, bounds.max.y * 0.2 + offsetY, -0.065]
-    : [offsetX, bounds.max.y * 0.2 + offsetY, 0.05];
-
-  const decalRotation: [number, number, number] = isBack
-    ? [0, Math.PI, 0]
-    : [0, 0, 0];
+  // Calculate Back Decal Transform
+  const bTransform = backTransform || (logoTransform?.side === "BACK" ? logoTransform : undefined);
+  const bScale = bTransform?.scale ?? 1;
+  const bAspect = getTextureAspect(rawBackTexture);
+  const bOffsetX = (bTransform?.offsetX ?? 0) * 0.00055;
+  const bOffsetY = (bTransform?.offsetY ?? 0) * -0.00055;
+  
+  const backDecalScale = [
+    baseSize * bAspect * bScale,
+    baseSize * bScale,
+    0.08,
+  ] as [number, number, number];
+  
+  const backDecalPosition: [number, number, number] = [
+    -bOffsetX, // Negate offsetX for correct left/right on back
+    bounds.max.y * 0.2 + bOffsetY,
+    -0.065
+  ];
 
   return (
     <mesh
@@ -131,15 +167,35 @@ export function TShirtModel({
       position={[0, -0.15, 0]}
       scale={scale}
     >
-      {!!logoUrl && (
+      {!!actualFrontUrl && (
         <Decal
-          position={decalPosition}
-          rotation={decalRotation}
-          scale={decalScale}
-          {...handlers}
+          position={frontDecalPosition}
+          rotation={[0, 0, 0]}
+          scale={frontDecalScale}
+          {...frontHandlers}
         >
           <meshStandardMaterial
-            map={rawLogoTexture}
+            map={rawFrontTexture}
+            transparent
+            depthTest
+            depthWrite={false}
+            polygonOffset
+            polygonOffsetFactor={-1}
+            roughness={0.9}
+            toneMapped={false}
+          />
+        </Decal>
+      )}
+      
+      {!!actualBackUrl && (
+        <Decal
+          position={backDecalPosition}
+          rotation={[0, Math.PI, 0]} // Face backwards
+          scale={backDecalScale}
+          {...backHandlers}
+        >
+          <meshStandardMaterial
+            map={rawBackTexture}
             transparent
             depthTest
             depthWrite={false}

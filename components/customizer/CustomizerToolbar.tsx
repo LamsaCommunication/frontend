@@ -16,6 +16,7 @@ import {
   Sparkles
 } from "lucide-react";
 import type { Product3DType, TextureTransform } from "./models/types";
+import { uploadsApi } from "@/lib/api/lamsa-api";
 
 interface CustomizerToolbarProps {
   productType: Product3DType | string;
@@ -29,6 +30,8 @@ interface CustomizerToolbarProps {
   onTransformChange: (transform: Partial<TextureTransform>) => void;
   isLocked?: boolean;
   availableColors?: string[];
+  printSides?: "FRONT_ONLY" | "BACK_ONLY" | "BOTH";
+  onPrintSidesChange?: (sides: "FRONT_ONLY" | "BACK_ONLY" | "BOTH") => void;
 }
 
 const COLOR_SWATCHES = [
@@ -116,13 +119,29 @@ export function CustomizerToolbar({
   logoTransform,
   onTransformChange,
   isLocked,
-  availableColors
+  availableColors,
+  printSides = "FRONT_ONLY",
+  onPrintSidesChange
 }: CustomizerToolbarProps) {
-  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = React.useState(false);
+
+  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
       onUploadLogo(url);
+
+      setIsUploading(true);
+      try {
+        const res = await uploadsApi.uploadCustomizerFiles({ clientLogo: file });
+        if (res.clientLogoPath) {
+          onUploadLogo(res.clientLogoPath);
+        }
+      } catch (error) {
+        console.error("Upload failed", error);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -269,10 +288,10 @@ export function CustomizerToolbar({
             <Upload className="h-5 w-5" />
           </div>
           <p className="mt-2 text-xs font-bold text-brand-charcoal">
-            {logoUrl ? "Logo chargé (Cliquer pour changer)" : "Importer votre logo"}
+            {logoUrl ? "Logo chargé (Cliquer pour changer)" : `Importer le logo (${logoTransform.side === "BACK" ? "Dos" : "Face Avant"})`}
           </p>
           <p className="mt-0.5 text-[10px] text-brand-warm-gray">
-            PNG (transparent recommandé), JPG, SVG
+            PNG (transparent recommandé), JPG
           </p>
         </div>
 
@@ -311,35 +330,90 @@ export function CustomizerToolbar({
           </div>
 
           {/* T-Shirt Face / Dos Placement Toggle */}
-          {isTShirt && (
+          {isTShirt && onPrintSidesChange && (
             <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
               <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
-                Côté d'impression :
+                Mode d'impression :
               </span>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-3 gap-1.5 mb-4 border-b border-brand-light-gray pb-4">
                 <button
                   type="button"
-                  onClick={() => onTransformChange({ side: "FRONT" })}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    logoTransform.side !== "BACK"
-                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                  onClick={() => {
+                    onPrintSidesChange("FRONT_ONLY");
+                    onTransformChange({ side: "FRONT" });
+                  }}
+                  className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                    printSides === "FRONT_ONLY"
+                      ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
                       : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
                   }`}
                 >
-                  Face Avant (Torse)
+                  Face Avant Uniquement
                 </button>
                 <button
                   type="button"
-                  onClick={() => onTransformChange({ side: "BACK" })}
-                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                    logoTransform.side === "BACK"
-                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                  onClick={() => {
+                    onPrintSidesChange("BACK_ONLY");
+                    onTransformChange({ side: "BACK" });
+                  }}
+                  className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                    printSides === "BACK_ONLY"
+                      ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
                       : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
                   }`}
                 >
-                  Dos (Arrière)
+                  Dos Uniquement
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onPrintSidesChange("BOTH");
+                    // Default to Front when both are selected initially
+                    if (logoTransform.side !== "FRONT" && logoTransform.side !== "BACK") {
+                       onTransformChange({ side: "FRONT" });
+                    }
+                  }}
+                  className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
+                    printSides === "BOTH"
+                      ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                  }`}
+                >
+                  Face + Dos
                 </button>
               </div>
+
+              {printSides === "BOTH" && (
+                <>
+                  <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
+                    Sélectionner la face à éditer :
+                  </span>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <button
+                      type="button"
+                      onClick={() => onTransformChange({ side: "FRONT" })}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        logoTransform.side === "FRONT"
+                          ? "bg-brand-red text-white border-brand-red shadow-xs"
+                          : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                      }`}
+                    >
+                      Éditer Face Avant
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onTransformChange({ side: "BACK" })}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                        logoTransform.side === "BACK"
+                          ? "bg-brand-red text-white border-brand-red shadow-xs"
+                          : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                      }`}
+                    >
+                      Éditer Dos
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
 

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import confetti from "canvas-confetti";
 import {
@@ -20,22 +20,25 @@ import {
   ArrowRight,
   Printer,
   ChevronRight,
-  ShoppingBag
+  ShoppingBag,
+  Loader2
 } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Container } from "@/components/ui/container";
 import { CustomSelect } from "@/components/ui/custom-select";
 import { useCartStore } from "@/lib/store/useCartStore";
-import { ordersApi } from "@/lib/api/lamsa-api";
+import { ordersApi, paymentsApi } from "@/lib/api/lamsa-api";
 import { OrderRecord } from "@/lib/store/useAdminStore";
 import { formatPrice } from "@/lib/utils";
 import { ALGERIA_WILAYAS } from "@/lib/data/algeria-wilayas";
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const paymentFailed = searchParams.get("payment") === "failed";
   const {
     items,
     selectedWilayaCode,
@@ -55,10 +58,11 @@ export default function CheckoutPage() {
   const [lastName, setLastName] = React.useState("");
   const [phone, setPhone] = React.useState("");
   const [address, setAddress] = React.useState("");
-  const [paymentMethod, setPaymentMethod] = React.useState<"CASH_ON_DELIVERY" | "CCP_TRANSFER">("CASH_ON_DELIVERY");
+  const [paymentMethod, setPaymentMethod] = React.useState<"ONLINE_PAYMENT">("ONLINE_PAYMENT");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [confirmedOrder, setConfirmedOrder] = React.useState<OrderRecord | null>(null);
+  const [isRedirecting, setIsRedirecting] = React.useState(false);
 
   const [isMounted, setIsMounted] = React.useState(false);
   React.useEffect(() => {
@@ -102,7 +106,7 @@ export default function CheckoutPage() {
     setIsSubmitting(true);
 
     try {
-      const newOrder = await ordersApi.checkout({
+      const response = await ordersApi.checkout({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         phone: phone.trim(),
@@ -124,9 +128,27 @@ export default function CheckoutPage() {
           preview3DPath: it.customization?.preview3DPath || it.image,
           clientVerified: it.customization?.clientVerified ?? true,
           customText: it.customization?.customText,
-          designNotes: it.customization?.designNotes
+          designNotes: it.customization?.designNotes,
+          frontTransform: it.customization?.frontTransform,
+          backTransform: it.customization?.backTransform,
+          modelType: it.customization?.modelType,
+          selectedColor: it.customization?.selectedColor || "#ffffff"
         }))
       });
+
+      const newOrder = response.data;
+
+      const paymentResponse = await paymentsApi.createChargilySession(newOrder.id);
+
+      if (paymentResponse.checkoutUrl) {
+        setIsRedirecting(true);
+        // Clear cart now as order is successfully created
+        clearCart();
+        window.location.href = paymentResponse.checkoutUrl;
+        return;
+      }
+
+      // Fallback if no checkoutUrl
 
       // Confetti celebration
       confetti({
@@ -139,7 +161,6 @@ export default function CheckoutPage() {
       clearCart();
     } catch (err) {
       console.error("Order creation failed", err);
-    } finally {
       setIsSubmitting(false);
     }
   };
@@ -163,6 +184,21 @@ export default function CheckoutPage() {
             <ChevronRight className="h-3.5 w-3.5" />
             <span className="text-brand-charcoal font-semibold">Finalisation de commande</span>
           </nav>
+
+          {/* Payment Failed Alert */}
+          {paymentFailed && (
+            <div className="mx-auto max-w-2xl mb-8 rounded-2xl border border-brand-red bg-brand-red/10 p-4 flex items-start gap-4 animate-in fade-in slide-in-from-top-4">
+              <AlertCircle className="h-6 w-6 text-brand-red mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-sm font-black text-brand-red mb-1">
+                  Paiement échoué ou annulé
+                </h3>
+                <p className="text-xs text-brand-dark/80 font-medium">
+                  La transaction Chargily n'a pas pu aboutir. Veuillez vérifier vos informations de paiement et réessayer de valider votre commande ci-dessous.
+                </p>
+              </div>
+            </div>
+          )}
 
           {/* Empty cart notification */}
           {items.length === 0 && !confirmedOrder ? (
@@ -224,7 +260,7 @@ export default function CheckoutPage() {
                 <div className="flex justify-between text-xs text-brand-dark/70 border-b border-brand-light-gray pb-3">
                   <span>Mode de paiement</span>
                   <span className="font-bold text-brand-charcoal">
-                    Paiement à la livraison (Cash on Delivery)
+                    Paiement en Ligne (Chargily)
                   </span>
                 </div>
                 <div className="flex justify-between text-sm font-extrabold text-brand-charcoal pt-1">
@@ -289,8 +325,8 @@ export default function CheckoutPage() {
                             onChange={(e) => setFirstName(e.target.value)}
                             placeholder="Votre prénom"
                             className={`w-full rounded-xl border py-2.5 pl-10 pr-4 text-xs font-medium text-brand-charcoal focus:bg-white focus:outline-none ${errors.firstName
-                                ? "border-brand-red bg-brand-red/5"
-                                : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
+                              ? "border-brand-red bg-brand-red/5"
+                              : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
                               }`}
                           />
                         </div>
@@ -311,8 +347,8 @@ export default function CheckoutPage() {
                             onChange={(e) => setLastName(e.target.value)}
                             placeholder="Votre nom"
                             className={`w-full rounded-xl border py-2.5 pl-10 pr-4 text-xs font-medium text-brand-charcoal focus:bg-white focus:outline-none ${errors.lastName
-                                ? "border-brand-red bg-brand-red/5"
-                                : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
+                              ? "border-brand-red bg-brand-red/5"
+                              : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
                               }`}
                           />
                         </div>
@@ -333,8 +369,8 @@ export default function CheckoutPage() {
                             onChange={(e) => setPhone(e.target.value)}
                             placeholder="05 / 06 / 07 xx xx xx xx"
                             className={`w-full rounded-xl border py-2.5 pl-10 pr-4 text-xs font-medium text-brand-charcoal focus:bg-white focus:outline-none ${errors.phone
-                                ? "border-brand-red bg-brand-red/5"
-                                : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
+                              ? "border-brand-red bg-brand-red/5"
+                              : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
                               }`}
                           />
                         </div>
@@ -356,7 +392,22 @@ export default function CheckoutPage() {
                       </h2>
                     </div>
 
-                    <div className="space-y-4">
+                    <div className="max-w-7xl mx-auto space-y-6">
+                      {/* Payment Warning Banner */}
+                      <div className="rounded-2xl border border-brand-red/30 bg-brand-red/10 p-4 flex items-start gap-4">
+                        <div className="flex-shrink-0 mt-0.5">
+                          <AlertCircle className="h-6 w-6 text-brand-red" />
+                        </div>
+                        <div>
+                          <h3 className="text-sm font-black text-brand-red mb-1">
+                            Paiement obligatoire avant traitement
+                          </h3>
+                          <p className="text-xs text-brand-dark font-medium leading-relaxed">
+                            Pour des raisons de sécurité et d'efficacité, toutes les commandes doivent être réglées en ligne via notre plateforme sécurisée Chargily. Votre commande ne sera validée et traitée par notre équipe qu'après réception de votre paiement.
+                          </p>
+                        </div>
+                      </div>
+
                       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         {/* Wilaya select */}
                         <CustomSelect
@@ -395,8 +446,8 @@ export default function CheckoutPage() {
                             type="button"
                             onClick={() => setIsStopDesk(false)}
                             className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all cursor-pointer ${!isStopDesk
-                                ? "border-brand-red bg-brand-red/5 shadow-sm"
-                                : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white"
+                              ? "border-brand-red bg-brand-red/5 shadow-sm"
+                              : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white"
                               }`}
                           >
                             <Home className={`h-5 w-5 mt-0.5 ${!isStopDesk ? "text-brand-red" : "text-brand-warm-gray"}`} />
@@ -414,8 +465,8 @@ export default function CheckoutPage() {
                             type="button"
                             onClick={() => setIsStopDesk(true)}
                             className={`flex items-start gap-3 rounded-2xl border p-4 text-left transition-all cursor-pointer ${isStopDesk
-                                ? "border-brand-red bg-brand-red/5 shadow-sm"
-                                : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white"
+                              ? "border-brand-red bg-brand-red/5 shadow-sm"
+                              : "border-brand-light-gray bg-brand-soft-white/60 hover:bg-white"
                               }`}
                           >
                             <Building2 className={`h-5 w-5 mt-0.5 ${isStopDesk ? "text-brand-red" : "text-brand-warm-gray"}`} />
@@ -444,8 +495,8 @@ export default function CheckoutPage() {
                               onChange={(e) => setAddress(e.target.value)}
                               placeholder="Cité, Numéro de rue, Bâtiment, Étage..."
                               className={`w-full rounded-xl border py-2.5 pl-10 pr-4 text-xs font-medium text-brand-charcoal focus:bg-white focus:outline-none resize-none ${errors.address
-                                  ? "border-brand-red bg-brand-red/5"
-                                  : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
+                                ? "border-brand-red bg-brand-red/5"
+                                : "border-brand-light-gray bg-brand-soft-white/60 focus:border-brand-red"
                                 }`}
                             />
                           </div>
@@ -473,10 +524,10 @@ export default function CheckoutPage() {
                         <CheckCircle2 className="h-5 w-5 text-brand-red" />
                         <div>
                           <span className="text-xs font-bold text-brand-charcoal block">
-                            Paiement à la livraison (Cash on Delivery)
+                            Paiement en Ligne (Chargily)
                           </span>
                           <span className="text-[11px] text-brand-dark/70">
-                            Réglez le livreur Yalidine lors de la réception de votre colis.
+                            Payez en toute sécurité avec EDAHABIA ou CIB.
                           </span>
                         </div>
                       </div>
@@ -489,11 +540,15 @@ export default function CheckoutPage() {
                   {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting}
-                    className="group flex w-full items-center justify-center gap-2 rounded-full bg-brand-red py-4 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_8px_25px_-6px_rgba(227,6,19,0.55)] cursor-pointer"
+                    disabled={isSubmitting || isRedirecting}
+                    className="group flex w-full items-center justify-center gap-2 rounded-full bg-brand-red py-4 text-sm font-bold text-white shadow-sm transition-all hover:bg-brand-red-hover hover:shadow-[0_8px_25px_-6px_rgba(227,6,19,0.55)] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <span>Confirmer la commande — {formatPrice(grandTotal)} DZD</span>
-                    <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                    <span>
+                      {isRedirecting
+                        ? "Redirection vers le paiement sécurisé..."
+                        : `Procéder au Paiement — ${formatPrice(grandTotal)} DZD`}
+                    </span>
+                    {!isRedirecting && <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />}
                   </button>
                 </form>
               </div>
@@ -579,5 +634,17 @@ export default function CheckoutPage() {
       </main>
       <Footer />
     </>
+  );
+}
+
+export default function CheckoutPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-[#faf9f6]">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-red" />
+      </div>
+    }>
+      <CheckoutContent />
+    </React.Suspense>
   );
 }

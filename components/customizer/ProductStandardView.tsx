@@ -18,6 +18,7 @@ import {
   Minus,
   Check
 } from "lucide-react";
+import { uploadsApi } from "@/lib/api/lamsa-api";
 import { Product } from "@/lib/store/useCatalogStore";
 import { useCartStore } from "@/lib/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
@@ -59,11 +60,25 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
     }
   }, [colors, selectedColor]);
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const [isUploading, setIsUploading] = React.useState(false);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setArtworkFile(file);
       setArtworkPreview(URL.createObjectURL(file));
+
+      setIsUploading(true);
+      try {
+        const res = await uploadsApi.uploadCustomizerFiles({ clientLogo: file });
+        if (res.clientLogoPath) {
+          setArtworkPreview(res.clientLogoPath);
+        }
+      } catch (err) {
+        console.error("Upload failed", err);
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -192,10 +207,10 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
               </div>
               <div className="flex-1 min-w-0">
                 <span className="text-xs font-bold text-brand-charcoal block truncate">
-                  {artworkFile ? artworkFile.name : "Cliquez pour téléverser votre visuel"}
+                  {artworkFile ? artworkFile.name : isUploading ? "Envoi en cours..." : "Télécharger mon design (PDF, AI, PNG)"}
                 </span>
-                <span className="text-[10px] text-brand-warm-gray">
-                  {artworkFile ? `${(artworkFile.size / 1024).toFixed(1)} Ko` : "BAT validé par nos graphistes avant tirage"}
+                <span className="text-[10px] text-brand-dark/70 font-medium">
+                  {artworkFile ? artworkFile.name : "Formats acceptés : PDF, AI, PSD, PNG haute résolution"}
                 </span>
               </div>
               <input

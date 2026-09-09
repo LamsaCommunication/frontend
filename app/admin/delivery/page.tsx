@@ -100,8 +100,16 @@ export default function AdminDeliveryPage() {
   };
 
   const handleGenerateWaybill = async (orderId: string) => {
-    await ordersApi.dispatchYalidine(orderId);
-    refetch();
+    try {
+      const res = await ordersApi.dispatchYalidine(orderId);
+      refetch();
+      if (res?.yalidineLabelUrl) {
+        window.open(res.yalidineLabelUrl, "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Erreur lors de la génération du bordereau.");
+    }
   };
 
   return (

@@ -3,13 +3,15 @@
 import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
   ArrowRight,
   Box,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  CheckCircle2
 } from "lucide-react";
 import { ChevronRight } from "lucide-react";
 import { Navbar } from "@/components/layout/navbar";
@@ -35,7 +37,7 @@ type SortOption = (typeof SORT_OPTIONS)[number]["value"];
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export default function ShopPage() {
+function ShopContent() {
   const {
     categories,
     activeCategoryId,
@@ -45,6 +47,9 @@ export default function ShopPage() {
   } = useCatalogStore();
 
   const { addItem } = useCartStore();
+
+  const searchParams = useSearchParams();
+  const paymentSuccess = searchParams.get("payment") === "success";
 
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
@@ -163,6 +168,23 @@ export default function ShopPage() {
               </div>
             </Container>
           </motion.section>
+        )}
+
+        {/* Payment Success Alert */}
+        {paymentSuccess && (
+          <Container as="div">
+            <div className="mx-auto max-w-3xl mt-8 rounded-2xl border border-emerald-500/30 bg-emerald-50 p-6 flex items-start gap-4 animate-in fade-in slide-in-from-top-4 shadow-sm">
+              <CheckCircle2 className="h-8 w-8 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <div>
+                <h3 className="text-base font-black text-emerald-800 mb-1">
+                  Paiement réussi !
+                </h3>
+                <p className="text-xs font-medium text-emerald-700/90">
+                  Votre commande a bien été payée et confirmée. Notre équipe la prépare dès maintenant pour l'expédition.
+                </p>
+              </div>
+            </div>
+          </Container>
         )}
 
         {/* Products Section */}
@@ -285,5 +307,17 @@ export default function ShopPage() {
 
       <Footer />
     </div>
+  );
+}
+
+export default function ShopPage() {
+  return (
+    <React.Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-brand-red" />
+      </div>
+    }>
+      <ShopContent />
+    </React.Suspense>
   );
 }

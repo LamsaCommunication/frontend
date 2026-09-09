@@ -63,10 +63,16 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
     }
     return "#ffffff";
   });
-  const [logoUrl, setLogoUrl] = React.useState<string | null>(null);
-  const [logoTransform, setLogoTransform] = React.useState<TextureTransform>(
-    DEFAULT_TRANSFORM
-  );
+
+  // Dual-sided State
+  const [activeSide, setActiveSide] = React.useState<"FRONT" | "BACK">("FRONT");
+  const [frontLogoUrl, setFrontLogoUrl] = React.useState<string | null>(null);
+  const [backLogoUrl, setBackLogoUrl] = React.useState<string | null>(null);
+  
+  const [frontTransform, setFrontTransform] = React.useState<TextureTransform>({ ...DEFAULT_TRANSFORM, side: "FRONT" });
+  const [backTransform, setBackTransform] = React.useState<TextureTransform>({ ...DEFAULT_TRANSFORM, side: "BACK" });
+
+  const [printSides, setPrintSides] = React.useState<"FRONT_ONLY" | "BACK_ONLY" | "BOTH">("FRONT_ONLY");
 
   const [clientVerified, setClientVerified] = React.useState(false);
   const [quantity, setQuantity] = React.useState(product.minQuantity || 1);
@@ -89,33 +95,48 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
   const controlsRef = React.useRef<any>(null);
 
   const handleUploadLogo = async (url: string) => {
-    setLogoUrl(url);
+    if (activeSide === "FRONT") {
+      setFrontLogoUrl(url);
+    } else {
+      setBackLogoUrl(url);
+    }
   };
 
   const handleRemoveLogo = () => {
-    setLogoUrl(null);
+    if (activeSide === "FRONT") {
+      setFrontLogoUrl(null);
+    } else {
+      setBackLogoUrl(null);
+    }
   };
 
-  const handleTransformChange = React.useCallback((updates: Partial<TextureTransform>) => {
-    setLogoTransform((prev) => {
-      const next = { ...prev, ...updates };
-      // If side was toggled on T-shirt, smoothly swing camera to face that side
-      if (updates.side && updates.side !== prev.side) {
-        if (cameraRef.current && controlsRef.current) {
-          const cam = cameraRef.current;
-          const dist = cam.position.length() || 4.5;
-          if (updates.side === "BACK") {
-            cam.position.set(0, 0, -dist);
-          } else {
-            cam.position.set(0, 0, dist);
-          }
-          controlsRef.current.target.set(0, 0, 0);
-          controlsRef.current.update();
+  const handleTransformChange = React.useCallback((updates: Partial<TextureTransform>, overrideSide?: "FRONT" | "BACK") => {
+    // If a side is explicitly passed from TShirtModel, use it, otherwise use activeSide
+    // For CustomizerToolbar, updates.side might be passed when clicking the toggle buttons
+    const targetSide = overrideSide || updates.side || activeSide;
+    
+    // Switch active side if requested via toolbar
+    if (updates.side && updates.side !== activeSide) {
+      setActiveSide(updates.side as "FRONT" | "BACK");
+      if (cameraRef.current && controlsRef.current) {
+        const cam = cameraRef.current;
+        const dist = cam.position.length() || 4.5;
+        if (updates.side === "BACK") {
+          cam.position.set(0, 0, -dist);
+        } else {
+          cam.position.set(0, 0, dist);
         }
+        controlsRef.current.target.set(0, 0, 0);
+        controlsRef.current.update();
       }
-      return next;
-    });
-  }, []);
+    }
+
+    if (targetSide === "FRONT") {
+      setFrontTransform((prev) => ({ ...prev, ...updates }));
+    } else {
+      setBackTransform((prev) => ({ ...prev, ...updates }));
+    }
+  }, [activeSide]);
 
   const handleAddToCart = (goToCheckout = false) => {
     if (!clientVerified) return;
@@ -127,8 +148,6 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
       cameraRef.current
     );
 
-    const isBack = logoTransform.side === "BACK";
-
     addItem(
       {
         productId: product.id,
@@ -138,16 +157,16 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
         quantity,
         image: preview3D || product.images[0] || "/lamsa2.png",
         customization: {
-          clientLogoPath: logoUrl || undefined,
-          designRectoPath: !isBack ? (logoUrl || undefined) : undefined,
-          designVersoPath: isBack ? (logoUrl || undefined) : undefined,
+          clientLogoPath: printSides !== "BACK_ONLY" ? (frontLogoUrl || undefined) : undefined,
+          designRectoPath: printSides !== "BACK_ONLY" ? (frontLogoUrl || undefined) : undefined,
+          designVersoPath: printSides !== "FRONT_ONLY" ? (backLogoUrl || undefined) : undefined,
           preview3DPath: preview3D || product.images[0] || "/lamsa2.png",
           clientVerified: true,
-          designNotes: `Modèle: ${selectedProductType}, Couleur: ${baseColor}, Emplacement: ${
-            isBack ? "Dos (Arrière)" : "Face Avant"
-          }`,
+          designNotes: `Modèle: ${selectedProductType}, Couleur: ${baseColor}, Faces Imprimées: ${printSides === "BOTH" ? "Avant et Arrière" : printSides === "FRONT_ONLY" ? "Avant" : "Arrière"}`,
           selectedColor: baseColor,
-          modelType: selectedProductType as any
+          modelType: selectedProductType as any,
+          frontTransform: printSides !== "BACK_ONLY" ? frontTransform : undefined,
+          backTransform: printSides !== "FRONT_ONLY" ? backTransform : undefined
         }
       },
       !goToCheckout
@@ -164,6 +183,10 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
 
   const minQty = product.minQuantity || 1;
   const totalPrice = product.price * quantity;
+
+  // Active props for toolbar
+  const activeLogoUrl = activeSide === "FRONT" ? frontLogoUrl : backLogoUrl;
+  const activeTransform = activeSide === "FRONT" ? frontTransform : backTransform;
 
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
@@ -201,8 +224,8 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
             </button>
             <button
               type="button"
-              onClick={() => setLogoTransform(DEFAULT_TRANSFORM)}
-              disabled={isLocked || !logoUrl}
+              onClick={() => handleTransformChange({ ...DEFAULT_TRANSFORM, side: activeSide })}
+              disabled={isLocked || !activeLogoUrl}
               className="flex h-10 w-10 items-center justify-center rounded-full border border-black/10 bg-white/80 text-brand-charcoal backdrop-blur-md shadow-sm transition-all hover:bg-white disabled:opacity-50 disabled:cursor-not-allowed hover:text-brand-red"
               title="Réinitialiser la position"
             >
@@ -216,8 +239,12 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
               modelType={selectedProductType}
               baseColor={baseColor}
               controlsRef={controlsRef}
-              logoUrl={logoUrl}
-              logoTransform={logoTransform}
+              logoUrl={activeLogoUrl}
+              logoTransform={activeTransform}
+              frontLogoUrl={printSides !== "BACK_ONLY" ? frontLogoUrl : null}
+              frontTransform={frontTransform}
+              backLogoUrl={printSides !== "FRONT_ONLY" ? backLogoUrl : null}
+              backTransform={backTransform}
               onTransformChange={handleTransformChange}
               orbitEnabled={orbitEnabled}
               setOrbitEnabled={setOrbitEnabled}
@@ -250,9 +277,9 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
               }
             }}
             onReset={() => {
-              handleTransformChange(DEFAULT_TRANSFORM);
+              handleTransformChange({ ...DEFAULT_TRANSFORM, side: activeSide });
               if (cameraRef.current && controlsRef.current) {
-                cameraRef.current.position.set(0, 0, 4.5);
+                cameraRef.current.position.set(0, 0, activeSide === "BACK" ? -4.5 : 4.5);
                 controlsRef.current.target.set(0, 0, 0);
                 controlsRef.current.update();
               }
@@ -302,12 +329,18 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
             baseColor={baseColor}
             onBaseColorChange={setBaseColor}
             availableColors={product.availableColors}
-            logoUrl={logoUrl}
+            logoUrl={activeLogoUrl}
             onUploadLogo={handleUploadLogo}
             onRemoveLogo={handleRemoveLogo}
-            logoTransform={logoTransform}
+            logoTransform={activeTransform}
             onTransformChange={handleTransformChange}
             isLocked={isLocked}
+            printSides={printSides}
+            onPrintSidesChange={(sides) => {
+              setPrintSides(sides);
+              if (sides === "FRONT_ONLY") setActiveSide("FRONT");
+              if (sides === "BACK_ONLY") setActiveSide("BACK");
+            }}
           />
         </div>
 
@@ -357,7 +390,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
                 className="mt-0.5 h-4 w-4 rounded border-brand-light-gray text-brand-red focus:ring-brand-red cursor-pointer"
               />
               <span className="text-xs font-semibold text-brand-charcoal leading-snug">
-                J&apos;ai vérifié mon graphisme et le rendu 3D, et je valide pour production.
+                J'ai vérifié mon graphisme et le rendu 3D, et je valide pour production.
               </span>
             </label>
             {!clientVerified && (

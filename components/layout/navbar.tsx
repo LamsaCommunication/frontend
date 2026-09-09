@@ -132,37 +132,41 @@ export function Navbar() {
 
         {/* ── Desktop Right Shopping Bag Button ─────────────────────── */}
         <div className="hidden lg:flex items-center justify-end">
-          <button
-            type="button"
-            onClick={openDrawer}
-            aria-label="Ouvrir le panier"
-            className="group relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-brand-charcoal transition-all hover:bg-brand-charcoal hover:text-white shadow-sm border border-black/[0.08] cursor-pointer"
-          >
-            <ShoppingBag className="h-4 w-4 transition-transform group-hover:scale-110" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-extrabold text-white shadow-sm animate-in zoom-in duration-200">
-                {itemCount}
-              </span>
-            )}
-          </button>
+          {pathname.startsWith("/shop") && (
+            <button
+              type="button"
+              onClick={openDrawer}
+              aria-label="Ouvrir le panier"
+              className="group relative flex h-10 w-10 items-center justify-center rounded-full bg-white text-brand-charcoal transition-all hover:bg-brand-charcoal hover:text-white shadow-sm border border-black/[0.08] cursor-pointer"
+            >
+              <ShoppingBag className="h-4 w-4 transition-transform group-hover:scale-110" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-extrabold text-white shadow-sm animate-in zoom-in duration-200">
+                  {itemCount}
+                </span>
+              )}
+            </button>
+          )}
         </div>
 
         {/* ── Mobile Right Actions (Cart + Hamburger) ──────────────── */}
         <div className="flex items-center gap-2 lg:hidden">
           {/* Mobile Shopping Bag */}
-          <button
-            type="button"
-            onClick={openDrawer}
-            aria-label="Ouvrir le panier"
-            className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#141414] transition-colors hover:bg-[#f4f4f4]"
-          >
-            <ShoppingBag className="h-4 w-4" />
-            {itemCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-extrabold text-white shadow-sm">
-                {itemCount}
-              </span>
-            )}
-          </button>
+          {pathname.startsWith("/shop") && (
+            <button
+              type="button"
+              onClick={openDrawer}
+              aria-label="Ouvrir le panier"
+              className="relative inline-flex h-9 w-9 cursor-pointer items-center justify-center rounded-full border border-black/[0.08] bg-white text-[#141414] transition-colors hover:bg-[#f4f4f4]"
+            >
+              <ShoppingBag className="h-4 w-4" />
+              {itemCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand-red px-1 text-[10px] font-extrabold text-white shadow-sm">
+                  {itemCount}
+                </span>
+              )}
+            </button>
+          )}
 
           {/* Mobile Hamburger */}
           <button

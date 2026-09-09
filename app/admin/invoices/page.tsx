@@ -100,11 +100,11 @@ export default function AdminInvoicesPage() {
   React.useEffect(() => {
     const socket = getSocket();
     if (!socket) return;
-    
+
     const handleNewOrder = (order: any) => {
       setToastMessage(`Nouvelle commande reçue : ${order.orderNumber} (${order.firstName} ${order.lastName})`);
       refetchRef.current();
-      
+
       setTimeout(() => {
         setToastMessage(null);
       }, 5000);
@@ -162,11 +162,10 @@ export default function AdminInvoicesPage() {
                   key={status}
                   type="button"
                   onClick={() => setStatusFilter(status)}
-                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                    statusFilter === status
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all cursor-pointer ${statusFilter === status
                       ? "bg-brand-charcoal text-white shadow-sm"
                       : "text-brand-dark/70 hover:bg-brand-soft-white"
-                  }`}
+                    }`}
                 >
                   {STATUS_LABELS[status]}
                   {count !== undefined ? ` (${count})` : (status === "ALL" && pagination ? ` (${pagination.total})` : "")}
