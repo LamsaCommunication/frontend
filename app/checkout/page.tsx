@@ -89,7 +89,7 @@ function CheckoutContent() {
 
   React.useEffect(() => {
     async function loadWilayaData() {
-      if (!selectedWilayaCode) return;
+      if (!selectedWilayaCode || selectedWilayaCode === "undefined") return;
       setIsLoadingDetails(true);
       try {
         const { yalidineApi } = await import("@/lib/api/lamsa-api");
@@ -471,16 +471,16 @@ function CheckoutContent() {
                           onChange={(e) => {
                             const val = e.target.value;
                             if (!val) return;
-                            const wilaya = wilayas.find(w => String(w.wilaya_id) === val);
+                            const wilaya = wilayas.find(w => String(w.id) === val);
                             if (wilaya) {
-                              setSelectedWilaya(String(wilaya.wilaya_id), wilaya.name);
+                              setSelectedWilaya(String(wilaya.id), wilaya.name);
                             }
                           }}
                         >
                           <option value="" disabled>Sélectionnez une wilaya</option>
                           {wilayas.map((w) => (
-                            <option key={String(w.wilaya_id)} value={String(w.wilaya_id)}>
-                              {w.wilaya_id} - {w.name}
+                            <option key={String(w.id)} value={String(w.id)}>
+                              {w.id} - {w.name}
                             </option>
                           ))}
                         </CustomSelect>
@@ -496,7 +496,7 @@ function CheckoutContent() {
                         >
                           <option value="" disabled>Sélectionnez une commune</option>
                           {communes.map((c) => (
-                            <option key={String(c.commune_id)} value={c.name}>
+                            <option key={String(c.id)} value={c.name}>
                               {c.name}
                             </option>
                           ))}

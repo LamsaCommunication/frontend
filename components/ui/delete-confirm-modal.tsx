@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertTriangle, Trash2, X, ShieldAlert, AlertCircle } from "lucide-react";
+import { Trash2, X, ShieldAlert, AlertCircle } from "lucide-react";
 
 export interface DeleteConfirmModalProps {
   isOpen: boolean;
@@ -28,10 +28,11 @@ export function DeleteConfirmModal({
   cancelLabel = "Annuler",
   isDeleting = false
 }: DeleteConfirmModalProps) {
+  const [isInternalDeleting, setIsInternalDeleting] = React.useState(false);
+
   if (!isOpen) return null;
 
   const isBlocked = Boolean(blockedReason);
-  const [isInternalDeleting, setIsInternalDeleting] = React.useState(false);
 
   const handleConfirm = async () => {
     if (!onConfirm) return;
