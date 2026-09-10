@@ -193,7 +193,8 @@ apiClient.get = async (url: string, config?: any) => {
     (url.includes("/api/v1/categories") ||
       url.includes("/api/v1/products") ||
       url.includes("/announcements") ||
-      url.includes("/client-logos")) &&
+      url.includes("/client-logos") ||
+      url.includes("/api/v1/delivery/yalidine")) &&
     !url.includes("/admin");
 
   const requestKey = `${url}?${JSON.stringify(config?.params || {})}`;
