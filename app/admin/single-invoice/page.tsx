@@ -114,10 +114,10 @@ function AdminSingleInvoiceContent() {
     try {
       const extensionMatch = url.match(/\.([a-zA-Z0-9]+)$/);
       const originalExtension = extensionMatch ? extensionMatch[1].toLowerCase() : "";
-      
+
       const cleanItemName = fixEncoding(itemName).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_À-ÿ]/g, "");
       const pathUrl = url.replace('/view/', '/download/');
-      
+
       if (targetFormat === "original" || targetFormat === originalExtension || originalExtension === "pdf") {
         const extension = extensionMatch ? `.${extensionMatch[1]}` : "";
         const filename = `${prefix}-${cleanItemName}${extension}`;
@@ -128,7 +128,7 @@ function AdminSingleInvoiceContent() {
       // Convert image format via frontend Canvas
       const res = await apiClient.get(pathUrl, { responseType: "blob" });
       const blob = new Blob([res.data]);
-      
+
       const isImageExt = ["webp", "png", "jpg", "jpeg", "svg"].includes(originalExtension);
       if (!isImageExt) {
         const filename = `${prefix}-${cleanItemName}.${originalExtension}`;
@@ -138,7 +138,7 @@ function AdminSingleInvoiceContent() {
 
       const objectUrl = window.URL.createObjectURL(blob);
       const img = new window.Image();
-      
+
       await new Promise((resolve, reject) => {
         img.onload = resolve;
         img.onerror = reject;
@@ -152,12 +152,12 @@ function AdminSingleInvoiceContent() {
       if (ctx) {
         // If converting SVG or transparent images to JPEG, add white background
         if (targetFormat === "jpeg") {
-            ctx.fillStyle = "#ffffff";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
         }
         ctx.drawImage(img, 0, 0);
         const convertedDataUrl = canvas.toDataURL(`image/${targetFormat}`, 1.0);
-        
+
         const link = document.createElement("a");
         link.href = convertedDataUrl;
         link.setAttribute("download", `${prefix}-${cleanItemName}.${targetFormat}`);
@@ -194,7 +194,7 @@ function AdminSingleInvoiceContent() {
           >
             <option value="original">Format Original</option>
             <option value="png">Format PNG</option>
-            <option value="jpeg">Format JPG</option>
+            <option value="jpeg">Format JPEG</option>
             <option value="webp">Format WEBP</option>
           </select>
         )}
@@ -330,8 +330,8 @@ function AdminSingleInvoiceContent() {
                   const rawImg = item.preview3DPath || frontLogo;
                   const itemImgSrc = rawImg
                     ? (rawImg.startsWith("/api/")
-                        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${rawImg}`
-                        : rawImg)
+                      ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${rawImg}`
+                      : rawImg)
                     : "/lamsa2.png";
 
                   return (
@@ -504,33 +504,93 @@ function AdminSingleInvoiceContent() {
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex-1 min-h-0 bg-brand-soft-white relative flex flex-col">
-              <div className="flex-1 relative w-full h-full">
+            <div className="flex-1 min-h-0 bg-brand-soft-white relative flex flex-col md:flex-row">
+              {/* Left: 3D Canvas */}
+              <div className="flex-1 relative min-w-0 h-full">
                 {(() => {
                   const safeUrl = (url?: string | null) => url?.startsWith("blob:") ? null : url;
                   const safeFrontUrl = safeUrl(viewing3DItem.designRectoPath || viewing3DItem.clientLogoPath);
                   const safeBackUrl = safeUrl(viewing3DItem.designVersoPath);
+
+                  const parseTransform = (t: any) => {
+                    if (!t) return DEFAULT_TRANSFORM;
+                    if (typeof t === "string") {
+                      try { return JSON.parse(t); } catch { return DEFAULT_TRANSFORM; }
+                    }
+                    return t;
+                  };
+
+                  const parsedFrontTransform = parseTransform(viewing3DItem.frontTransform);
+                  const parsedBackTransform = parseTransform(viewing3DItem.backTransform);
 
                   return (
                     <Scene3D
                       modelType={viewing3DItem.modelType}
                       baseColor={viewing3DItem.selectedColor || "#ffffff"}
                       logoUrl={safeFrontUrl}
-                      logoTransform={viewing3DItem.frontTransform || DEFAULT_TRANSFORM}
+                      logoTransform={parsedFrontTransform}
                       frontLogoUrl={safeFrontUrl}
-                      frontTransform={viewing3DItem.frontTransform || DEFAULT_TRANSFORM}
+                      frontTransform={parsedFrontTransform}
                       backLogoUrl={safeBackUrl}
-                      backTransform={viewing3DItem.backTransform || DEFAULT_TRANSFORM}
+                      backTransform={parsedBackTransform}
                       isLocked={true}
                       orbitEnabled={true}
                     />
                   );
                 })()}
+                <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
+                  <span className="bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-bold text-brand-charcoal shadow-sm">
+                    Utilisez la souris pour tourner le modèle.
+                  </span>
+                </div>
               </div>
-              <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
-                <span className="bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-bold text-brand-charcoal shadow-sm">
-                  Utilisez la souris pour tourner le modèle. Les positions de logo sont centrées par défaut.
-                </span>
+
+              {/* Right: Details Panel */}
+              <div className="w-full md:w-[320px] bg-white border-l border-brand-light-gray p-6 flex flex-col gap-5 overflow-y-auto z-10">
+                <h3 className="text-sm font-black text-brand-charcoal">Détails de l'article</h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <span className="text-[10px] font-bold text-brand-warm-gray uppercase tracking-wider block">Produit</span>
+                    <span className="text-xs font-bold text-brand-charcoal">{fixEncoding(viewing3DItem.productName)}</span>
+                  </div>
+                  
+                  {viewing3DItem.selectedColor && (
+                    <div>
+                      <span className="text-[10px] font-bold text-brand-warm-gray uppercase tracking-wider block">Couleur de Base</span>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <div 
+                          className="h-5 w-5 rounded-full border border-brand-light-gray shadow-sm" 
+                          style={{ backgroundColor: viewing3DItem.selectedColor }}
+                        />
+                        <span className="text-xs font-mono font-semibold text-brand-charcoal">{viewing3DItem.selectedColor}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {viewing3DItem.customText && (
+                    <div>
+                      <span className="text-[10px] font-bold text-brand-warm-gray uppercase tracking-wider block">Texte Personnalisé</span>
+                      <span className="text-xs font-bold text-brand-charcoal bg-brand-soft-white px-2.5 py-1.5 rounded-lg inline-block mt-1.5 border border-brand-light-gray/50">
+                        {fixEncoding(viewing3DItem.customText)}
+                      </span>
+                    </div>
+                  )}
+
+                  {viewing3DItem.designNotes && (
+                    <div>
+                      <span className="text-[10px] font-bold text-brand-warm-gray uppercase tracking-wider block mb-1.5">Notes de Design</span>
+                      <p className="text-xs font-semibold text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200/60 leading-relaxed">
+                        {fixEncoding(viewing3DItem.designNotes)}
+                      </p>
+                    </div>
+                  )}
+                  
+                  <div className="pt-2 border-t border-brand-light-gray/50">
+                    <span className="text-[10px] font-bold text-brand-warm-gray uppercase tracking-wider block">Quantité Commandée</span>
+                    <span className="text-sm font-black text-brand-red">{viewing3DItem.quantity} unité(s)</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

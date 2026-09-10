@@ -180,23 +180,23 @@ function AdminProductsContent() {
     setIsDrawerOpen(true);
   };
 
-function normalizeHexColor(input: string): string | null {
-  let cleaned = input.trim();
-  if (!cleaned) return null;
-  if (!cleaned.startsWith("#")) {
-    cleaned = "#" + cleaned;
+  function normalizeHexColor(input: string): string | null {
+    let cleaned = input.trim();
+    if (!cleaned) return null;
+    if (!cleaned.startsWith("#")) {
+      cleaned = "#" + cleaned;
+    }
+    if (/^#[0-9a-fA-F]{3}$/.test(cleaned)) {
+      const r = cleaned[1];
+      const g = cleaned[2];
+      const b = cleaned[3];
+      return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
+    }
+    if (/^#[0-9a-fA-F]{6}$/.test(cleaned)) {
+      return cleaned.toLowerCase();
+    }
+    return null;
   }
-  if (/^#[0-9a-fA-F]{3}$/.test(cleaned)) {
-    const r = cleaned[1];
-    const g = cleaned[2];
-    const b = cleaned[3];
-    return `#${r}${r}${g}${g}${b}${b}`.toLowerCase();
-  }
-  if (/^#[0-9a-fA-F]{6}$/.test(cleaned)) {
-    return cleaned.toLowerCase();
-  }
-  return null;
-}
 
   const removeAvailableColor = (hex: string) => {
     setFormAvailableColors((prev) =>
@@ -340,7 +340,7 @@ function normalizeHexColor(input: string): string | null {
       // Synchronize client-facing catalog store immediately
       try {
         useCatalogStore.getState().fetchCatalog();
-      } catch {}
+      } catch { }
 
       setTimeout(() => {
         setIsDrawerOpen(false);
@@ -1000,119 +1000,119 @@ function normalizeHexColor(input: string): string | null {
 
                       {/* Available Colors Manager (both 2D & 3D) */}
                       <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          className="space-y-3 pt-2"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block">
-                                Couleurs du Produit :
-                              </label>
-                              <span className="rounded-full bg-brand-soft-white px-2 py-0.5 text-[10px] font-bold text-brand-charcoal border border-brand-light-gray">
-                                {formAvailableColors.length} couleur{formAvailableColors.length > 1 ? "s" : ""}
-                              </span>
-                            </div>
-
-                            {formAvailableColors.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={removeAllAvailableColors}
-                                className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
-                                title="Supprimer toutes les couleurs"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                                <span>Tout supprimer</span>
-                              </button>
-                            )}
-                          </div>
-
-                          <p className="text-[11px] text-brand-warm-gray leading-relaxed">
-                            Définissez les déclinaisons de couleurs proposées aux clients sur la boutique.
-                          </p>
-
-                          {/* Active Colors List (Only what is currently added) */}
-                          {formAvailableColors.length > 0 ? (
-                            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-light-gray/80 bg-white p-3 shadow-2xs">
-                              {formAvailableColors.map((hex) => {
-                                const PRESET_MAP: Record<string, string> = {
-                                  "#ffffff": "Blanc",
-                                  "#141414": "Noir",
-                                  "#e30613": "Rouge Lamsa",
-                                  "#1e3a8a": "Bleu Marine",
-                                  "#2563eb": "Bleu Royal",
-                                  "#10b981": "Vert Émeraude",
-                                  "#f59e0b": "Or / Jaune",
-                                  "#9ca3af": "Gris",
-                                  "#d97706": "Kraft",
-                                  "#ec4899": "Rose"
-                                };
-                                const label = PRESET_MAP[hex.toLowerCase()] || hex.toUpperCase();
-                                return (
-                                  <div
-                                    key={hex}
-                                    className="group flex items-center gap-2 rounded-full border border-brand-light-gray bg-brand-soft-white px-3 py-1.5 text-xs font-bold text-brand-charcoal shadow-2xs transition-all hover:border-red-300 hover:bg-red-50/50"
-                                  >
-                                    <span
-                                      className="h-3.5 w-3.5 rounded-full border border-black/20 shadow-2xs shrink-0"
-                                      style={{ backgroundColor: hex }}
-                                    />
-                                    <span className="text-[11px]">{label}</span>
-                                    <button
-                                      type="button"
-                                      onClick={() => removeAvailableColor(hex)}
-                                      title={`Supprimer ${label}`}
-                                      className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/5 text-brand-charcoal/70 hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
-                                    >
-                                      <X className="h-2.5 w-2.5 stroke-[3]" />
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div className="rounded-2xl border border-dashed border-brand-light-gray bg-brand-soft-white/60 p-4 text-center">
-                              <p className="text-xs font-semibold text-brand-warm-gray">
-                                Aucune couleur configurée — le sélecteur de déclinaisons sera masqué sur la boutique.
-                              </p>
-                            </div>
-                          )}
-
-                          {/* Add Color Section */}
-                          <div className="space-y-2 pt-1 border-t border-brand-light-gray/60">
-                            <span className="text-[11px] font-bold text-brand-warm-gray uppercase tracking-wider block">
-                              Ajouter une couleur :
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="space-y-3 pt-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <label className="text-xs font-bold uppercase tracking-wider text-brand-charcoal block">
+                              Couleurs du Produit :
+                            </label>
+                            <span className="rounded-full bg-brand-soft-white px-2 py-0.5 text-[10px] font-bold text-brand-charcoal border border-brand-light-gray">
+                              {formAvailableColors.length} couleur{formAvailableColors.length > 1 ? "s" : ""}
                             </span>
-
-                            {/* Custom Color Picker & Hex Input */}
-                            <div className="flex items-center gap-2 pt-1">
-                              <div className="flex items-center gap-2 rounded-xl border border-brand-light-gray bg-white px-3 py-1.5 shadow-2xs">
-                                <input
-                                  type="color"
-                                  value={normalizeHexColor(customHexInput) || "#2563eb"}
-                                  onChange={(e) => setCustomHexInput(e.target.value)}
-                                  className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
-                                />
-                                <input
-                                  type="text"
-                                  value={customHexInput}
-                                  onChange={(e) => setCustomHexInput(e.target.value)}
-                                  placeholder="#HEX"
-                                  className="w-20 text-xs font-mono font-bold uppercase text-brand-charcoal focus:outline-none"
-                                />
-                              </div>
-
-                              <button
-                                type="button"
-                                onClick={handleAddCustomColor}
-                                className="rounded-xl bg-brand-charcoal px-3.5 py-2 text-xs font-bold text-white hover:bg-brand-red transition-colors cursor-pointer shadow-xs"
-                              >
-                                + Ajouter cette couleur
-                              </button>
-                            </div>
                           </div>
-                        </motion.div>
+
+                          {formAvailableColors.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={removeAllAvailableColors}
+                              className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-700 transition-colors cursor-pointer"
+                              title="Supprimer toutes les couleurs"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              <span>Tout supprimer</span>
+                            </button>
+                          )}
+                        </div>
+
+                        <p className="text-[11px] text-brand-warm-gray leading-relaxed">
+                          Définissez les déclinaisons de couleurs proposées aux clients sur la boutique.
+                        </p>
+
+                        {/* Active Colors List (Only what is currently added) */}
+                        {formAvailableColors.length > 0 ? (
+                          <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-brand-light-gray/80 bg-white p-3 shadow-2xs">
+                            {formAvailableColors.map((hex) => {
+                              const PRESET_MAP: Record<string, string> = {
+                                "#ffffff": "Blanc",
+                                "#141414": "Noir",
+                                "#e30613": "Rouge Lamsa",
+                                "#1e3a8a": "Bleu Marine",
+                                "#2563eb": "Bleu Royal",
+                                "#10b981": "Vert Émeraude",
+                                "#f59e0b": "Or / Jaune",
+                                "#9ca3af": "Gris",
+                                "#d97706": "Kraft",
+                                "#ec4899": "Rose"
+                              };
+                              const label = PRESET_MAP[hex.toLowerCase()] || hex.toUpperCase();
+                              return (
+                                <div
+                                  key={hex}
+                                  className="group flex items-center gap-2 rounded-full border border-brand-light-gray bg-brand-soft-white px-3 py-1.5 text-xs font-bold text-brand-charcoal shadow-2xs transition-all hover:border-red-300 hover:bg-red-50/50"
+                                >
+                                  <span
+                                    className="h-3.5 w-3.5 rounded-full border border-black/20 shadow-2xs shrink-0"
+                                    style={{ backgroundColor: hex }}
+                                  />
+                                  <span className="text-[11px]">{label}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeAvailableColor(hex)}
+                                    title={`Supprimer ${label}`}
+                                    className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-black/5 text-brand-charcoal/70 hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
+                                  >
+                                    <X className="h-2.5 w-2.5 stroke-[3]" />
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <div className="rounded-2xl border border-dashed border-brand-light-gray bg-brand-soft-white/60 p-4 text-center">
+                            <p className="text-xs font-semibold text-brand-warm-gray">
+                              Aucune couleur configurée — le sélecteur de déclinaisons sera masqué sur la boutique.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Add Color Section */}
+                        <div className="space-y-2 pt-1 border-t border-brand-light-gray/60">
+                          <span className="text-[11px] font-bold text-brand-warm-gray uppercase tracking-wider block">
+                            Ajouter une couleur :
+                          </span>
+
+                          {/* Custom Color Picker & Hex Input */}
+                          <div className="flex items-center gap-2 pt-1">
+                            <div className="flex items-center gap-2 rounded-xl border border-brand-light-gray bg-white px-3 py-1.5 shadow-2xs">
+                              <input
+                                type="color"
+                                value={normalizeHexColor(customHexInput) || "#2563eb"}
+                                onChange={(e) => setCustomHexInput(e.target.value)}
+                                className="h-6 w-6 cursor-pointer rounded border-0 bg-transparent"
+                              />
+                              <input
+                                type="text"
+                                value={customHexInput}
+                                onChange={(e) => setCustomHexInput(e.target.value)}
+                                placeholder="#HEX"
+                                className="w-20 text-xs font-mono font-bold uppercase text-brand-charcoal focus:outline-none"
+                              />
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={handleAddCustomColor}
+                              className="rounded-xl bg-brand-charcoal px-3.5 py-2 text-xs font-bold text-white hover:bg-brand-red transition-colors cursor-pointer shadow-xs"
+                            >
+                              + Ajouter cette couleur
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
 
                       {/* ── Image Upload: Single if 3D is ON, Multiple if 3D is OFF ── */}
                       <div className="pt-2 space-y-2.5">

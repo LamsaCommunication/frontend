@@ -68,7 +68,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
   const [activeSide, setActiveSide] = React.useState<"FRONT" | "BACK">("FRONT");
   const [frontLogoUrl, setFrontLogoUrl] = React.useState<string | null>(null);
   const [backLogoUrl, setBackLogoUrl] = React.useState<string | null>(null);
-  
+
   const [frontTransform, setFrontTransform] = React.useState<TextureTransform>({ ...DEFAULT_TRANSFORM, side: "FRONT" });
   const [backTransform, setBackTransform] = React.useState<TextureTransform>({ ...DEFAULT_TRANSFORM, side: "BACK" });
 
@@ -88,7 +88,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
 
   // 2. 3D Viewport Controls
   const [orbitEnabled, setOrbitEnabled] = React.useState(true);
-  
+
   const glRef = React.useRef<THREE.WebGLRenderer | null>(null);
   const sceneRef = React.useRef<THREE.Scene | null>(null);
   const cameraRef = React.useRef<THREE.Camera | null>(null);
@@ -114,7 +114,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
     // If a side is explicitly passed from TShirtModel, use it, otherwise use activeSide
     // For CustomizerToolbar, updates.side might be passed when clicking the toggle buttons
     const targetSide = overrideSide || updates.side || activeSide;
-    
+
     // Switch active side if requested via toolbar
     if (updates.side && updates.side !== activeSide) {
       setActiveSide(updates.side as "FRONT" | "BACK");
@@ -196,11 +196,6 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
         <div className="relative h-[360px] sm:h-[440px] md:h-[520px] lg:h-[580px] w-full overflow-hidden rounded-3xl border border-brand-light-gray bg-transparent shadow-inner">
           {/* Top Floating Badge & Warning */}
           <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2 pointer-events-none">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-black/10 bg-white/80 px-3.5 py-1 text-xs font-bold text-brand-charcoal backdrop-blur-md shadow-sm">
-              <Sparkles className="h-3.5 w-3.5 text-brand-red" />
-              Studio 3D Temps Réel
-            </span>
-            
             {showWarning && (
               <div className="animate-in fade-in slide-in-from-top-2 inline-flex items-center gap-1.5 rounded-full border border-brand-red/20 bg-brand-red/90 px-3.5 py-1 text-xs font-bold text-white shadow-md">
                 <AlertCircle className="h-3.5 w-3.5" />
@@ -214,11 +209,10 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
             <button
               type="button"
               onClick={() => setIsLocked((prev) => !prev)}
-              className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-all ${
-                isLocked
-                  ? "border-brand-red bg-brand-red text-white"
-                  : "border-black/10 bg-white/80 text-brand-charcoal hover:bg-white backdrop-blur-md"
-              }`}
+              className={`flex h-10 w-10 items-center justify-center rounded-full border shadow-sm transition-all ${isLocked
+                ? "border-brand-red bg-brand-red text-white"
+                : "border-black/10 bg-white/80 text-brand-charcoal hover:bg-white backdrop-blur-md"
+                }`}
               title={isLocked ? "Déverrouiller le logo" : "Verrouiller le logo"}
             >
               {isLocked ? <Lock className="h-4 w-4" /> : <Unlock className="h-4 w-4" />}
@@ -286,17 +280,6 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
               }
             }}
           />
-        </div>
-
-        {/* Viewport Footer Info */}
-        <div className="flex items-center justify-between px-2 text-xs font-semibold text-brand-dark/70">
-          <span className="flex items-center gap-1.5 text-emerald-600">
-            <CheckCircle2 className="h-4 w-4" />
-            Rendu WebGL photoréaliste direct
-          </span>
-          <span className="text-brand-warm-gray">
-            Lamsa 3D Studio v2.4
-          </span>
         </div>
       </div>
 
@@ -408,13 +391,12 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
               type="button"
               disabled={!clientVerified}
               onClick={() => handleAddToCart(false)}
-              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-bold transition-all ${
-                !clientVerified
-                  ? "bg-brand-light-gray text-brand-warm-gray cursor-not-allowed"
-                  : addedFeedback
-                    ? "bg-emerald-600 text-white"
-                    : "bg-brand-charcoal text-white hover:bg-black shadow-xs cursor-pointer"
-              }`}
+              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-bold transition-all ${!clientVerified
+                ? "bg-brand-light-gray text-brand-warm-gray cursor-not-allowed"
+                : addedFeedback
+                  ? "bg-emerald-600 text-white"
+                  : "bg-brand-charcoal text-white hover:bg-black shadow-xs cursor-pointer"
+                }`}
             >
               {addedFeedback ? (
                 <>
@@ -433,31 +415,14 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
               type="button"
               disabled={!clientVerified}
               onClick={() => handleAddToCart(true)}
-              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-black transition-all ${
-                !clientVerified
-                  ? "bg-brand-light-gray text-brand-warm-gray cursor-not-allowed"
-                  : "bg-brand-red text-white shadow-sm hover:bg-brand-red-hover hover:shadow-[0_8px_25px_-6px_rgba(227,6,19,0.55)] cursor-pointer"
-              }`}
+              className={`flex w-full items-center justify-center gap-2 rounded-full py-3.5 text-xs font-black transition-all ${!clientVerified
+                ? "bg-brand-light-gray text-brand-warm-gray cursor-not-allowed"
+                : "bg-brand-red text-white shadow-sm hover:bg-brand-red-hover hover:shadow-[0_8px_25px_-6px_rgba(227,6,19,0.55)] cursor-pointer"
+                }`}
             >
               <span>Commander Directement</span>
               <ArrowRight className="h-4 w-4" />
             </button>
-          </div>
-
-          {/* Trust Guarantees */}
-          <div className="mt-6 grid grid-cols-3 gap-2 border-t border-brand-light-gray/60 pt-4 text-center">
-            <div className="flex flex-col items-center gap-1">
-              <Clock className="h-4 w-4 text-brand-red" />
-              <span className="text-[10px] font-bold text-brand-charcoal">Expédition 48-72h</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <Truck className="h-4 w-4 text-brand-red" />
-              <span className="text-[10px] font-bold text-brand-charcoal">Yalidine 58 Wilayas</span>
-            </div>
-            <div className="flex flex-col items-center gap-1">
-              <ShieldCheck className="h-4 w-4 text-brand-red" />
-              <span className="text-[10px] font-bold text-brand-charcoal">Garantie Qualité</span>
-            </div>
           </div>
         </div>
       </div>

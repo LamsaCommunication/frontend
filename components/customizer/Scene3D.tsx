@@ -8,6 +8,7 @@ import { OrbitControls, ContactShadows, Environment, Lightformer } from "@react-
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { ProductModel } from "./ProductModel";
 import type { Product3DType, TextureTransform } from "./models/types";
+import { ErrorBoundary } from "../ErrorBoundary";
 
 interface Scene3DProps {
   modelType: string | Product3DType;
@@ -176,9 +177,15 @@ export function Scene3D(props: Scene3DProps) {
         camera={{ position: [0, 0, 4.5], fov: 45 }}
         style={{ width: "100%", height: "100%" }}
       >
-        <React.Suspense fallback={null}>
-          <SceneContent {...props} />
-        </React.Suspense>
+        <ErrorBoundary fallback={
+          <div className="absolute inset-0 flex items-center justify-center bg-brand-soft-white text-brand-red text-sm font-bold text-center p-4">
+            Impossible de charger le modèle 3D ou ses textures (Fichier introuvable).
+          </div>
+        }>
+          <React.Suspense fallback={null}>
+            <SceneContent {...props} />
+          </React.Suspense>
+        </ErrorBoundary>
       </Canvas>
     </div>
   );

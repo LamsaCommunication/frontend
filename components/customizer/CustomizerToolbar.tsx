@@ -201,7 +201,7 @@ export function CustomizerToolbar({
             Support 3D configuré
           </span>
           <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-1">
-            <CheckCircle2 className="h-3 w-3" /> Modèle 3D synchronisé
+            <CheckCircle2 className="h-3 w-3" /> Modèle 3D
           </span>
         </div>
 
@@ -220,15 +220,15 @@ export function CustomizerToolbar({
               {isTShirt
                 ? "T-Shirt Coton 3D"
                 : isCap
-                ? "Casquette Baseball 3D"
-                : "Mug Céramique HD 3D"}
+                  ? "Casquette Baseball 3D"
+                  : "Mug Céramique HD 3D"}
             </span>
             <span className="text-[10px] text-brand-warm-gray">
               {isTShirt
                 ? "Personnalisation textile DTF / Sérigraphie"
                 : isCap
-                ? "Personnalisation broderie & marquage relief"
-                : "Impression sublimation panoramique 360°"}
+                  ? "Personnalisation broderie & marquage relief"
+                  : "Impression sublimation panoramique 360°"}
             </span>
           </div>
         </div>
@@ -253,26 +253,105 @@ export function CustomizerToolbar({
               type="button"
               onClick={() => onBaseColorChange(swatch.hex)}
               title={swatch.name}
-              className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all cursor-pointer ${
-                swatch.border || "border-transparent"
-              } ${
-                baseColor.toLowerCase() === swatch.hex.toLowerCase()
+              className={`relative flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all cursor-pointer ${swatch.border || "border-transparent"
+                } ${baseColor.toLowerCase() === swatch.hex.toLowerCase()
                   ? "ring-2 ring-brand-red ring-offset-2 scale-110"
                   : "hover:scale-105"
-              }`}
+                }`}
               style={{ backgroundColor: swatch.hex }}
             >
               {baseColor.toLowerCase() === swatch.hex.toLowerCase() && (
                 <span
-                  className={`h-2 w-2 rounded-full ${
-                    swatch.hex.toLowerCase() === "#ffffff" ? "bg-black" : "bg-white"
-                  }`}
+                  className={`h-2 w-2 rounded-full ${swatch.hex.toLowerCase() === "#ffffff" ? "bg-black" : "bg-white"
+                    }`}
                 />
               )}
             </button>
           ))}
         </div>
       </div>
+
+      {/* ── 1.5. T-Shirt Print Mode ────────────────────────────── */}
+      {isTShirt && onPrintSidesChange && (
+        <div className={`rounded-2xl border border-brand-light-gray bg-brand-soft-white/40 p-4 ${isLocked ? "opacity-50 pointer-events-none" : ""}`}>
+          <span className="text-[11px] font-bold text-brand-charcoal block mb-2">
+            Mode d'impression :
+          </span>
+          <div className={`grid grid-cols-3 gap-1.5 ${printSides === "BOTH" ? "mb-4 border-b border-brand-light-gray pb-4" : ""}`}>
+            <button
+              type="button"
+              onClick={() => {
+                onPrintSidesChange("FRONT_ONLY");
+                onTransformChange({ side: "FRONT" });
+              }}
+              className={`py-2 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${printSides === "FRONT_ONLY"
+                  ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
+                  : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                }`}
+            >
+              Face Avant Uniquement
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onPrintSidesChange("BACK_ONLY");
+                onTransformChange({ side: "BACK" });
+              }}
+              className={`py-2 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${printSides === "BACK_ONLY"
+                  ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
+                  : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                }`}
+            >
+              Dos Uniquement
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                onPrintSidesChange("BOTH");
+                if (logoTransform.side !== "FRONT" && logoTransform.side !== "BACK") {
+                  onTransformChange({ side: "FRONT" });
+                }
+              }}
+              className={`py-2 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${printSides === "BOTH"
+                  ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
+                  : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                }`}
+            >
+              Face + Dos
+            </button>
+          </div>
+
+          {printSides === "BOTH" && (
+            <>
+              <span className="text-[11px] font-bold text-brand-charcoal block mb-2">
+                Sélectionner la face à éditer :
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ side: "FRONT" })}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${logoTransform.side === "FRONT"
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                    }`}
+                >
+                  Éditer Face Avant
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onTransformChange({ side: "BACK" })}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${logoTransform.side === "BACK"
+                      ? "bg-brand-red text-white border-brand-red shadow-xs"
+                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                    }`}
+                >
+                  Éditer Dos
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
 
       {/* ── 2. File Upload Dropzone ─────────────────────────────────── */}
       <div>
@@ -329,216 +408,126 @@ export function CustomizerToolbar({
             </button>
           </div>
 
-          {/* T-Shirt Face / Dos Placement Toggle */}
-          {isTShirt && onPrintSidesChange && (
-            <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-              <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
-                Mode d'impression :
-              </span>
-              <div className="grid grid-cols-3 gap-1.5 mb-4 border-b border-brand-light-gray pb-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    onPrintSidesChange("FRONT_ONLY");
-                    onTransformChange({ side: "FRONT" });
-                  }}
-                  className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
-                    printSides === "FRONT_ONLY"
-                      ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
-                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                  }`}
-                >
-                  Face Avant Uniquement
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onPrintSidesChange("BACK_ONLY");
-                    onTransformChange({ side: "BACK" });
-                  }}
-                  className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
-                    printSides === "BACK_ONLY"
-                      ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
-                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                  }`}
-                >
-                  Dos Uniquement
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onPrintSidesChange("BOTH");
-                    // Default to Front when both are selected initially
-                    if (logoTransform.side !== "FRONT" && logoTransform.side !== "BACK") {
-                       onTransformChange({ side: "FRONT" });
-                    }
-                  }}
-                  className={`py-1.5 px-2 rounded-xl text-[10px] font-bold border transition-all cursor-pointer ${
-                    printSides === "BOTH"
-                      ? "bg-brand-charcoal text-white border-brand-charcoal shadow-xs"
-                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                  }`}
-                >
-                  Face + Dos
-                </button>
-              </div>
 
-              {printSides === "BOTH" && (
-                <>
-                  <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
-                    Sélectionner la face à éditer :
-                  </span>
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <button
-                      type="button"
-                      onClick={() => onTransformChange({ side: "FRONT" })}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        logoTransform.side === "FRONT"
-                          ? "bg-brand-red text-white border-brand-red shadow-xs"
-                          : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                      }`}
-                    >
-                      Éditer Face Avant
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onTransformChange({ side: "BACK" })}
-                      className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                        logoTransform.side === "BACK"
-                          ? "bg-brand-red text-white border-brand-red shadow-xs"
-                          : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                      }`}
-                    >
-                      Éditer Dos
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
+        </div>
+      )}
 
-          {/* Cap Quick Placement Panels */}
-          {isCap && (
-            <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-              <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
-                Zone de placement :
-              </span>
-              <div className="grid grid-cols-4 gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => onTransformChange({ offsetX: 0 })}
-                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
-                    Math.abs((logoTransform.offsetX || 0) * 0.004) < 0.4
-                      ? "bg-brand-red text-white border-brand-red shadow-xs"
-                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                  }`}
-                >
-                  Front
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onTransformChange({ offsetX: -390 })}
-                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
-                    Math.abs((logoTransform.offsetX || 0) * 0.004 - (-Math.PI / 2)) < 0.6
-                      ? "bg-brand-red text-white border-brand-red shadow-xs"
-                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                  }`}
-                >
-                  Côté G.
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onTransformChange({ offsetX: 390 })}
-                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
-                    Math.abs((logoTransform.offsetX || 0) * 0.004 - (Math.PI / 2)) < 0.6
-                      ? "bg-brand-red text-white border-brand-red shadow-xs"
-                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                  }`}
-                >
-                  Côté D.
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onTransformChange({ offsetX: 785 })}
-                  className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${
-                    Math.abs(Math.abs((logoTransform.offsetX || 0) * 0.004) - Math.PI) < 0.6
-                      ? "bg-brand-red text-white border-brand-red shadow-xs"
-                      : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                  }`}
-                >
-                  Arrière
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Scale Slider */}
-          <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-            <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
-              <span className="flex items-center gap-1.5">
-                <Maximize2 className="h-3.5 w-3.5 text-brand-red" />
-                Taille
-              </span>
-              <span className="font-mono text-brand-warm-gray">
-                {Math.round(logoTransform.scale * 100)}%
-              </span>
-            </div>
-            <SmoothRangeInput
-              min={0.2}
-              max={2.5}
-              step={0.02}
-              value={logoTransform.scale}
-              onChange={(scale) => onTransformChange({ scale })}
-              disabled={isLocked}
-              className="w-full accent-brand-red cursor-pointer"
-            />
-          </div>
-
-          {/* Position X Slider */}
-          <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-            <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
-              <span className="flex items-center gap-1.5">
-                <MoveHorizontal className="h-3.5 w-3.5 text-brand-red" />
-                {rangeConfig.xLabel}
-              </span>
-              <span className="font-mono text-brand-warm-gray">
-                {logoTransform.offsetX}
-              </span>
-            </div>
-            <SmoothRangeInput
-              min={rangeConfig.xMin}
-              max={rangeConfig.xMax}
-              step={rangeConfig.xStep}
-              value={logoTransform.offsetX}
-              onChange={(offsetX) => onTransformChange({ offsetX })}
-              disabled={isLocked}
-              className="w-full accent-brand-red cursor-pointer"
-            />
-          </div>
-
-          {/* Position Y Slider */}
-          <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-            <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
-              <span className="flex items-center gap-1.5">
-                <MoveVertical className="h-3.5 w-3.5 text-brand-red" />
-                Position Verticale
-              </span>
-              <span className="font-mono text-brand-warm-gray">
-                {logoTransform.offsetY}
-              </span>
-            </div>
-            <SmoothRangeInput
-              min={rangeConfig.yMin}
-              max={rangeConfig.yMax}
-              step={rangeConfig.yStep}
-              value={logoTransform.offsetY}
-              onChange={(offsetY) => onTransformChange({ offsetY })}
-              disabled={isLocked}
-              className="w-full accent-brand-red cursor-pointer"
-            />
+      {/* Cap Quick Placement Panels */}
+      {isCap && (
+        <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+          <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
+            Zone de placement :
+          </span>
+          <div className="grid grid-cols-4 gap-1.5">
+            <button
+              type="button"
+              onClick={() => onTransformChange({ offsetX: 0 })}
+              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004) < 0.4
+                ? "bg-brand-red text-white border-brand-red shadow-xs"
+                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                }`}
+            >
+              Front
+            </button>
+            <button
+              type="button"
+              onClick={() => onTransformChange({ offsetX: -390 })}
+              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004 - (-Math.PI / 2)) < 0.6
+                ? "bg-brand-red text-white border-brand-red shadow-xs"
+                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                }`}
+            >
+              Côté G.
+            </button>
+            <button
+              type="button"
+              onClick={() => onTransformChange({ offsetX: 390 })}
+              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004 - (Math.PI / 2)) < 0.6
+                ? "bg-brand-red text-white border-brand-red shadow-xs"
+                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                }`}
+            >
+              Côté D.
+            </button>
+            <button
+              type="button"
+              onClick={() => onTransformChange({ offsetX: 785 })}
+              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs(Math.abs((logoTransform.offsetX || 0) * 0.004) - Math.PI) < 0.6
+                ? "bg-brand-red text-white border-brand-red shadow-xs"
+                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                }`}
+            >
+              Arrière
+            </button>
           </div>
         </div>
       )}
+
+      {/* Scale Slider */}
+      <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+        <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
+          <span className="flex items-center gap-1.5">
+            <Maximize2 className="h-3.5 w-3.5 text-brand-red" />
+            Taille
+          </span>
+          <span className="font-mono text-brand-warm-gray">
+            {Math.round(logoTransform.scale * 100)}%
+          </span>
+        </div>
+        <SmoothRangeInput
+          min={0.2}
+          max={2.5}
+          step={0.02}
+          value={logoTransform.scale}
+          onChange={(scale) => onTransformChange({ scale })}
+          disabled={isLocked}
+          className="w-full accent-brand-red cursor-pointer"
+        />
+      </div>
+
+      {/* Position X Slider */}
+      <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+        <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
+          <span className="flex items-center gap-1.5">
+            <MoveHorizontal className="h-3.5 w-3.5 text-brand-red" />
+            {rangeConfig.xLabel}
+          </span>
+          <span className="font-mono text-brand-warm-gray">
+            {logoTransform.offsetX}
+          </span>
+        </div>
+        <SmoothRangeInput
+          min={rangeConfig.xMin}
+          max={rangeConfig.xMax}
+          step={rangeConfig.xStep}
+          value={logoTransform.offsetX}
+          onChange={(offsetX) => onTransformChange({ offsetX })}
+          disabled={isLocked}
+          className="w-full accent-brand-red cursor-pointer"
+        />
+      </div>
+
+      {/* Position Y Slider */}
+      <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+        <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
+          <span className="flex items-center gap-1.5">
+            <MoveVertical className="h-3.5 w-3.5 text-brand-red" />
+            Position Verticale
+          </span>
+          <span className="font-mono text-brand-warm-gray">
+            {logoTransform.offsetY}
+          </span>
+        </div>
+        <SmoothRangeInput
+          min={rangeConfig.yMin}
+          max={rangeConfig.yMax}
+          step={rangeConfig.yStep}
+          value={logoTransform.offsetY}
+          onChange={(offsetY) => onTransformChange({ offsetY })}
+          disabled={isLocked}
+          className="w-full accent-brand-red cursor-pointer"
+        />
+      </div>
     </div>
   );
 }
