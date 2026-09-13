@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import * as THREE from "three";
-import { Decal, useGLTF, useTexture } from "@react-three/drei";
+import { Decal, useGLTF } from "@react-three/drei";
 import type { ModelComponentProps } from "./types";
 import { useDragHandler } from "../hooks/useDragHandler";
 import {
@@ -10,6 +10,7 @@ import {
   getTextureAspect,
   createCeramicBodyMaterial,
   createCeramicHandleMaterial,
+  useSafeTexture,
 } from "../utils/texture-utils";
 
 // ── Asset path ───────────────────────────────────────────────────────
@@ -32,12 +33,7 @@ export function MugModel({
   onLockedDragAttempt,
 }: ModelComponentProps) {
   const { scene } = useGLTF(MUG_GLB_PATH);
-  const rawLogoTexture = useTexture(logoUrl || TRANSPARENT_PIXEL);
-
-  React.useEffect(() => {
-    rawLogoTexture.flipY = true;
-    rawLogoTexture.needsUpdate = true;
-  }, [rawLogoTexture]);
+  const rawLogoTexture = useSafeTexture(logoUrl);
 
   // Parse GLTF scene into separate body and handle geometries
   const { bodyGeometry, handleGeometry } = React.useMemo(() => {
@@ -199,12 +195,7 @@ function ProceduralMug({
     []
   );
 
-  const rawLogoTexture = useTexture(logoUrl || TRANSPARENT_PIXEL);
-
-  React.useEffect(() => {
-    rawLogoTexture.flipY = true;
-    rawLogoTexture.needsUpdate = true;
-  }, [rawLogoTexture]);
+  const rawLogoTexture = useSafeTexture(logoUrl);
 
   React.useEffect(() => {
     return () => {

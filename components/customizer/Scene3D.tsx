@@ -165,28 +165,28 @@ function SceneContent({
 export function Scene3D(props: Scene3DProps) {
   return (
     <div className="relative h-full w-full select-none overflow-hidden touch-none">
-      <Canvas
-        gl={{
-          preserveDrawingBuffer: true,
-          antialias: true,
-          alpha: true,
-          powerPreference: "high-performance",
-          toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 1.0,
-        }}
-        camera={{ position: [0, 0, 4.5], fov: 45 }}
-        style={{ width: "100%", height: "100%" }}
-      >
-        <ErrorBoundary fallback={
-          <div className="absolute inset-0 flex items-center justify-center bg-brand-soft-white text-brand-red text-sm font-bold text-center p-4">
-            Impossible de charger le modèle 3D ou ses textures (Fichier introuvable).
-          </div>
-        }>
+      <ErrorBoundary fallback={
+        <div className="absolute inset-0 flex items-center justify-center bg-brand-soft-white text-brand-red text-sm font-bold text-center p-4 z-10">
+          Impossible de charger le modèle 3D ou ses textures (Fichier introuvable).
+        </div>
+      }>
+        <Canvas
+          gl={{
+            preserveDrawingBuffer: true,
+            antialias: true,
+            alpha: true,
+            powerPreference: "high-performance",
+            toneMapping: THREE.ACESFilmicToneMapping,
+            toneMappingExposure: 1.0,
+          }}
+          camera={{ position: [0, 0, 4.5], fov: 45 }}
+          style={{ width: "100%", height: "100%" }}
+        >
           <React.Suspense fallback={null}>
             <SceneContent {...props} />
           </React.Suspense>
-        </ErrorBoundary>
-      </Canvas>
+        </Canvas>
+      </ErrorBoundary>
     </div>
   );
 }

@@ -508,7 +508,13 @@ function AdminSingleInvoiceContent() {
               {/* Left: 3D Canvas */}
               <div className="flex-1 relative min-w-0 h-full">
                 {(() => {
-                  const safeUrl = (url?: string | null) => url?.startsWith("blob:") ? null : url;
+                  const safeUrl = (url?: string | null) => {
+                    if (!url) return null;
+                    if (url.startsWith("blob:")) return null;
+                    return url.startsWith("/api/") 
+                      ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${url}`
+                      : url;
+                  };
                   const safeFrontUrl = safeUrl(viewing3DItem.designRectoPath || viewing3DItem.clientLogoPath);
                   const safeBackUrl = safeUrl(viewing3DItem.designVersoPath);
 

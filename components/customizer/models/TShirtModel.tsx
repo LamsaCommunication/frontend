@@ -2,10 +2,10 @@
 
 import * as React from "react";
 import * as THREE from "three";
-import { Decal, useGLTF, useTexture } from "@react-three/drei";
+import { Decal, useGLTF } from "@react-three/drei";
 import type { ModelComponentProps } from "./types";
 import { useDragHandler } from "../hooks/useDragHandler";
-import { TRANSPARENT_PIXEL, getTextureAspect } from "../utils/texture-utils";
+import { TRANSPARENT_PIXEL, getTextureAspect, useSafeTexture } from "../utils/texture-utils";
 
 // ── Asset path ───────────────────────────────────────────────────────
 const TSHIRT_GLB_PATH = "/models/tshirt/tshirt.glb";
@@ -35,15 +35,8 @@ export function TShirtModel({
   const actualFrontUrl = frontLogoUrl !== undefined ? frontLogoUrl : (logoTransform?.side !== "BACK" ? logoUrl : null);
   const actualBackUrl = backLogoUrl !== undefined ? backLogoUrl : (logoTransform?.side === "BACK" ? logoUrl : null);
   
-  const rawFrontTexture = useTexture(actualFrontUrl || TRANSPARENT_PIXEL);
-  const rawBackTexture = useTexture(actualBackUrl || TRANSPARENT_PIXEL);
-
-  React.useEffect(() => {
-    rawFrontTexture.flipY = true;
-    rawFrontTexture.needsUpdate = true;
-    rawBackTexture.flipY = true;
-    rawBackTexture.needsUpdate = true;
-  }, [rawFrontTexture, rawBackTexture]);
+  const rawFrontTexture = useSafeTexture(actualFrontUrl);
+  const rawBackTexture = useSafeTexture(actualBackUrl);
 
   // Process GLTF scene: extract primary geometry and compute bounds
   const { geometry, scale, bounds } = React.useMemo(() => {

@@ -2,13 +2,14 @@
 
 import * as React from "react";
 import * as THREE from "three";
-import { Decal, useGLTF, useTexture } from "@react-three/drei";
+import { Decal, useGLTF } from "@react-three/drei";
 import type { ModelComponentProps } from "./types";
 import { useDragHandler } from "../hooks/useDragHandler";
 import {
   TRANSPARENT_PIXEL,
   getTextureAspect,
   createFabricMaterial,
+  useSafeTexture,
 } from "../utils/texture-utils";
 
 // ── Asset path ───────────────────────────────────────────────────────
@@ -31,12 +32,7 @@ export function CapModel({
   onLockedDragAttempt,
 }: ModelComponentProps) {
   const { scene } = useGLTF(CAP_GLB_PATH);
-  const rawLogoTexture = useTexture(logoUrl || TRANSPARENT_PIXEL);
-
-  React.useEffect(() => {
-    rawLogoTexture.flipY = true;
-    rawLogoTexture.needsUpdate = true;
-  }, [rawLogoTexture]);
+  const rawLogoTexture = useSafeTexture(logoUrl);
 
   // Parse GLTF scene into body and stitches geometries
   const { bodyGeometry, stitchesGeometry, bounds, scale } = React.useMemo(() => {
