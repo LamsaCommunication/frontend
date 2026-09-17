@@ -33,6 +33,15 @@ function AdminSingleInvoiceContent() {
 
   // 3D Viewer Modal State
   const [viewing3DItem, setViewing3DItem] = React.useState<any>(null);
+  const [isModalReady, setIsModalReady] = React.useState(false);
+
+  React.useEffect(() => {
+    if (viewing3DItem) {
+      setIsModalReady(false);
+      const timer = setTimeout(() => setIsModalReady(true), 250);
+      return () => clearTimeout(timer);
+    }
+  }, [viewing3DItem]);
 
   const loadOrder = React.useCallback(async () => {
     if (!id) {
@@ -551,6 +560,14 @@ function AdminSingleInvoiceContent() {
 
                     const parsedFrontTransform = parseTransform(viewing3DItem.frontTransform);
                     const parsedBackTransform = parseTransform(viewing3DItem.backTransform);
+
+                    if (!isModalReady) {
+                      return (
+                        <div className="flex h-full w-full items-center justify-center">
+                          <span className="text-xs font-bold text-brand-warm-gray">Préparation de l'environnement 3D...</span>
+                        </div>
+                      );
+                    }
 
                     return (
                       <Scene3D
