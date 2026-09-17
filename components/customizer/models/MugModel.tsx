@@ -10,19 +10,12 @@ import {
   getTextureAspect,
   createCeramicBodyMaterial,
   createCeramicHandleMaterial,
+  createCeramicMaskedMaterial,
   useSafeTexture,
 } from "../utils/texture-utils";
 
-// ── Asset path ───────────────────────────────────────────────────────
 const MUG_GLB_PATH = "/models/mug/mug.glb";
 
-/**
- * MugModel — Loads the mug GLB (Draco-compressed) with separate body and handle meshes.
- *
- * Body: Always white ceramic (regardless of color selection).
- * Handle: Receives the user-selected baseColor.
- * Logo/decal is applied only to the body mesh.
- */
 export function MugModel({
   baseColor,
   logoUrl,
@@ -35,30 +28,28 @@ export function MugModel({
   const { scene } = useGLTF(MUG_GLB_PATH);
   const rawLogoTexture = useSafeTexture(logoUrl);
 
-  // Parse GLTF scene and dynamically split single mesh into body (outside) and colored parts (inside + handle)
-  const { bodyGeometry, coloredGeometry } = React.useMemo(() => {
+  // Parse GLTF scene and normalize geometry for the custom shader
+  const { geometry, shaderParams } = React.useMemo(() => {
     let sourceGeo: THREE.BufferGeometry | null = null;
 
     scene.traverse((child) => {
       const mesh = child as THREE.Mesh;
       if (mesh.isMesh && mesh.geometry) {
         if (!sourceGeo) {
-           sourceGeo = mesh.geometry.clone();
+          sourceGeo = mesh.geometry.clone();
         } else if ((mesh.geometry.attributes.position?.count ?? 0) > (sourceGeo.attributes.position?.count ?? 0)) {
-           // Take the largest geometry if there are multiple
-           sourceGeo = mesh.geometry.clone();
+          sourceGeo = mesh.geometry.clone();
         }
       }
     });
 
-    if (!sourceGeo) return { bodyGeometry: null, coloredGeometry: null };
+    if (!sourceGeo) return { geometry: null, shaderParams: null };
 
-    // Explicitly cast to help TypeScript since it loses track in the callback
     const geo = sourceGeo as THREE.BufferGeometry;
 
     geo.computeBoundingBox();
     let bbox = geo.boundingBox;
-    if (!bbox) return { bodyGeometry: geo, coloredGeometry: null };
+    if (!bbox) return { geometry: geo, shaderParams: null };
 
     // Find the actual cylinder center before translation (to pivot correctly)
     const radius = (bbox.max.z - bbox.min.z) / 2;
@@ -70,7 +61,7 @@ export function MugModel({
     // Normalize Geometry: center the cylinder at (0,0,0) and scale to typical mug height (2.1)
     const height = bbox.max.y - bbox.min.y;
     const scale = height > 0 ? 2.1 / height : 1;
-    
+
     geo.translate(-centerX, -centerY, -centerZ);
     geo.scale(scale, scale, scale);
 
@@ -78,105 +69,43 @@ export function MugModel({
     geo.computeVertexNormals();
     geo.computeBoundingBox();
     bbox = geo.boundingBox!;
-
-    const position = geo.attributes.position;
-    const normal = geo.attributes.normal;
-    const index = geo.index;
-
-    if (!position || !normal || !index) {
-        return { bodyGeometry: geo, coloredGeometry: null };
-    }
-
-    const idxArr = index.array;
-    const outerIndices: number[] = [];
-    const innerIndices: number[] = [];
-    
     // Now the cylinder is perfectly centered at X=0, Z=0
     const normalizedRadius = radius * scale;
-    const handleDistThreshold = normalizedRadius * 1.15;
+    // Push the handle color boundary right to the surface of the cylinder body
+    // so the handle is fully colored exactly to the joint, just like the reference.
+    const handleDistThreshold = normalizedRadius * 1.01;
 
-    const vA = new THREE.Vector3();
-    const vB = new THREE.Vector3();
-    const vC = new THREE.Vector3();
-    const nA = new THREE.Vector3();
-    const nB = new THREE.Vector3();
-    const nC = new THREE.Vector3();
-
-    for (let i = 0; i < idxArr.length; i += 3) {
-      const i0 = idxArr[i];
-      const i1 = idxArr[i+1];
-      const i2 = idxArr[i+2];
-
-      vA.fromBufferAttribute(position, i0);
-      vB.fromBufferAttribute(position, i1);
-      vC.fromBufferAttribute(position, i2);
-
-      nA.fromBufferAttribute(normal, i0);
-      nB.fromBufferAttribute(normal, i1);
-      nC.fromBufferAttribute(normal, i2);
-
-      const cX = (vA.x + vB.x + vC.x) / 3;
-      const cY = (vA.y + vB.y + vC.y) / 3;
-      const cZ = (vA.z + vB.z + vC.z) / 3;
-
-      const nx = (nA.x + nB.x + nC.x) / 3;
-      const ny = (nA.y + nB.y + nC.y) / 3;
-      const nz = (nA.z + nB.z + nC.z) / 3;
-
-      // Distance from center (0,0)
-      const dist = Math.sqrt(cX * cX + cZ * cZ);
-
-      let isColored = false;
-
-      // 1. Is it the handle? (Outside the main cylinder radius)
-      if (dist > handleDistThreshold) {
-        isColored = true;
-      } else {
-        // 2. Is it the inside of the cylinder?
-        // Normal dot vector from center
-        const dot = nx * cX + nz * cZ;
-        
-        // Inner wall (normal points towards center)
-        if (dot < -0.01) {
-            isColored = true;
-        } 
-        // Inner bottom (faces up, but lower half of the mug to avoid top rim issues)
-        else if (ny > 0.8 && cY < bbox.min.y + (bbox.max.y - bbox.min.y) * 0.5) {
-            isColored = true;
-        }
+    return {
+      geometry: geo,
+      shaderParams: {
+        handleDistThreshold,
+        minY: bbox.min.y,
+        maxY: bbox.max.y
       }
-
-      if (isColored) {
-        innerIndices.push(i0, i1, i2);
-      } else {
-        outerIndices.push(i0, i1, i2);
-      }
-    }
-
-    const bGeo = geo.clone();
-    bGeo.setIndex(outerIndices);
-    bGeo.clearGroups();
-
-    const cGeo = geo.clone();
-    cGeo.setIndex(innerIndices);
-    cGeo.clearGroups();
-
-    return { bodyGeometry: bGeo, coloredGeometry: cGeo };
+    };
   }, [scene]);
 
-  // Materials — body is always white, handle uses user color
-  const bodyMaterial = React.useMemo(() => createCeramicBodyMaterial(), []);
-  const handleMaterial = React.useMemo(
-    () => createCeramicHandleMaterial(baseColor === "#ffffff" ? "#fbf9f5" : baseColor),
-    [baseColor]
-  );
+  // Unified Material with custom shader for masking
+  const mugMaterial = React.useMemo(() => createCeramicMaskedMaterial(), []);
 
   React.useEffect(() => {
     return () => {
-      bodyMaterial.dispose();
-      handleMaterial.dispose();
+      mugMaterial.dispose();
     };
-  }, [bodyMaterial, handleMaterial]);
+  }, [mugMaterial]);
+
+  React.useEffect(() => {
+    if (shaderParams) {
+      mugMaterial.customUniforms.uHandleThreshold.value = shaderParams.handleDistThreshold;
+      mugMaterial.customUniforms.uMinY.value = shaderParams.minY;
+      mugMaterial.customUniforms.uMaxY.value = shaderParams.maxY;
+    }
+  }, [mugMaterial, shaderParams]);
+
+  React.useEffect(() => {
+    const color = baseColor === "#ffffff" ? "#fbf9f5" : baseColor;
+    mugMaterial.customUniforms.uCustomColor.value.set(color);
+  }, [mugMaterial, baseColor]);
 
   const handlers = useDragHandler(
     logoTransform,
@@ -187,7 +116,7 @@ export function MugModel({
   );
 
   // Fallback to procedural mug if GLB parsing yields no geometry
-  if (!bodyGeometry) {
+  if (!geometry) {
     return (
       <ProceduralMug
         baseColor={baseColor}
@@ -218,10 +147,10 @@ export function MugModel({
 
   return (
     <group position={[0, -0.05, 0]} scale={[1.1, 1.1, 1.1]}>
-      {/* Body mesh — always white ceramic */}
+      {/* Unified Mug Mesh with Shader Masking */}
       <mesh
-        geometry={bodyGeometry}
-        material={bodyMaterial}
+        geometry={geometry}
+        material={mugMaterial}
         castShadow
         receiveShadow
       >
@@ -247,16 +176,6 @@ export function MugModel({
           </Decal>
         )}
       </mesh>
-
-      {/* Handle and Inside mesh — user-selected color */}
-      {coloredGeometry && (
-        <mesh
-          geometry={coloredGeometry}
-          material={handleMaterial}
-          castShadow
-          receiveShadow
-        />
-      )}
     </group>
   );
 }
