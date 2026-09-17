@@ -53,9 +53,12 @@ export function MugModel({
 
     if (!sourceGeo) return { bodyGeometry: null, coloredGeometry: null };
 
-    sourceGeo.computeBoundingBox();
-    let bbox = sourceGeo.boundingBox;
-    if (!bbox) return { bodyGeometry: sourceGeo, coloredGeometry: null };
+    // Explicitly cast to help TypeScript since it loses track in the callback
+    const geo = sourceGeo as THREE.BufferGeometry;
+
+    geo.computeBoundingBox();
+    let bbox = geo.boundingBox;
+    if (!bbox) return { bodyGeometry: geo, coloredGeometry: null };
 
     // Find the actual cylinder center before translation (to pivot correctly)
     const radius = (bbox.max.z - bbox.min.z) / 2;
@@ -68,20 +71,20 @@ export function MugModel({
     const height = bbox.max.y - bbox.min.y;
     const scale = height > 0 ? 2.1 / height : 1;
     
-    sourceGeo.translate(-centerX, -centerY, -centerZ);
-    sourceGeo.scale(scale, scale, scale);
+    geo.translate(-centerX, -centerY, -centerZ);
+    geo.scale(scale, scale, scale);
 
     // Recompute normals and bounds after transformations
-    sourceGeo.computeVertexNormals();
-    sourceGeo.computeBoundingBox();
-    bbox = sourceGeo.boundingBox!;
+    geo.computeVertexNormals();
+    geo.computeBoundingBox();
+    bbox = geo.boundingBox!;
 
-    const position = sourceGeo.attributes.position;
-    const normal = sourceGeo.attributes.normal;
-    const index = sourceGeo.index;
+    const position = geo.attributes.position;
+    const normal = geo.attributes.normal;
+    const index = geo.index;
 
     if (!position || !normal || !index) {
-        return { bodyGeometry: sourceGeo, coloredGeometry: null };
+        return { bodyGeometry: geo, coloredGeometry: null };
     }
 
     const idxArr = index.array;
@@ -150,11 +153,11 @@ export function MugModel({
       }
     }
 
-    const bGeo = sourceGeo.clone();
+    const bGeo = geo.clone();
     bGeo.setIndex(outerIndices);
     bGeo.clearGroups();
 
-    const cGeo = sourceGeo.clone();
+    const cGeo = geo.clone();
     cGeo.setIndex(innerIndices);
     cGeo.clearGroups();
 
