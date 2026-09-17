@@ -22,6 +22,7 @@ import { ordersApi, uploadsApi } from "@/lib/api/lamsa-api";
 import { apiClient } from "@/lib/api/api-client";
 import { Scene3D } from "@/components/customizer/Scene3D";
 import { DEFAULT_TRANSFORM } from "@/components/customizer/models/types";
+import { toast } from "sonner";
 
 function AdminSingleInvoiceContent() {
   const searchParams = useSearchParams();
@@ -78,7 +79,7 @@ function AdminSingleInvoiceContent() {
       await loadOrder();
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la mise à jour du statut.");
+      toast.error("Erreur lors de la mise à jour du statut.");
     }
   };
 
@@ -86,13 +87,13 @@ function AdminSingleInvoiceContent() {
     try {
       const res = await ordersApi.dispatchYalidine(order.id);
       await loadOrder();
-      alert(`Bordereau Yalidine généré avec succès !`);
+      toast.success(`Bordereau Yalidine généré avec succès !`);
       if (res?.yalidineLabelUrl) {
         window.open(res.yalidineLabelUrl, "_blank");
       }
     } catch (err) {
       console.error(err);
-      alert("Erreur lors de la génération du bordereau.");
+      toast.error("Erreur lors de la génération du bordereau.");
     }
   };
 
@@ -107,15 +108,31 @@ function AdminSingleInvoiceContent() {
 
   const handleDownload = async (url: string, prefix: string, itemName: string, targetFormat: string = "original") => {
     if (url.startsWith("blob:")) {
-      alert("Ce fichier est un ancien logo local non sauvegardé sur le serveur et ne peut pas être téléchargé.");
+      toast.error("Ce fichier est un ancien logo local non sauvegardé sur le serveur et ne peut pas être téléchargé.");
       return;
     }
 
     try {
+      const cleanItemName = fixEncoding(itemName).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_À-ÿ]/g, "");
+
+      // Direct download for Base64 Data URLs
+      if (url.startsWith("data:")) {
+        const mimeMatch = url.match(/^data:image\/([a-zA-Z0-9]+);/);
+        let ext = mimeMatch ? mimeMatch[1] : "png";
+        if (ext === "jpeg") ext = "jpg";
+        
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", `${prefix}-${cleanItemName}.${ext}`);
+        document.body.appendChild(link);
+        link.click();
+        link.parentNode?.removeChild(link);
+        return;
+      }
+
       const extensionMatch = url.match(/\.([a-zA-Z0-9]+)$/);
       const originalExtension = extensionMatch ? extensionMatch[1].toLowerCase() : "";
 
-      const cleanItemName = fixEncoding(itemName).replace(/\s+/g, "_").replace(/[^a-zA-Z0-9_À-ÿ]/g, "");
       const pathUrl = url.replace('/view/', '/download/');
 
       if (targetFormat === "original" || targetFormat === originalExtension || originalExtension === "pdf") {
@@ -168,7 +185,7 @@ function AdminSingleInvoiceContent() {
       window.URL.revokeObjectURL(objectUrl);
     } catch (err) {
       console.error(err);
-      alert("Erreur lors du téléchargement ou de la conversion du fichier.");
+      toast.error("Erreur lors du téléchargement ou de la conversion du fichier.");
     }
   };
 
@@ -511,44 +528,46 @@ function AdminSingleInvoiceContent() {
             </div>
             <div className="flex-1 min-h-0 bg-brand-soft-white relative flex flex-col md:flex-row">
               {/* Left: 3D Canvas */}
-              <div className="flex-1 relative min-w-0 h-full">
-                {(() => {
-                  const safeUrl = (url?: string | null) => {
-                    if (!url) return null;
-                    if (url.startsWith("blob:")) return null;
-                    return url.startsWith("/api/") 
-                      ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${url}`
-                      : url;
-                  };
-                  const safeFrontUrl = safeUrl(viewing3DItem.designRectoPath || viewing3DItem.clientLogoPath);
-                  const safeBackUrl = safeUrl(viewing3DItem.designVersoPath);
+              <div className="flex-1 relative min-w-0 h-full w-full">
+                <div className="absolute inset-0">
+                  {(() => {
+                    const safeUrl = (url?: string | null) => {
+                      if (!url) return null;
+                      if (url.startsWith("blob:")) return null;
+                      return url.startsWith("/api/") 
+                        ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}${url}`
+                        : url;
+                    };
+                    const safeFrontUrl = safeUrl(viewing3DItem.designRectoPath || viewing3DItem.clientLogoPath);
+                    const safeBackUrl = safeUrl(viewing3DItem.designVersoPath);
 
-                  const parseTransform = (t: any) => {
-                    if (!t) return DEFAULT_TRANSFORM;
-                    if (typeof t === "string") {
-                      try { return JSON.parse(t); } catch { return DEFAULT_TRANSFORM; }
-                    }
-                    return t;
-                  };
+                    const parseTransform = (t: any) => {
+                      if (!t) return DEFAULT_TRANSFORM;
+                      if (typeof t === "string") {
+                        try { return JSON.parse(t); } catch { return DEFAULT_TRANSFORM; }
+                      }
+                      return t;
+                    };
 
-                  const parsedFrontTransform = parseTransform(viewing3DItem.frontTransform);
-                  const parsedBackTransform = parseTransform(viewing3DItem.backTransform);
+                    const parsedFrontTransform = parseTransform(viewing3DItem.frontTransform);
+                    const parsedBackTransform = parseTransform(viewing3DItem.backTransform);
 
-                  return (
-                    <Scene3D
-                      modelType={viewing3DItem.modelType}
-                      baseColor={viewing3DItem.selectedColor || "#ffffff"}
-                      logoUrl={safeFrontUrl}
-                      logoTransform={parsedFrontTransform}
-                      frontLogoUrl={safeFrontUrl}
-                      frontTransform={parsedFrontTransform}
-                      backLogoUrl={safeBackUrl}
-                      backTransform={parsedBackTransform}
-                      isLocked={true}
-                      orbitEnabled={true}
-                    />
-                  );
-                })()}
+                    return (
+                      <Scene3D
+                        modelType={viewing3DItem.modelType}
+                        baseColor={viewing3DItem.selectedColor || "#ffffff"}
+                        logoUrl={safeFrontUrl}
+                        logoTransform={parsedFrontTransform}
+                        frontLogoUrl={safeFrontUrl}
+                        frontTransform={parsedFrontTransform}
+                        backLogoUrl={safeBackUrl}
+                        backTransform={parsedBackTransform}
+                        isLocked={true}
+                        orbitEnabled={true}
+                      />
+                    );
+                  })()}
+                </div>
                 <div className="absolute bottom-4 left-0 right-0 flex justify-center pointer-events-none">
                   <span className="bg-white/80 backdrop-blur px-3 py-1.5 rounded-full text-[10px] font-bold text-brand-charcoal shadow-sm">
                     Utilisez la souris pour tourner le modèle.

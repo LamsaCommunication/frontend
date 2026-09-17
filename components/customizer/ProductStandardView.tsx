@@ -15,10 +15,8 @@ import {
   Upload,
   Layers,
   Plus,
-  Minus,
   Check
 } from "lucide-react";
-import { uploadsApi } from "@/lib/api/lamsa-api";
 import { Product } from "@/lib/store/useCatalogStore";
 import { useCartStore } from "@/lib/store/useCartStore";
 import { formatPrice } from "@/lib/utils";
@@ -67,17 +65,19 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
     const file = e.target.files?.[0];
     if (file) {
       setArtworkFile(file);
-      setArtworkPreview(URL.createObjectURL(file));
-
       setIsUploading(true);
+      
       try {
-        const res = await uploadsApi.uploadCustomizerFiles({ clientLogo: file });
-        if (res.clientLogoPath) {
-          setArtworkPreview(res.clientLogoPath);
-        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            setArtworkPreview(reader.result as string);
+          }
+          setIsUploading(false);
+        };
+        reader.readAsDataURL(file);
       } catch (err) {
-        console.error("Upload failed", err);
-      } finally {
+        console.error("FileReader failed", err);
         setIsUploading(false);
       }
     }

@@ -17,7 +17,6 @@ import {
   ChevronDown
 } from "lucide-react";
 import type { Product3DType, TextureTransform } from "./models/types";
-import { uploadsApi } from "@/lib/api/lamsa-api";
 
 interface CustomizerToolbarProps {
   productType: Product3DType | string;
@@ -130,18 +129,18 @@ export function CustomizerToolbar({
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      onUploadLogo(url);
-
       setIsUploading(true);
       try {
-        const res = await uploadsApi.uploadCustomizerFiles({ clientLogo: file });
-        if (res.clientLogoPath) {
-          onUploadLogo(res.clientLogoPath);
-        }
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          if (reader.result) {
+            onUploadLogo(reader.result as string);
+          }
+          setIsUploading(false);
+        };
+        reader.readAsDataURL(file);
       } catch (error) {
-        console.error("Upload failed", error);
-      } finally {
+        console.error("FileReader failed", error);
         setIsUploading(false);
       }
     }
