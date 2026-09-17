@@ -18,6 +18,7 @@ export interface OrderItemRecord {
   customText?: string;
   designNotes?: string;
   modelType?: string;
+  customerNote?: string;
   frontTransform?: any;
   backTransform?: any;
 }
