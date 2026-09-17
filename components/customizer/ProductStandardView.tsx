@@ -15,6 +15,7 @@ import {
   Upload,
   Layers,
   Plus,
+  Minus,
   Check
 } from "lucide-react";
 import { Product } from "@/lib/store/useCatalogStore";
