@@ -35,34 +35,130 @@ export function MugModel({
   const { scene } = useGLTF(MUG_GLB_PATH);
   const rawLogoTexture = useSafeTexture(logoUrl);
 
-  // Parse GLTF scene into separate body and handle geometries
-  const { bodyGeometry, handleGeometry } = React.useMemo(() => {
-    let bodyGeo: THREE.BufferGeometry | null = null;
-    let handleGeo: THREE.BufferGeometry | null = null;
+  // Parse GLTF scene and dynamically split single mesh into body (outside) and colored parts (inside + handle)
+  const { bodyGeometry, coloredGeometry } = React.useMemo(() => {
+    let sourceGeo: THREE.BufferGeometry | null = null;
 
     scene.traverse((child) => {
       const mesh = child as THREE.Mesh;
       if (mesh.isMesh && mesh.geometry) {
-        const count = mesh.geometry.attributes.position?.count ?? 0;
-        // Body has ~7,692 vertices (larger), Handle has ~3,309 vertices (smaller)
-        if (count > 5000) {
-          bodyGeo = mesh.geometry.clone();
-        } else {
-          handleGeo = mesh.geometry.clone();
+        if (!sourceGeo) {
+           sourceGeo = mesh.geometry.clone();
+        } else if ((mesh.geometry.attributes.position?.count ?? 0) > (sourceGeo.attributes.position?.count ?? 0)) {
+           // Take the largest geometry if there are multiple
+           sourceGeo = mesh.geometry.clone();
         }
       }
     });
 
-    const b = bodyGeo as THREE.BufferGeometry | null;
-    const h = handleGeo as THREE.BufferGeometry | null;
-    if (b) {
-      b.computeVertexNormals();
-    }
-    if (h) {
-      h.computeVertexNormals();
+    if (!sourceGeo) return { bodyGeometry: null, coloredGeometry: null };
+
+    sourceGeo.computeBoundingBox();
+    let bbox = sourceGeo.boundingBox;
+    if (!bbox) return { bodyGeometry: sourceGeo, coloredGeometry: null };
+
+    // Find the actual cylinder center before translation (to pivot correctly)
+    const radius = (bbox.max.z - bbox.min.z) / 2;
+    const isHandlePlusX = Math.abs(bbox.max.x) > Math.abs(bbox.min.x);
+    const centerX = isHandlePlusX ? bbox.min.x + radius : bbox.max.x - radius;
+    const centerY = (bbox.max.y + bbox.min.y) / 2;
+    const centerZ = (bbox.max.z + bbox.min.z) / 2;
+
+    // Normalize Geometry: center the cylinder at (0,0,0) and scale to typical mug height (2.1)
+    const height = bbox.max.y - bbox.min.y;
+    const scale = height > 0 ? 2.1 / height : 1;
+    
+    sourceGeo.translate(-centerX, -centerY, -centerZ);
+    sourceGeo.scale(scale, scale, scale);
+
+    // Recompute normals and bounds after transformations
+    sourceGeo.computeVertexNormals();
+    sourceGeo.computeBoundingBox();
+    bbox = sourceGeo.boundingBox!;
+
+    const position = sourceGeo.attributes.position;
+    const normal = sourceGeo.attributes.normal;
+    const index = sourceGeo.index;
+
+    if (!position || !normal || !index) {
+        return { bodyGeometry: sourceGeo, coloredGeometry: null };
     }
 
-    return { bodyGeometry: b, handleGeometry: h };
+    const idxArr = index.array;
+    const outerIndices: number[] = [];
+    const innerIndices: number[] = [];
+    
+    // Now the cylinder is perfectly centered at X=0, Z=0
+    const normalizedRadius = radius * scale;
+    const handleDistThreshold = normalizedRadius * 1.15;
+
+    const vA = new THREE.Vector3();
+    const vB = new THREE.Vector3();
+    const vC = new THREE.Vector3();
+    const nA = new THREE.Vector3();
+    const nB = new THREE.Vector3();
+    const nC = new THREE.Vector3();
+
+    for (let i = 0; i < idxArr.length; i += 3) {
+      const i0 = idxArr[i];
+      const i1 = idxArr[i+1];
+      const i2 = idxArr[i+2];
+
+      vA.fromBufferAttribute(position, i0);
+      vB.fromBufferAttribute(position, i1);
+      vC.fromBufferAttribute(position, i2);
+
+      nA.fromBufferAttribute(normal, i0);
+      nB.fromBufferAttribute(normal, i1);
+      nC.fromBufferAttribute(normal, i2);
+
+      const cX = (vA.x + vB.x + vC.x) / 3;
+      const cY = (vA.y + vB.y + vC.y) / 3;
+      const cZ = (vA.z + vB.z + vC.z) / 3;
+
+      const nx = (nA.x + nB.x + nC.x) / 3;
+      const ny = (nA.y + nB.y + nC.y) / 3;
+      const nz = (nA.z + nB.z + nC.z) / 3;
+
+      // Distance from center (0,0)
+      const dist = Math.sqrt(cX * cX + cZ * cZ);
+
+      let isColored = false;
+
+      // 1. Is it the handle? (Outside the main cylinder radius)
+      if (dist > handleDistThreshold) {
+        isColored = true;
+      } else {
+        // 2. Is it the inside of the cylinder?
+        // Normal dot vector from center
+        const dot = nx * cX + nz * cZ;
+        
+        // Inner wall (normal points towards center)
+        if (dot < -0.01) {
+            isColored = true;
+        } 
+        // Inner bottom (faces up, but lower half of the mug to avoid top rim issues)
+        else if (ny > 0.8 && cY < bbox.min.y + (bbox.max.y - bbox.min.y) * 0.5) {
+            isColored = true;
+        }
+      }
+
+      if (isColored) {
+        innerIndices.push(i0, i1, i2);
+      } else {
+        outerIndices.push(i0, i1, i2);
+      }
+    }
+
+    const bGeo = sourceGeo.clone();
+    bGeo.setIndex(outerIndices);
+    bGeo.clearGroups();
+
+    const cGeo = sourceGeo.clone();
+    cGeo.setIndex(innerIndices);
+    cGeo.clearGroups();
+
+    return { bodyGeometry: bGeo, coloredGeometry: cGeo };
   }, [scene]);
 
   // Materials — body is always white, handle uses user color
@@ -149,10 +245,10 @@ export function MugModel({
         )}
       </mesh>
 
-      {/* Handle mesh — user-selected color */}
-      {handleGeometry && (
+      {/* Handle and Inside mesh — user-selected color */}
+      {coloredGeometry && (
         <mesh
-          geometry={handleGeometry}
+          geometry={coloredGeometry}
           material={handleMaterial}
           castShadow
           receiveShadow
