@@ -76,6 +76,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
 
   const [clientVerified, setClientVerified] = React.useState(false);
   const [quantity, setQuantity] = React.useState(product.minQuantity || 1);
+  const [customerNote, setCustomerNote] = React.useState("");
 
   // 1.5. Lock State & Warning Toast
   const [isLocked, setIsLocked] = React.useState(false);
@@ -164,6 +165,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
           preview3DPath: preview3D || product.images[0] || "/lamsa2.png",
           clientVerified: true,
           designNotes: `Modèle: ${selectedProductType}, Couleur: ${baseColor}, Faces Imprimées: ${printSides === "BOTH" ? "Avant et Arrière" : printSides === "FRONT_ONLY" ? "Avant" : "Arrière"}`,
+          customerNote: customerNote.trim() || undefined,
           selectedColor: baseColor,
           modelType: selectedProductType as any,
           frontTransform: printSides !== "BACK_ONLY" ? frontTransform : undefined,
@@ -192,7 +194,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-12 lg:items-start">
       {/* ── Left: Interactive 3D Viewport & Camera Director (7 Cols) ─── */}
-      <div className="lg:col-span-7 sticky top-24 space-y-4">
+      <div className="lg:col-span-7 lg:sticky lg:top-24 space-y-4 z-20">
         <div className="relative h-[360px] sm:h-[440px] md:h-[520px] lg:h-[580px] w-full overflow-hidden rounded-3xl border border-brand-light-gray bg-transparent shadow-inner">
           {/* Top Floating Badge & Warning */}
           <div className="absolute top-4 left-4 z-10 flex flex-col items-start gap-2 pointer-events-none">
@@ -338,17 +340,30 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setQuantity(Math.max(minQty, quantity - (minQty > 1 ? minQty : 1)))}
+                  onClick={() => setQuantity(Math.max(minQty, quantity - 1))}
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-brand-charcoal font-bold shadow-sm hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
                 >
                   -
                 </button>
-                <span className="w-12 text-center text-sm font-extrabold text-brand-charcoal">
-                  {quantity}
-                </span>
+                <input
+                  type="number"
+                  min={minQty}
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val)) setQuantity(val);
+                    else setQuantity(minQty);
+                  }}
+                  onBlur={() => {
+                    if (quantity < minQty) {
+                      setQuantity(minQty);
+                    }
+                  }}
+                  className="w-14 text-center text-sm font-extrabold text-brand-charcoal bg-transparent border-b-2 border-transparent focus:border-brand-red focus:outline-none appearance-none"
+                />
                 <button
                   type="button"
-                  onClick={() => setQuantity(quantity + (minQty > 1 ? minQty : 1))}
+                  onClick={() => setQuantity(quantity + 1)}
                   className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-brand-charcoal font-bold shadow-sm hover:bg-brand-red hover:text-white transition-colors cursor-pointer"
                 >
                   +
@@ -364,6 +379,17 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
             </div>
           </div>
 
+          {/* Customer Note */}
+          <div className="mt-4">
+            <textarea
+              value={customerNote}
+              onChange={(e) => setCustomerNote(e.target.value)}
+              placeholder="Note pour le vendeur (optionnel)..."
+              rows={2}
+              className="w-full rounded-xl border border-brand-light-gray bg-brand-soft-white py-2 px-3.5 text-xs text-brand-charcoal placeholder-brand-warm-gray focus:border-brand-red focus:outline-none resize-none"
+            />
+          </div>
+
           {/* Mandatory Verification Gate */}
           <div className="mt-6 rounded-2xl border border-brand-red/20 bg-brand-red/5 p-4">
             <label className="flex items-start gap-3 cursor-pointer">
@@ -371,7 +397,7 @@ export function Product3DStudio({ product }: Product3DStudioProps) {
                 type="checkbox"
                 checked={clientVerified}
                 onChange={(e) => setClientVerified(e.target.checked)}
-                className="mt-0.5 h-4 w-4 rounded border-brand-light-gray text-brand-red focus:ring-brand-red cursor-pointer"
+                className="mt-0.5 appearance-none relative h-4 w-4 shrink-0 rounded-[4px] border border-brand-red bg-white checked:bg-brand-red checked:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-all cursor-pointer after:content-[''] after:absolute after:inset-0 after:bg-no-repeat after:bg-center after:bg-[length:70%] checked:after:bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%2220%206%209%2017%204%2012%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]"
               />
               <span className="text-xs font-semibold text-brand-charcoal leading-snug">
                 J'ai vérifié mon graphisme et le rendu 3D, et je valide pour production.

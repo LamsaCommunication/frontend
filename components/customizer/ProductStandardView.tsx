@@ -36,6 +36,7 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
   const [artworkFile, setArtworkFile] = React.useState<File | null>(null);
   const [artworkPreview, setArtworkPreview] = React.useState<string | null>(null);
   const [designNotes, setDesignNotes] = React.useState("");
+  const [customerNote, setCustomerNote] = React.useState("");
   const [addedFeedback, setAddedFeedback] = React.useState(false);
 
   const images = product.images && product.images.length > 0 ? product.images : ["/lamsa2.png"];
@@ -96,6 +97,7 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
           clientVerified: true,
           clientLogoPath: artworkPreview || undefined,
           designNotes: designNotes.trim() || undefined,
+          customerNote: customerNote.trim() || undefined,
           selectedColor: colors.length > 0 ? selectedColor : undefined,
           modelType: "none",
           preview3DPath: currentImage
@@ -230,8 +232,28 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
               placeholder="Instructions particulières (couleurs, texte à ajouter...)"
               className="w-full rounded-xl border border-brand-light-gray bg-white py-2 px-3.5 text-xs text-brand-charcoal placeholder-brand-warm-gray focus:border-brand-red focus:outline-none"
             />
+            {/* Customer Note */}
+            <textarea
+              value={customerNote}
+              onChange={(e) => setCustomerNote(e.target.value)}
+              placeholder="Note pour le vendeur (optionnel)..."
+              rows={2}
+              className="w-full rounded-xl border border-brand-light-gray bg-white py-2 px-3.5 text-xs text-brand-charcoal placeholder-brand-warm-gray focus:border-brand-red focus:outline-none resize-none mt-2"
+            />
           </div>
           )} {/* end allowLogoUpload */}
+          
+          {product.allowLogoUpload === false && (
+            <div className="rounded-2xl border border-brand-light-gray/80 bg-brand-soft-white/40 p-4">
+              <textarea
+                value={customerNote}
+                onChange={(e) => setCustomerNote(e.target.value)}
+                placeholder="Note pour le vendeur (optionnel)..."
+                rows={2}
+                className="w-full rounded-xl border border-brand-light-gray bg-white py-2 px-3.5 text-xs text-brand-charcoal placeholder-brand-warm-gray focus:border-brand-red focus:outline-none resize-none"
+              />
+            </div>
+          )}
 
           {/* Color Selection (if colors available) */}
           {colors.length > 0 && (
@@ -301,9 +323,22 @@ export function ProductStandardView({ product }: ProductStandardViewProps) {
                 >
                   <Minus className="h-3.5 w-3.5" />
                 </button>
-                <span className="min-w-12 text-center text-sm font-black text-brand-charcoal">
-                  {quantity}
-                </span>
+                <input
+                  type="number"
+                  min={product.minQuantity || 1}
+                  value={quantity}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value);
+                    if (!isNaN(val)) setQuantity(val);
+                    else setQuantity(product.minQuantity || 1);
+                  }}
+                  onBlur={() => {
+                    if (quantity < (product.minQuantity || 1)) {
+                      setQuantity(product.minQuantity || 1);
+                    }
+                  }}
+                  className="w-14 text-center text-sm font-black text-brand-charcoal bg-transparent border-b-2 border-transparent focus:border-brand-red focus:outline-none appearance-none"
+                />
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => q + 1)}

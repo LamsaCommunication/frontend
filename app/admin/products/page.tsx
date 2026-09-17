@@ -40,6 +40,7 @@ function AdminProductsContent() {
   const [search, setSearch] = React.useState("");
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [selectedCatId, setSelectedCatId] = React.useState<string>("ALL");
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
 
   // Debounce search
   React.useEffect(() => {
@@ -97,7 +98,6 @@ function AdminProductsContent() {
 
   const [addedProductId, setAddedProductId] = React.useState<string | null>(null);
 
-  // Delete Modal State
   const [deleteModalState, setDeleteModalState] = React.useState<{
     isOpen: boolean;
     title: string;
@@ -110,6 +110,8 @@ function AdminProductsContent() {
     title: "",
     blockedReason: null
   });
+
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = React.useState(false);
 
   // Sync default category when categories load from database
   React.useEffect(() => {
@@ -393,7 +395,15 @@ function AdminProductsContent() {
             />
           </div>
 
-          <div className="w-full sm:w-64">
+          <div className="w-full sm:w-auto flex flex-col sm:flex-row gap-3 items-center">
+            {selectedIds.size > 0 && (
+              <button
+                onClick={() => setBulkDeleteModalOpen(true)}
+                className="w-full sm:w-auto whitespace-nowrap text-xs font-bold text-white bg-brand-red px-4 py-2 rounded-full hover:bg-brand-red-hover transition-colors"
+              >
+                Supprimer ({selectedIds.size})
+              </button>
+            )}
             <CustomSelect
               value={selectedCatId}
               onChange={(e) => {
@@ -419,6 +429,20 @@ function AdminProductsContent() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-brand-light-gray bg-brand-soft-white/60 text-brand-warm-gray uppercase tracking-wider font-bold">
+                  <th className="py-3.5 px-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={products.length > 0 && selectedIds.size === products.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds(new Set(products.map(p => p.id)));
+                        } else {
+                          setSelectedIds(new Set());
+                        }
+                      }}
+                      className="appearance-none relative h-4 w-4 shrink-0 rounded-[4px] border border-brand-light-gray bg-white checked:bg-brand-red checked:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-all cursor-pointer after:content-[''] after:absolute after:inset-0 after:bg-no-repeat after:bg-center after:bg-[length:70%] checked:after:bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%2220%206%209%2017%204%2012%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]"
+                    />
+                  </th>
                   <th className="py-3.5 px-4">Produit & Visuel</th>
                   <th className="py-3.5 px-4">Catégorie</th>
                   <th className="py-3.5 px-4">Prix Unitaire</th>
@@ -458,6 +482,19 @@ function AdminProductsContent() {
                         key={prod.id}
                         className="hover:bg-brand-soft-white/50 transition-colors"
                       >
+                        <td className="py-3.5 px-4 w-10">
+                          <input
+                            type="checkbox"
+                            checked={selectedIds.has(prod.id)}
+                            onChange={(e) => {
+                              const newSet = new Set(selectedIds);
+                              if (e.target.checked) newSet.add(prod.id);
+                              else newSet.delete(prod.id);
+                              setSelectedIds(newSet);
+                            }}
+                            className="appearance-none relative h-4 w-4 shrink-0 rounded-[4px] border border-brand-light-gray bg-white checked:bg-brand-red checked:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-all cursor-pointer after:content-[''] after:absolute after:inset-0 after:bg-no-repeat after:bg-center after:bg-[length:70%] checked:after:bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%2220%206%209%2017%204%2012%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]"
+                          />
+                        </td>
                         {/* Media & Title */}
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
@@ -1247,6 +1284,26 @@ function AdminProductsContent() {
         itemName={deleteModalState.itemName}
         description={deleteModalState.description}
         blockedReason={deleteModalState.blockedReason}
+      />
+
+      {/* Bulk Delete Modal */}
+      <DeleteConfirmModal
+        isOpen={bulkDeleteModalOpen}
+        onClose={() => setBulkDeleteModalOpen(false)}
+        onConfirm={async () => {
+          try {
+            await productsApi.deleteBulk(Array.from(selectedIds));
+            setSelectedIds(new Set());
+            refetch();
+          } catch (err: any) {
+            alert(err.response?.data?.message || "Erreur de suppression.");
+          } finally {
+            setBulkDeleteModalOpen(false);
+          }
+        }}
+        title="Supprimer les produits sélectionnés ?"
+        itemName={`${selectedIds.size} produit(s)`}
+        description="Cette action est irréversible. Les produits sélectionnés et toutes leurs données associées seront définitivement supprimés de la base de données."
       />
     </AdminLayout>
   );

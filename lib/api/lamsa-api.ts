@@ -121,6 +121,12 @@ export const ordersApi = {
     return res.data;
   },
 
+  /** Admin: Hard-delete multiple orders directly from DB */
+  deleteBulk: async (ids: string[]) => {
+    const res = await apiClient.delete("/api/v1/orders/bulk", { data: { ids } });
+    return res.data;
+  },
+
   /** Admin: Get dashboard stats */
   getAdminStats: async () => {
     const res = await apiClient.get("/api/v1/orders/admin/stats");
@@ -252,6 +258,12 @@ export const productsApi = {
   /** Admin: Hard-delete product directly from DB */
   delete: async (id: string) => {
     const res = await apiClient.delete(`/api/v1/products/${id}`);
+    return res.data;
+  },
+
+  /** Admin: Hard-delete multiple products directly from DB */
+  deleteBulk: async (ids: string[]) => {
+    const res = await apiClient.delete("/api/v1/products/admin/bulk", { data: { ids } });
     return res.data;
   },
 

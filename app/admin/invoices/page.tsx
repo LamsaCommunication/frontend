@@ -70,6 +70,7 @@ export default function AdminInvoicesPage() {
   const [debouncedSearch, setDebouncedSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState("ALL");
   const [toastMessage, setToastMessage] = React.useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
 
   // Delete Modal State
   const [deleteModalState, setDeleteModalState] = React.useState<{
@@ -81,6 +82,8 @@ export default function AdminInvoicesPage() {
     orderId: "",
     orderNumber: ""
   });
+
+  const [bulkDeleteModalOpen, setBulkDeleteModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     const id = setTimeout(() => setDebouncedSearch(search), 350);
@@ -142,6 +145,17 @@ export default function AdminInvoicesPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {selectedIds.size > 0 && (
+              <button
+                type="button"
+                onClick={() => setBulkDeleteModalOpen(true)}
+                className="inline-flex items-center gap-1.5 rounded-full bg-brand-red px-4 py-2 text-xs font-bold text-white transition-colors hover:bg-brand-red-hover cursor-pointer"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                <span>Supprimer ({selectedIds.size})</span>
+              </button>
+            )}
+
             <button
               type="button"
               onClick={() => refetch()}
@@ -203,6 +217,20 @@ export default function AdminInvoicesPage() {
             <table className="w-full text-left text-xs">
               <thead>
                 <tr className="border-b border-brand-light-gray bg-brand-soft-white/60 text-brand-warm-gray uppercase tracking-wider font-bold">
+                  <th className="py-3.5 px-4 w-10">
+                    <input
+                      type="checkbox"
+                      checked={orders.length > 0 && selectedIds.size === orders.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedIds(new Set(orders.map(o => o.id)));
+                        } else {
+                          setSelectedIds(new Set());
+                        }
+                      }}
+                      className="appearance-none relative h-4 w-4 shrink-0 rounded-[4px] border border-brand-light-gray bg-white checked:bg-brand-red checked:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-all cursor-pointer after:content-[''] after:absolute after:inset-0 after:bg-no-repeat after:bg-center after:bg-[length:70%] checked:after:bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%2220%206%209%2017%204%2012%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]"
+                    />
+                  </th>
                   <th className="py-3.5 px-4">Facture / Date</th>
                   <th className="py-3.5 px-4">Client &amp; Téléphone</th>
                   <th className="py-3.5 px-4">Wilaya (Yalidine)</th>
@@ -234,6 +262,19 @@ export default function AdminInvoicesPage() {
                 ) : (
                   orders.map((ord) => (
                     <tr key={ord.id} className="hover:bg-brand-soft-white/50 transition-colors">
+                      <td className="py-3.5 px-4 w-10">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds.has(ord.id)}
+                          onChange={(e) => {
+                            const newSet = new Set(selectedIds);
+                            if (e.target.checked) newSet.add(ord.id);
+                            else newSet.delete(ord.id);
+                            setSelectedIds(newSet);
+                          }}
+                          className="appearance-none relative h-4 w-4 shrink-0 rounded-[4px] border border-brand-light-gray bg-white checked:bg-brand-red checked:border-brand-red focus:outline-none focus:ring-2 focus:ring-brand-red/20 transition-all cursor-pointer after:content-[''] after:absolute after:inset-0 after:bg-no-repeat after:bg-center after:bg-[length:70%] checked:after:bg-[url('data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22white%22%20stroke-width%3D%223%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpolyline%20points%3D%2220%206%209%2017%204%2012%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]"
+                        />
+                      </td>
                       <td className="py-3.5 px-4">
                         <span className="font-bold text-brand-charcoal block">{ord.orderNumber}</span>
                         <span className="text-[10px] text-brand-warm-gray">
@@ -330,7 +371,6 @@ export default function AdminInvoicesPage() {
       )}
     </AdminLayout>
 
-    {/* ── Delete Confirmation Modal ───────────────────────── */}
     <DeleteConfirmModal
       isOpen={deleteModalState.isOpen}
       onClose={() => setDeleteModalState((prev) => ({ ...prev, isOpen: false }))}
@@ -342,6 +382,25 @@ export default function AdminInvoicesPage() {
       title="Supprimer la commande ?"
       itemName={deleteModalState.orderNumber}
       description="Cette action est irréversible. La commande et toutes ses données associées seront définitivement supprimées de la base de données."
+    />
+
+    <DeleteConfirmModal
+      isOpen={bulkDeleteModalOpen}
+      onClose={() => setBulkDeleteModalOpen(false)}
+      onConfirm={async () => {
+        try {
+          await ordersApi.deleteBulk(Array.from(selectedIds));
+          setSelectedIds(new Set());
+          refetch();
+        } catch (err: any) {
+          alert("Erreur lors de la suppression");
+        } finally {
+          setBulkDeleteModalOpen(false);
+        }
+      }}
+      title="Supprimer les commandes sélectionnées ?"
+      itemName={`${selectedIds.size} commande(s)`}
+      description="Cette action est irréversible. Les commandes sélectionnées et toutes leurs données associées seront définitivement supprimées de la base de données."
     />
     </>
   );

@@ -185,6 +185,7 @@ function CheckoutContent() {
           clientVerified: it.customization?.clientVerified ?? true,
           customText: it.customization?.customText,
           designNotes: it.customization?.designNotes,
+          customerNote: it.customization?.customerNote,
           frontTransform: it.customization?.frontTransform,
           backTransform: it.customization?.backTransform,
           modelType: it.customization?.modelType,

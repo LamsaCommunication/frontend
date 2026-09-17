@@ -11,6 +11,7 @@ export interface CartCustomization {
   clientVerified: boolean;
   customText?: string;
   designNotes?: string;
+  customerNote?: string;
   selectedColor?: string;
   modelType: Product3DModelType;
   frontTransform?: TextureTransform;

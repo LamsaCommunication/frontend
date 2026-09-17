@@ -13,7 +13,8 @@ import {
   Trash2,
   Coffee,
   Shirt,
-  Sparkles
+  Sparkles,
+  ChevronDown
 } from "lucide-react";
 import type { Product3DType, TextureTransform } from "./models/types";
 import { uploadsApi } from "@/lib/api/lamsa-api";
@@ -124,6 +125,7 @@ export function CustomizerToolbar({
   onPrintSidesChange
 }: CustomizerToolbarProps) {
   const [isUploading, setIsUploading] = React.useState(false);
+  const [showAdvanced, setShowAdvanced] = React.useState(false);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -193,7 +195,7 @@ export function CustomizerToolbar({
   }, [isTShirt, isCap]);
 
   return (
-    <div className="fixed bottom-0 left-0 w-full bg-white/95 backdrop-blur-md rounded-t-2xl shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-50 p-4 max-h-[50vh] overflow-y-auto space-y-6 lg:relative lg:block lg:bg-transparent lg:shadow-none lg:p-0 lg:max-h-none lg:overflow-visible lg:z-auto">
+    <div className="space-y-6">
       {/* ── 0. Active 3D Product Mesh (Synced to DB configuration) ── */}
       <div>
         <div className="flex items-center justify-between mb-2">
@@ -392,14 +394,21 @@ export function CustomizerToolbar({
 
       {/* ── 3. Precision 3D Transform Sliders ──────────────────────── */}
       {logoUrl && (
-        <div className="rounded-2xl border border-brand-light-gray bg-brand-soft-white/40 p-4 space-y-4">
-          <div className="flex items-center justify-between border-b border-brand-light-gray pb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal">
+        <div className="rounded-2xl border border-brand-light-gray bg-brand-soft-white/40 p-4">
+          <div 
+            className="flex items-center justify-between cursor-pointer select-none"
+            onClick={() => setShowAdvanced(!showAdvanced)}
+          >
+            <span className="text-xs font-bold uppercase tracking-wider text-brand-charcoal flex items-center gap-2">
               Ajustement du Logo
+              <ChevronDown className={`h-4 w-4 text-brand-charcoal transition-transform duration-300 ${showAdvanced ? "rotate-180" : ""}`} />
             </span>
             <button
               type="button"
-              onClick={handleResetTransform}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleResetTransform();
+              }}
               disabled={isLocked}
               className="text-[11px] font-semibold text-brand-warm-gray hover:text-brand-red transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-40"
               title="Réinitialiser la position et la taille"
@@ -408,126 +417,128 @@ export function CustomizerToolbar({
             </button>
           </div>
 
+          {showAdvanced && (
+            <div className="pt-4 mt-3 border-t border-brand-light-gray/60 space-y-5 animate-in slide-in-from-top-2 fade-in duration-200">
+              {/* Cap Quick Placement Panels */}
+              {isCap && (
+                <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+                  <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
+                    Zone de placement :
+                  </span>
+                  <div className="grid grid-cols-4 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => onTransformChange({ offsetX: 0 })}
+                      className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004) < 0.4
+                        ? "bg-brand-red text-white border-brand-red shadow-xs"
+                        : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                        }`}
+                    >
+                      Front
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onTransformChange({ offsetX: -390 })}
+                      className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004 - (-Math.PI / 2)) < 0.6
+                        ? "bg-brand-red text-white border-brand-red shadow-xs"
+                        : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                        }`}
+                    >
+                      Côté G.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onTransformChange({ offsetX: 390 })}
+                      className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004 - (Math.PI / 2)) < 0.6
+                        ? "bg-brand-red text-white border-brand-red shadow-xs"
+                        : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                        }`}
+                    >
+                      Côté D.
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onTransformChange({ offsetX: 785 })}
+                      className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs(Math.abs((logoTransform.offsetX || 0) * 0.004) - Math.PI) < 0.6
+                        ? "bg-brand-red text-white border-brand-red shadow-xs"
+                        : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
+                        }`}
+                    >
+                      Arrière
+                    </button>
+                  </div>
+                </div>
+              )}
 
+              {/* Scale Slider */}
+              <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+                <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
+                  <span className="flex items-center gap-1.5">
+                    <Maximize2 className="h-3.5 w-3.5 text-brand-red" />
+                    Taille
+                  </span>
+                  <span className="font-mono text-brand-warm-gray">
+                    {Math.round(logoTransform.scale * 100)}%
+                  </span>
+                </div>
+                <SmoothRangeInput
+                  min={0.2}
+                  max={2.5}
+                  step={0.02}
+                  value={logoTransform.scale}
+                  onChange={(scale) => onTransformChange({ scale })}
+                  disabled={isLocked}
+                  className="w-full accent-brand-red cursor-pointer"
+                />
+              </div>
+
+              {/* Position X Slider */}
+              <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+                <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
+                  <span className="flex items-center gap-1.5">
+                    <MoveHorizontal className="h-3.5 w-3.5 text-brand-red" />
+                    {rangeConfig.xLabel}
+                  </span>
+                  <span className="font-mono text-brand-warm-gray">
+                    {logoTransform.offsetX}
+                  </span>
+                </div>
+                <SmoothRangeInput
+                  min={rangeConfig.xMin}
+                  max={rangeConfig.xMax}
+                  step={rangeConfig.xStep}
+                  value={logoTransform.offsetX}
+                  onChange={(offsetX) => onTransformChange({ offsetX })}
+                  disabled={isLocked}
+                  className="w-full accent-brand-red cursor-pointer"
+                />
+              </div>
+
+              {/* Position Y Slider */}
+              <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
+                <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
+                  <span className="flex items-center gap-1.5">
+                    <MoveVertical className="h-3.5 w-3.5 text-brand-red" />
+                    Position Verticale
+                  </span>
+                  <span className="font-mono text-brand-warm-gray">
+                    {logoTransform.offsetY}
+                  </span>
+                </div>
+                <SmoothRangeInput
+                  min={rangeConfig.yMin}
+                  max={rangeConfig.yMax}
+                  step={rangeConfig.yStep}
+                  value={logoTransform.offsetY}
+                  onChange={(offsetY) => onTransformChange({ offsetY })}
+                  disabled={isLocked}
+                  className="w-full accent-brand-red cursor-pointer"
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
-
-      {/* Cap Quick Placement Panels */}
-      {isCap && (
-        <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-          <span className="text-[11px] font-bold text-brand-charcoal block mb-1.5">
-            Zone de placement :
-          </span>
-          <div className="grid grid-cols-4 gap-1.5">
-            <button
-              type="button"
-              onClick={() => onTransformChange({ offsetX: 0 })}
-              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004) < 0.4
-                ? "bg-brand-red text-white border-brand-red shadow-xs"
-                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                }`}
-            >
-              Front
-            </button>
-            <button
-              type="button"
-              onClick={() => onTransformChange({ offsetX: -390 })}
-              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004 - (-Math.PI / 2)) < 0.6
-                ? "bg-brand-red text-white border-brand-red shadow-xs"
-                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                }`}
-            >
-              Côté G.
-            </button>
-            <button
-              type="button"
-              onClick={() => onTransformChange({ offsetX: 390 })}
-              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs((logoTransform.offsetX || 0) * 0.004 - (Math.PI / 2)) < 0.6
-                ? "bg-brand-red text-white border-brand-red shadow-xs"
-                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                }`}
-            >
-              Côté D.
-            </button>
-            <button
-              type="button"
-              onClick={() => onTransformChange({ offsetX: 785 })}
-              className={`py-1.5 px-1 rounded-xl text-[11px] font-bold border transition-all text-center cursor-pointer ${Math.abs(Math.abs((logoTransform.offsetX || 0) * 0.004) - Math.PI) < 0.6
-                ? "bg-brand-red text-white border-brand-red shadow-xs"
-                : "bg-white text-brand-charcoal border-brand-light-gray hover:border-brand-red/40"
-                }`}
-            >
-              Arrière
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Scale Slider */}
-      <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-        <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
-          <span className="flex items-center gap-1.5">
-            <Maximize2 className="h-3.5 w-3.5 text-brand-red" />
-            Taille
-          </span>
-          <span className="font-mono text-brand-warm-gray">
-            {Math.round(logoTransform.scale * 100)}%
-          </span>
-        </div>
-        <SmoothRangeInput
-          min={0.2}
-          max={2.5}
-          step={0.02}
-          value={logoTransform.scale}
-          onChange={(scale) => onTransformChange({ scale })}
-          disabled={isLocked}
-          className="w-full accent-brand-red cursor-pointer"
-        />
-      </div>
-
-      {/* Position X Slider */}
-      <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-        <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
-          <span className="flex items-center gap-1.5">
-            <MoveHorizontal className="h-3.5 w-3.5 text-brand-red" />
-            {rangeConfig.xLabel}
-          </span>
-          <span className="font-mono text-brand-warm-gray">
-            {logoTransform.offsetX}
-          </span>
-        </div>
-        <SmoothRangeInput
-          min={rangeConfig.xMin}
-          max={rangeConfig.xMax}
-          step={rangeConfig.xStep}
-          value={logoTransform.offsetX}
-          onChange={(offsetX) => onTransformChange({ offsetX })}
-          disabled={isLocked}
-          className="w-full accent-brand-red cursor-pointer"
-        />
-      </div>
-
-      {/* Position Y Slider */}
-      <div className={isLocked ? "opacity-50 pointer-events-none" : ""}>
-        <div className="flex justify-between text-xs font-semibold text-brand-charcoal mb-1">
-          <span className="flex items-center gap-1.5">
-            <MoveVertical className="h-3.5 w-3.5 text-brand-red" />
-            Position Verticale
-          </span>
-          <span className="font-mono text-brand-warm-gray">
-            {logoTransform.offsetY}
-          </span>
-        </div>
-        <SmoothRangeInput
-          min={rangeConfig.yMin}
-          max={rangeConfig.yMax}
-          step={rangeConfig.yStep}
-          value={logoTransform.offsetY}
-          onChange={(offsetY) => onTransformChange({ offsetY })}
-          disabled={isLocked}
-          className="w-full accent-brand-red cursor-pointer"
-        />
-      </div>
     </div>
   );
 }

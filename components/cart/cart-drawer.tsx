@@ -165,8 +165,13 @@ export function CartDrawer() {
                               )}
 
                               {item.customization?.customText && (
-                                <p className="mt-1 text-xs text-brand-dark/70 line-clamp-1">
+                                <p className="mt-1 text-[11px] text-brand-dark/70 line-clamp-1 italic">
                                   Texte: &quot;{item.customization.customText}&quot;
+                                </p>
+                              )}
+                              {item.customization?.customerNote && (
+                                <p className="mt-1 text-[11px] text-brand-red line-clamp-1 italic">
+                                  Note: {item.customization.customerNote}
                                 </p>
                               )}
 

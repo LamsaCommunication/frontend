@@ -384,7 +384,12 @@ function AdminSingleInvoiceContent() {
                         </div>
                         {item.designNotes && (
                           <p className="text-[10px] text-brand-warm-gray mt-2 italic border-l-2 pl-2">
-                            {item.designNotes}
+                            <span className="font-bold">Design:</span> {item.designNotes}
+                          </p>
+                        )}
+                        {item.customerNote && (
+                          <p className="text-[10px] text-brand-warm-gray mt-2 italic border-l-2 pl-2 border-brand-red">
+                            <span className="font-bold text-brand-red">Note Client:</span> {item.customerNote}
                           </p>
                         )}
                       </td>
@@ -588,6 +593,15 @@ function AdminSingleInvoiceContent() {
                       <span className="text-[10px] font-bold text-brand-warm-gray uppercase tracking-wider block mb-1.5">Notes de Design</span>
                       <p className="text-xs font-semibold text-amber-900 bg-amber-50 p-2.5 rounded-xl border border-amber-200/60 leading-relaxed">
                         {fixEncoding(viewing3DItem.designNotes)}
+                      </p>
+                    </div>
+                  )}
+
+                  {viewing3DItem.customerNote && (
+                    <div>
+                      <span className="text-[10px] font-bold text-brand-warm-gray uppercase tracking-wider block mb-1.5">Note Client</span>
+                      <p className="text-xs font-semibold text-brand-red bg-brand-red/5 p-2.5 rounded-xl border border-brand-red/20 leading-relaxed">
+                        {fixEncoding(viewing3DItem.customerNote)}
                       </p>
                     </div>
                   )}
